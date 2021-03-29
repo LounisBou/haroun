@@ -1,0 +1,9 @@
+curl --data-binary '{ "jsonrpc": "2.0", "method": "VideoLibrary.Scan", "id": "mybash"}' -H 'content-type: application/json;' http://rdmcrew:rdmcrew2016@192.168.1.110:8888/jsonrpc
+
+
+
+curl --data-binary '{"jsonrpc":"2.0","id":"mybash","method":"Files.GetDirectory","params":{"directory":"/mnt/NAS/Vidéos/","media":"file"}}' -H 'content-type: application/json;' http://rdmcrew:rdmcrew2016@192.168.1.110:8888/jsonrpc
+
+
+
+http://rdmcrew:rdmcrew2016@192.168.1.110:8888/jsonrpc?request={ "jsonrpc": "2.0", "method": "VideoLibrary.Scan", "id": "mybash"}
