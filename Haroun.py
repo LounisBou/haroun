@@ -20,14 +20,47 @@ class Haroun:
     
     # Brain instanciation.
     self.brain = Brain()
+
+
+  def getStimulus(self, source, source_id, sentence, parent_id): 
+    
+    """ 
+      Retrieve call info. 
+    
+      Use haroun brain to create and return Stimulus Object.
+      
+      Returns
+      _______
+      stimulus : Stimulus
+        Stimulus concept object created from call infos.
+    """
+    
+    # Generate stimulus from call info.
+    stimulus = self.brain.generateStimulus(source, source_id, sentence, parent_id)
+    
+    # If we manage to understand stimulus.
+    if(stimulus):
+      # Ask Haroun to initiate interaction.
+      if(self.brain.initiate(interaction)):
+        # When interaction treatment is done, return interaction answer.
+        return interaction.answer
+      else:
+        # [DEBUG]
+        return "Désolé, mais je n'ai pas compris ce que je dois faire."
+    else:
+      # [DEBUG]
+      return "Que voulez vous dire par : " + interaction.sentence
+    
+    # Return stimulus.
+    return stimulus
     
     
-  def interact(self, source, source_id, sentence, parent_id):
+  def interact(self, stimulus):
     
     """
       Manage assistant interaction.
   
-      Initiate interaction in Haroun Brain.
+      Initiate interaction from stimulus in Haroun Brain.
   
       Parameters
       ----------
@@ -44,19 +77,23 @@ class Haroun:
       -------
       void
     """
-
-    # On demande à Haroun d'analyser la question.
-    if(self.cerveau.analyse(question, Encodage) == 1):
-      # On demande à Haroun d'exécuter la demande.
-      if(self.cerveau.execute() == 1):
-        # Reponse
-        return self.cerveau.reponse.texte
+        
+    # Use brain to analyse stimulus and create interaction.
+    interaction = self.brain.createInteraction(stimulus, Encodage)
+    # If we manage to understand stimulus, we can know initiate interaction.
+    if(interaction):
+      # Ask Haroun to initiate interaction.
+      interaction = self.brain.initiate(interaction)
+      # If interaction was treated with success.
+      if(interaction):
+        # Return interaction answer.
+        return interaction.answer
       else:
-        # DEBUG
+        # [DEBUG]
         return "Désolé, mais je n'ai pas compris ce que je dois faire."
     else:
-      # DEBUG
-      return "Que voulez vous dire par : " + self.cerveau.question.texte
+      # [DEBUG]
+      return "Que voulez vous dire par : " + interaction.sentence
 
 
 #####################################################################################################   
@@ -86,13 +123,13 @@ if __name__ == "__main__":
     sys.exit()
   
   # DEBUG
-  print(question)
+  print(sentence)
   
   # ! - Init interaction :
   
-  # Launch Haroun interaction.
+  # Launch Haroun to interact with stimulus.
   answer = Haroun.interact(sentence)
   
   # [DEBUG]
-  print(answer)
+  print(answer.texte)
   

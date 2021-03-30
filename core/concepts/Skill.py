@@ -1,49 +1,71 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Dependances : subprocess
 #
-# Import librairie execution de commande
+# Libraries dependancies :
+#
+# Import system library.
+import sys
+# Import OS library.
+import os
+# Import subprocess library.
 import subprocess
 #
-# Class : Competence exécuté par Haroune.
+#
+# Globals :
+#
+# Current, parent, and root paths.
+DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))
+DOSSIER_PARENT = os.path.dirname(DOSSIER_COURRANT)
+DOSSIER_RACINE = os.path.dirname(DOSSIER_PARENT)
+sys.path.append(DOSSIER_RACINE)
+#
+#
+#
 class Skill:
 	
-	# ! - Fonctions
+	""" Concept of Haroun Skill. """
 	
-	# Fonction : Constructeur
 	def __init__(self):
 		
-		# Keywords
+		""" Skill class constructor. """		
+		
+		# Keywords.
 		self.keywords = []
-		# Params
+		# Params.
 		self.params = {}
-		# Domaine de Competence
-		self.domaine = ''
-		# Action de la Competence
+    # Variables.
+		self.vars = {}	
+		# Domain of skill.
+		self.domain = ''
+		# Action of skill.
 		self.action = ''
-		# Reponses Competence
-		self.reponses = []		
-		# Variables
-		self.variables = {}		
-		# Reaction Competence
+		
+		# Skill exectution answer.
+		self.answer_infos = []		
+		# Reaction Competence.
 		self.reaction = ''		
-		# Code de retour Competence
-		self.erreur = -1
+		# Error flag.
+		self.error = -1
 	
-	# Fonctions : Setter
+  
+  """ Getters/Setters """
+
 	def addKeyword(self, keyword):
 		self.keywords.append(keyword)
+		
 	def setKeywords(self, keywords):
 		self.keywords = keywords
 	
 	def addParam(self, paramName, positions):
 		self.params[paramName] = positions
+		
 	def setParams(self, params):
 		self.params = params
 		
 	def addVariable(self, varName, value):
 		self.variables[varName] = value
+		
 	def setVariables(self, variables):
 		self.variables = variables
 	
@@ -55,24 +77,59 @@ class Skill:
 		
 	def addReponse(self, reponse):
 		self.reponses.append(reponse)		
+		
 	def setReponses(self, reponses):
 		self.reponses = reponses
 	
-	# Fonctions : Getter	    
 	def getParam(self, paramName):
 		return self.params[paramName]	
 		
 	def getKeyword(self, position):
 		return self.keywords[position]	
 	
-
-	# Fonction : Excute
+  
+  """ Skill management methods : """
+  
+  def prepare(self):
+    
+    """
+  	  Prepare skill for execution.
+  	  
+  	  Prepare skill data to perform action domain skill execution.
+  	  
+  	  Returns
+  	  -------
+  	  void.
+    """
+    
+    # End.
+    return
+    
+  
 	def execute(self):
-		# Ecécution de la Competence 
+  	
+  	"""
+  	  Execute the skill.
+  	  
+  	  Execute the method of domain link to the skill action, and retrieve stdOut output.
+  	  
+  	  Execution via : subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+    	  command : Shell command to execute.
+    	  shell : Flag to use shell.
+    	  stderr : Flag to redirect stdErr.
+  	  
+  	  Returns
+  	  -------
+  	  execution_code : Int
+  	    Return value of skill execution.
+    """
+  	
+		# Excécution de la Competence 
 		# et récuperaction de la sortie standard
 		# Version DEBUG : Sortie erreur redirigé vers sortie standard
 		# result = subprocess.check_output([batcmd], stderr=subprocess.STDOUT)
 		self.reaction = subprocess.check_output(self.action, shell=True)
-		# Et on renvoi.
+		
+		# End.
 		return 1
 		

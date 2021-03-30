@@ -1,12 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Class : Conscious (Awareness simulation : Reflexivity.)
+#
+# Libraries dependancies :
+#
+# Import system library.
+import sys
+# Import OS library.
+import os
+#
+#
+#  
 class Conscious:
 		
-	# ! - Fonctions
+	""" Concept of Haroun Conscious (Awareness simulation : Reflexivity.) """
 	
-	# Construct
 	def __init__(self):
+  	
+  	""" Ego class constructor. """	
+  	
 		# Mood
 		self.mood = 0

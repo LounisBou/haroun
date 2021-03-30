@@ -2,70 +2,107 @@
 # -*- coding: utf-8 -*-
 #
 #
-# Dependances : sys, os
+# Libraries dependancies :
 #
-# Import de la librairie system
+# Import system library.
 import sys
-# Import de la librairie OS
+# Import OS library.
 import os
-# Import de Path depuis la librairie pathlib.
+# Import Path function form pathlib library.
 from pathlib import Path
-# Import JSON.
+# Import json library.
 import json
-# Rhasspynlu
+# Import rhasspy-nlu library. 
 import rhasspynlu
 #
+#
+# Haroun dependancies :
 #
 # Import core concept intent.
 from core.concepts.Intent import *
 #
 #
+# Globals :
 #
-# Ajout des du dossier des domaines au path systeme
+# Current, parent, and root paths.
 DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))
 DOSSIER_PARENT = os.path.dirname(DOSSIER_COURRANT)
 DOSSIER_RACINE = os.path.dirname(DOSSIER_PARENT)
 sys.path.append(DOSSIER_RACINE)
 #
 #
-# Class : Question (Question au format texte du STT)
-class Question:
-    
-  # ! - Fonctions
+#
+class Interaction:
   
-  # Fonction : Constructeur
-  def __init__(self, text):
+  """ Concept of Interaction for Haroun. """
+    
+  def __init__(self, sentence):
+    
+    """ 
+      Interaction class constructor.
+      
+      Interaction concept class, manage interaction infos.
+      
+      Parameters
+      ----------
+      sentence : String
+        Interaction sentence in string format
+      
+      
+      Returns
+      _______
+      void
+      
+    """
     
     # ! Attributs
     
-    # Flag d'état.
+    # Error flag.
     self.error = 0
-    # Chaine à manipuler.
-    self.texte = text   
-    # Liste de mot.
-    self.mots = self.texte.split(' ')
+    
+    # Interaction sentence.
+    self.sentence = sentence   
+    # Sentence words list.
+    self.words = self.sentence.split(' ')
+    # Recognition : JSON Recognition Object from NLU recognize.
+    self.recognition
+    # Intent : Intent that match the Interaction (defined by Recognition)
+    self.intent
     
 
-  # Fonction : NLU (Natural Language Understanding)
-  def interprete(self):
+  # ! NLU (Natural Language Understanding)
+  
+  def interpreter(self, training_graph):
     
-    # Chargement des intentions de compétences
-    intentions = rhasspynlu.parse_ini(Path(DOSSIER_RACINE+"/competences/openhab.ini"))
+    """ 
+      Interpreter method, apply NLU analysis on Interaction sentence.
+      
+      Interpretation of Interaction sentence via rhasspy-nlu.
+      
+      Parameters
+      ----------
+      training_graph : DiGraph—Directed (See https://networkx.org/documentation/networkx-2.3/reference/classes/digraph.html)
+        rhasspy-nlu DiGraph—Directed training result is a directed graph whose states are words and edges are input/output labels.
+      
+      Returns
+      _______
+      void
+      
+    """
     
-    # Analyse des intentions en graph d'intentions.
-    intentions_graph = rhasspynlu.intents_to_graph(intentions)
+    # Perform intent recognition in Interaction sentence thanks to training graph.
+    recognitions = rhasspynlu.recognize(self.sentence, training_graph)
     
-    # Reconnaissance de l'intention dans le texte en fonction du graph d'intentions.
-    reconnaissance = rhasspynlu.recognize(self.texte, intentions_graph)
-    
-    # Si la reconnaissance de l'intention est réussi.
-    if reconnaissance :
-      # Transformation de la reconnaissance reconnue au format JSON.
-      reconnaissance_dict = reconnaissance[0].asdict()
+    # If rhasspynlu perform recognition without problem.
+    if(recognitions):
+      # Format recognitions as dict.
+      recognitions_dict = recognitions[0].asdict()
+      # Format recognitions dict as json.
+      self.recognition = json.dumps(reconnaissance_dict)
       # [DEBUG]
-      print(json.dumps(reconnaissance_dict))
+      print(self.recognition)
     else:
-      # DEBUG
+      # [DEBUG]
       print("Je n'ai pas compris votre intention.")
            
 
@@ -83,12 +120,14 @@ class Question:
   def getMot(self, position):
     return self.mots[position]
   
-  # Fonctions de m anipulations : 
+  # Fonctions de manipulations : 
   
-  # Contient : retourne la position du mot, -1 sinon.
-  def contient(self, mot):
+  def containsWord(self, word):
+    
+    
+    
     # On parcours la liste de mots.
-    for i in range(0,len(self.mots)):
+    for i in range(0,len(self.words)):
       # Récupération du mot courant.
       current = self.mots[i]
       # Test de correspondance du mot (minuscule)

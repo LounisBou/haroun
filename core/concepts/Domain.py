@@ -1,26 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Dependances : sys, os
 #
-# Import de la librairie system
+# Libraries dependancies :
+#
+# Import system library.
 import sys
-# Import de la librairie OS
+# Import OS library.
 import os
-# Ajout des du dossier des domaines au path systeme
+#
+#
+# Globals :
+#
+# Current, parent, and root paths.
 DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))
 DOSSIER_PARENT = os.path.dirname(DOSSIER_COURRANT)
 DOSSIER_RACINE = os.path.dirname(DOSSIER_PARENT)
 sys.path.append(DOSSIER_RACINE)
-
 #
-# Class : Haroun Domain of Skills.
+#
+#
 class Domain:
 	
-	# ! - Fonctions
+	""" Concept of Haroun Domain. """
 	
 	# Fonction : Constructeur
-	def __init__(self):		
+	def __init__(self):
+  	
+  	""" Domain class constructor. """		
+  
+    # Action to manage via domain.
 		action = ""
 	
   # Fonction d'import

@@ -2,20 +2,31 @@
 # -*- coding: utf-8 -*-
 #
 #
-
+# Libraries dependancies :
+#
+# Import system library.
+import sys
+# Import OS library.
+import os
 #
 #
-# Import core concept intent.
-from core.concepts.Intent import *
+# Globals :
+#
+# Current, parent, and root paths.
+DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))
+DOSSIER_PARENT = os.path.dirname(DOSSIER_COURRANT)
+DOSSIER_RACINE = os.path.dirname(DOSSIER_PARENT)
+sys.path.append(DOSSIER_RACINE)
 #
 #
-# Class : 
+#
 class Stimulus:
     
-  # ! - Fonctions
+  """ Concept of Haroun Stimulus. """
   
   def __init__(self):
     
-    # ! Attributs
+    """ Stimulus class constructor. """	
     
-    
+    # Flag error.
+    self.error = 0
