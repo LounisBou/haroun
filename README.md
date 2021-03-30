@@ -1,6 +1,12 @@
 # Haroun
 Haroun is a python home assistant. Manage text interaction between user and domains API.
 
+[schema.pdf](https://github.com/LounisBou/haroun/files/6228943/schema.pdf)
+
+# Operation
+
+[designpattern.pdf](https://github.com/LounisBou/haroun/files/6228932/designpattern.pdf)
+
 # Structure
 
 Haroun.py (Main file launch assistance process. Init brain, receive interaction sentence.)
@@ -33,3 +39,6 @@ Haroun.py (Main file launch assistance process. Init brain, receive interaction 
     Kodi.ini
     Social.ini
     ...
+    
+![structure](https://user-images.githubusercontent.com/34158993/112987532-1d0b4600-9163-11eb-906d-89e348af3d72.png)
+
