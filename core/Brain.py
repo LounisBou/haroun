@@ -258,14 +258,14 @@ class Brain:
       
     # If there is a skill execution result.
     if(skill_execution_results):
-      # We have to analyse results to create an interaction answer.
-      anwser_infos = skill.analysis(skill_execution_results)
-      # Add answer_infos to interaction.answer
-      interaction.answer.add(anwser_infos)
+      # We have to analyse results to create an interaction response.
+      response_infos = skill.analysis(skill_execution_results)
+      # Add response_infos to interaction.response
+      interaction.response.add(response_infos)
       
       
-    # Generate interaction answer.
-    self.answer(interaction)
+    # Generate interaction response.
+    self.response(interaction)
     
     # Return modified interaction.
     return interaction    
@@ -316,7 +316,7 @@ class Brain:
       
       Returns
       _______
-      answer_infos : Dict
+      response_infos : Dict
         Domain method execution returned infos.
       
     """
@@ -325,22 +325,22 @@ class Brain:
     domain = skill.getDomain()
   
     # Execute the Skill via the Domain, and retrieve returned infos.
-    answer_infos = domain.execute(skill)
+    response_infos = domain.execute(skill)
     
-    # Return answer_infos.
-    return answer_infos
+    # Return response_infos.
+    return response_infos
 
-  def answer(self, interaction):
+  def response(self, interaction):
     
     """ 
-      Create interaction answer.  
+      Create interaction response.  
       
-      Parse interaction data, to generate an answer with datas and sentence.
+      Parse interaction data, to generate an response with datas and sentence.
       
       Parameters
       ----------
       interaction : Interaction
-        Interaction for which to generate answer.
+        Interaction for which to generate response.
       
       Returns
       _______
@@ -348,7 +348,7 @@ class Brain:
       
     """
     
-    # Generate answer from interaction.
+    # Generate response from interaction.
     
     
     return

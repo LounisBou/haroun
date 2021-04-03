@@ -18,8 +18,10 @@ import rhasspynlu
 #
 # Haroun dependancies :
 #
-# Import core concept intent.
+# Import core concept Intent.
 from core.concepts.Intent import *
+# Import core concept Response.
+from core.concepts.Response import *
 #
 #
 # Globals :
@@ -68,6 +70,8 @@ class Interaction:
     self.recognition
     # Intent : Intent that match the Interaction (defined by Recognition)
     self.intent
+    # Response : Interaction Response.
+    self.response
     
 
   # ! NLU (Natural Language Understanding)

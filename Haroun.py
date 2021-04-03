@@ -22,12 +22,23 @@ class Haroun:
     self.brain = Brain()
 
 
-  def getStimulus(self, source, source_id, sentence, parent_id): 
+  def getStimulus(self, source, source_id, sentence, parent_interaction_id): 
     
     """ 
       Retrieve call info. 
     
       Use haroun brain to create and return Stimulus Object.
+      
+      Parameters
+      ----------
+      source : String
+        Label for stimulus source origin.
+      source_id : String
+        Uniq identifier for stimulus source origin.
+      sentence : String (optionnal)
+        Sentence of the stimulus. [Default = '']
+      parent_interaction_id : String (optionnal)
+        Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
       
       Returns
       _______
@@ -36,14 +47,14 @@ class Haroun:
     """
     
     # Generate stimulus from call info.
-    stimulus = self.brain.generateStimulus(source, source_id, sentence, parent_id)
+    stimulus = self.brain.generateStimulus(source, source_id, sentence, parent_interaction_id)
     
     # If we manage to understand stimulus.
     if(stimulus):
       # Ask Haroun to initiate interaction.
       if(self.brain.initiate(interaction)):
-        # When interaction treatment is done, return interaction answer.
-        return interaction.answer
+        # When interaction treatment is done, return interaction response.
+        return interaction.response
       else:
         # [DEBUG]
         return "Désolé, mais je n'ai pas compris ce que je dois faire."
@@ -64,18 +75,12 @@ class Haroun:
   
       Parameters
       ----------
-      source : int
-        Description of arg1
-      source_id : str
-        Description of arg2
-      sentence : str
-        Description of arg2
-      parent_id : str
-        Description of arg2
+      stimulus : Stimulus
+        Stimulus that at the origin of the interaction
         
       Returns
       -------
-      void
+      response : Return Interaction Response Object.
     """
         
     # Use brain to analyse stimulus and create interaction.
@@ -86,8 +91,8 @@ class Haroun:
       interaction = self.brain.initiate(interaction)
       # If interaction was treated with success.
       if(interaction):
-        # Return interaction answer.
-        return interaction.answer
+        # Return interaction response.
+        return interaction.response
       else:
         # [DEBUG]
         return "Désolé, mais je n'ai pas compris ce que je dois faire."
@@ -128,8 +133,8 @@ if __name__ == "__main__":
   # ! - Init interaction :
   
   # Launch Haroun to interact with stimulus.
-  answer = Haroun.interact(sentence)
+  response = Haroun.interact(sentence)
   
   # [DEBUG]
-  print(answer.texte)
+  print(response.texte)
   
