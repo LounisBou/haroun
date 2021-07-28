@@ -9,7 +9,7 @@
 #
 # Import consciousness class.
 from core.consciousness.Conscious import *
-from core.consciousness.Ego import *
+from core.consciousness.Me import *
 #
 # Import concepts class.
 from core.concepts.Domain import *
@@ -24,8 +24,8 @@ from core.concepts.Memory import *
 # Gloabls : 
 #
 # Current, and root paths.
-DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))
-DOSSIER_RACINE = os.path.dirname(DOSSIER_COURRANT)
+DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))+'/'
+DOSSIER_RACINE = os.path.dirname(os.path.abspath(DOSSIER_COURRANT))+'/'
 sys.path.append(DOSSIER_RACINE)
 #
 #
@@ -48,17 +48,20 @@ class Brain:
     # Available skills list. 
     self.skills = self.getDomains()
     
-    # Available intents files list. 
-    self.intentsFiles =  self.getIntentsFiles()
+    # Available intents list. 
+    self.intents =  self.getIntents()
     
     # IntentToSkill dictionnary, create a dict for "Intent to Skill" conversion. 
     self.intentToSkill = []
     
     # Training rhasspy-nlu graph from known intents. 
-    self.intents_graph = null
+    self.intents_graph = None
   
     # Memories 
     self.memories = Memory()
+    
+    # Training brain by creating intents graph.
+    self.training()
 
   # ! - Initialisation.
   
@@ -76,9 +79,13 @@ class Brain:
     """
     
     # Browse through domains files 
+    files = []
+    for(dirpath, dirnames, filenames) in os.walk(DOSSIER_RACINE+"domains"):
+      files.extend(filenames)
+      break
     
     # Return
-    return
+    return files
     
   def getSkills(self):
     
@@ -94,18 +101,23 @@ class Brain:
     """
     
     # Browse through skills files 
-    
+    files = []
+    for(dirpath, dirnames, filenames) in os.walk(DOSSIER_RACINE+"skills"):
+      files.extend(filenames)
+      break
     
     # Return
-    return
+    return files
     
-  def getIntentsFiles(self):
+    
+  def getIntents(self):
     
     """ 
       Acquire intents file list. 
       
       Parse haroun/intents folder to list of intents file.
       Normally one file per available domains.
+      Generate one intents file and parse it with rhasspy-nlu.
       
       Returns
       _______
@@ -113,11 +125,52 @@ class Brain:
     
     """
     
-    # Browse through intents files 
+    # Intents directory path.
+    intentsPath=DOSSIER_RACINE+"intents/"
     
+    # Browse through intents files 
+    intentsFiles = []    
+    for(dirPath, dirNames, fileNames) in os.walk(intentsPath):
+      # [DEBUG]
+      print('Looking in intent directory : '+intentsPath+", listing files :")
+      print(fileNames)
+      intentsFiles.extend(fileNames)
+      break
+      
+    """ Write all intents in intents/.all.ini file. """
+    
+    # Open intents/.all.ini, a file that will contains all intents.
+    allIntentsFilePath  = intentsPath+".all.ini"
+          
+    # Open intents/.all.ini in write mode
+    with open(allIntentsFilePath, 'w+') as allIntentsFileBuffer:
+      
+      # Iterate through intentsFiles list
+      for fileName in intentsFiles:
+        
+        # Construct file path.
+        filePath = intentsPath+fileName
+        
+        # Open each file in read mode
+        with open(filePath) as fileBuffer:
+  
+          # Read the data from file. 
+          fileIntents = fileBuffer.read()
+          
+          # Write it in allIntentsFileBuffer and add '\n' to enter data from next line
+          allIntentsFileBuffer.write(fileIntents+"\n")
+    
+    # Load file for rhasspy-nlu.
+    intents = rhasspynlu.parse_ini(Path(allIntentsFilePath))
+    
+    # [DEBUG]
+    #print('Intents : ')
+    #print(intents)
+    #print('----------------------------------------')
     
     # Return
-    return
+    return intents
+    
   
   # ! - NLU training.
   
@@ -126,8 +179,7 @@ class Brain:
     """ 
       Acquire domains knowledge. 
       
-      Instanciate rhasspy nlu, and parse sentences.ini intents files.
-      Generate intents to graph training.
+      Transform intents into graph training.
       
       Returns
       _______
@@ -135,28 +187,17 @@ class Brain:
     
     """
     
-    # This variables will load all active intents files.
-    all_intents = ""
-    
-    # Browse through intents files list for rhasspy-nlu.
-    for intentFile in self.intentsFiles:
-      # Concact all domain sentence .ini file.
-      #all_intents = all_intents + intentFile.content()
-      
-    # Write all intents in intents/.all.ini file.
-    
-      
-    # Load file for rhasspy-nlu.
-    intents = rhasspynlu.parse_ini(Path(DOSSIER_RACINE+"/intents/.all.ini"))
-    
     # Generate intents training graph from list of known intents.
-    self.intents_graph = rhasspynlu.intents_to_graph(intents)
+    self.intents_graph = rhasspynlu.intents_to_graph(self.intents)
     
-    # Generate graph from intents for training.
-    
+    # [DEBUG]
+    #print('Intents graph : ')
+    #print(self.intents_graph)
+    #print('----------------------------------------')
+        
     # End.
     return
-    
+      
     
   def SkillsIntentsAnalysis(self, interaction):
    
@@ -218,10 +259,38 @@ class Brain:
       return stimulus
     else:
       # Error.
-      return false
+      return False
     
     
   # ! - Interaction management.
+  
+  def createInteraction(self, stimulus):
+  
+    """ 
+      Generate Interaction concept object. 
+      
+      Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
+      
+      Parameters
+      ----------
+      stimulus : Stimulus
+        Stimulus source origin of the interaction.
+          
+      Returns
+      _______
+      interaction : Interaction
+        Interaction concept object created with stimulus infos.
+      
+    """
+    
+    # Create interaction from stimulus.
+    interaction = Interaction(stimulus)
+    
+    # Return interaction ready to interact.
+    return interaction
+    
+    
+
   
   def initiate(self, interaction):
     
@@ -247,6 +316,10 @@ class Brain:
     
     # Interaction sentence NLU analysis thanks to intents training graph.
     interaction.interpreter(self.intents_graph)
+    
+    # [DEBUG]
+    print("Interaction object : ")
+    print(interaction)
     
     # Defined Skill that is associated with this intents.
     skill = self.analysis(interaction)
@@ -294,7 +367,7 @@ class Brain:
     """
     
     # Find Skill from Interaction Intent label.
-    skill_infos = intentToSkill[interaction.intent.label]
+    skill_infos = self.intentToSkill[interaction.intent.label]
     
     # Create Skill from skill_info.
     skill = Skill()

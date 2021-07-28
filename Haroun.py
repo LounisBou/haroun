@@ -22,7 +22,7 @@ class Haroun:
     self.brain = Brain()
 
 
-  def getStimulus(self, source, source_id, sentence, parent_interaction_id): 
+  def call(self, source, source_id, sentence, parent_interaction_id): 
     
     """ 
       Retrieve call info. 
@@ -38,7 +38,7 @@ class Haroun:
       sentence : String (optionnal)
         Sentence of the stimulus. [Default = '']
       parent_interaction_id : String (optionnal)
-        Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
+        Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = None]
       
       Returns
       _______
@@ -51,55 +51,29 @@ class Haroun:
     
     # If we manage to understand stimulus.
     if(stimulus):
-      # Ask Haroun to initiate interaction.
-      if(self.brain.initiate(interaction)):
-        # When interaction treatment is done, return interaction response.
-        return interaction.response
+      # Check if stimulus need interaction.
+      if(stimulus.needInteraction()):
+        # Haroun create an interaction with user.
+        interaction = self.brain.createInteraction(stimulus);
+        # If interaction is ready.
+        if(interaction):
+          # Ask Haroun to initiate interaction.
+          self.brain.initiate(interaction)
+          # When interaction treatment is done, return interaction response.
+          return interaction.response
+        else:
+          # [DEBUG]
+          print("Interaction error. [Error #3]")
       else:
         # [DEBUG]
-        return "Désolé, mais je n'ai pas compris ce que je dois faire."
+        return ("No interaction needed. [Error #2]")
     else:
       # [DEBUG]
-      return "Que voulez vous dire par : " + interaction.sentence
+      return ("Stimulus error. [Error #1]")
     
-    # Return stimulus.
-    return stimulus
+    # [DEBUG]
+    return False
     
-    
-  def interact(self, stimulus):
-    
-    """
-      Manage assistant interaction.
-  
-      Initiate interaction from stimulus in Haroun Brain.
-  
-      Parameters
-      ----------
-      stimulus : Stimulus
-        Stimulus that at the origin of the interaction
-        
-      Returns
-      -------
-      response : Return Interaction Response Object.
-    """
-        
-    # Use brain to analyse stimulus and create interaction.
-    interaction = self.brain.createInteraction(stimulus, Encodage)
-    # If we manage to understand stimulus, we can know initiate interaction.
-    if(interaction):
-      # Ask Haroun to initiate interaction.
-      interaction = self.brain.initiate(interaction)
-      # If interaction was treated with success.
-      if(interaction):
-        # Return interaction response.
-        return interaction.response
-      else:
-        # [DEBUG]
-        return "Désolé, mais je n'ai pas compris ce que je dois faire."
-    else:
-      # [DEBUG]
-      return "Que voulez vous dire par : " + interaction.sentence
-
 
 #####################################################################################################   
 #                                            MAIN                                                   #
@@ -127,14 +101,11 @@ if __name__ == "__main__":
     # End.
     sys.exit()
   
-  # DEBUG
-  print(sentence)
-  
   # ! - Init interaction :
   
-  # Launch Haroun to interact with stimulus.
-  response = Haroun.interact(sentence)
+  # Launch Haroun stimulus analisys.
+  response = Haroun.call("DEBUG", 0, sentence, None)
   
   # [DEBUG]
-  print(response.texte)
+  print(response)
   

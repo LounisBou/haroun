@@ -19,14 +19,14 @@ sys.path.append(DOSSIER_RACINE)
 #
 #
 #
-class Intent:	
-	
-	""" Concept of Haroun Intent. """
-	
-	def __init__(self):
-  	
-  	""" Intent class constructor. """
-  	
-		# Error flag.
-		self.error = 0
-		
+class Intent: 
+  
+  """ Concept of Haroun Intent. """
+  
+  def __init__(self):
+    
+    """ Intent class constructor. """
+    
+    # Error flag.
+    self.error = 0
+    

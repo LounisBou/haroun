@@ -12,12 +12,12 @@ import os
 #
 #  
 class Conscious:
-		
-	""" Concept of Haroun Conscious (Awareness simulation : Reflexivity.) """
-	
-	def __init__(self):
-  	
-  	""" Ego class constructor. """	
-  	
-		# Mood
-		self.mood = 0
+  
+  """ Concept of Haroun Conscious (Awareness simulation : Reflexivity.) """
+  
+  def __init__(self):
+    
+    """ Ego class constructor. """  
+    
+    # Mood
+    self.mood = 0

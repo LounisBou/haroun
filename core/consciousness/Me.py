@@ -13,11 +13,11 @@ import os
 # 
 class Ego:
   
- """ Concept of Haroun Ego (Personality simulation). """  
-		
-	def __init__(self):
-  	
-  	""" Ego class constructor. """	
-  	
-		# Mood
-		self.mood = 0
+  """ Concept of Haroun Ego (Personality simulation). """
+  
+  def __init__(self):
+    
+    """ Ego class constructor. """  
+    
+    # Mood
+    self.mood = 0

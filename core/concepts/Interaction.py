@@ -38,7 +38,7 @@ class Interaction:
   
   """ Concept of Interaction for Haroun. """
     
-  def __init__(self, sentence):
+  def __init__(self, stimulus):
     
     """ 
       Interaction class constructor.
@@ -47,8 +47,8 @@ class Interaction:
       
       Parameters
       ----------
-      sentence : String
-        Interaction sentence in string format
+      stimulus : Stimulus
+        Stimulus at the origin of the interaction.
       
       
       Returns
@@ -60,18 +60,21 @@ class Interaction:
     # ! Attributs
     
     # Error flag.
-    self.error = 0
+    self.error = False
+    # Done flag.
+    self.done = False
     
-    # Interaction sentence.
-    self.sentence = sentence   
+    # Interaction stimulus.
+    self.stimulus = stimulus   
     # Sentence words list.
-    self.words = self.sentence.split(' ')
+    self.words = self.stimulus.sentence.split(' ')
     # Recognition : JSON Recognition Object from NLU recognize.
-    self.recognition
+    self.recognition = None
     # Intent : Intent that match the Interaction (defined by Recognition)
-    self.intent
+    self.intent = None
     # Response : Interaction Response.
-    self.response
+    self.response = None
+    
     
 
   # ! NLU (Natural Language Understanding)
@@ -94,42 +97,42 @@ class Interaction:
       
     """
     
+    # [DEBUG]
+    print('Interaction sentence : '+self.stimulus.sentence)
+    print('----------------------------------------')
+    
     # Perform intent recognition in Interaction sentence thanks to training graph.
-    recognitions = rhasspynlu.recognize(self.sentence, training_graph)
+    recognitions = rhasspynlu.recognize(self.stimulus.sentence, training_graph)
     
     # If rhasspynlu perform recognition without problem.
     if(recognitions):
       # Format recognitions as dict.
       recognitions_dict = recognitions[0].asdict()
       # Format recognitions dict as json.
-      self.recognition = json.dumps(reconnaissance_dict)
+      recognition = json.dumps(recognitions_dict)
+     
       # [DEBUG]
+      print("Recognised string  : ")
+      print(recognition)
+      print('----------------------------------------')
+
+      self.recognition = json.loads(recognition)
+      
+      # [DEBUG]
+      print("Recognised object  : ")
       print(self.recognition)
+      print('----------------------------------------')
+    
     else:
       # [DEBUG]
       print("Je n'ai pas compris votre intention.")
-           
+      print('----------------------------------------')    
 
-  # Fonction : Setter
-  def set(self, text):
-    self.__init__(text)
-  
-  # Fonctions : Getter
-  def getText(self):
-      return self.texte
-      
-  def getList(self):
-    return self.mots
-  
-  def getMot(self, position):
-    return self.mots[position]
   
   # Fonctions de manipulations : 
   
   def containsWord(self, word):
-    
-    
-    
+
     # On parcours la liste de mots.
     for i in range(0,len(self.words)):
       # Récupération du mot courant.
