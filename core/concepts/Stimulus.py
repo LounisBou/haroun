@@ -48,6 +48,9 @@ class Stimulus:
     self.source_id = source_id
     
     # Sentence
+    self.raw_sentence = sentence
+    
+    # Sentence
     self.sentence = sentence
     
     # Parent interaction ID if one.
@@ -58,6 +61,9 @@ class Stimulus:
     
     # Interaction flag.
     self.interaction = False
+    
+    # Stimulus duration.
+    self.duration = None
     
     
   def isValid(self):

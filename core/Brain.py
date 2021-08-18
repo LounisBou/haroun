@@ -18,6 +18,10 @@ from core.concepts.Stimulus import *
 from core.concepts.Interaction import *
 from core.concepts.Intent import *
 from core.concepts.Memory import *
+# Import functools
+from functools import *
+# Import utils
+from utils.debug import *
 #
 #
 #
@@ -46,13 +50,16 @@ class Brain:
     self.domains = self.getDomains()
     
     # Available skills list. 
-    self.skills = self.getDomains()
+    self.skills = self.getSkills()
     
     # Available intents list. 
     self.intents =  self.getIntents()
     
+    # Available slots for replacements in intents.
+    self.replacements_slots = self.getSlots()
+    
     # IntentToSkill dictionnary, create a dict for "Intent to Skill" conversion. 
-    self.intentToSkill = []
+    self.intentToSkill = {}
     
     # Training rhasspy-nlu graph from known intents. 
     self.intents_graph = None
@@ -65,6 +72,8 @@ class Brain:
 
   # ! - Initialisation.
   
+  @debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
   def getDomains(self):
     
     """ 
@@ -84,9 +93,17 @@ class Brain:
       files.extend(filenames)
       break
     
+    # Load every domain class to create all specifics slots.
+    domains = {}
+    for file in files :
+      print("Domain : "+file)
+      #loadSpecificsSlots = getattr(__import__("domains."+file.split('.')[0], fromlist=["loadSpecificsSlots"]), "loadSpecificsSlots")
+    
     # Return
     return files
-    
+  
+  @debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
   def getSkills(self):
     
     """ 
@@ -109,11 +126,13 @@ class Brain:
     # Return
     return files
     
-    
+  
+  @debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
   def getIntents(self):
     
     """ 
-      Acquire intents file list. 
+      Acquire intents file list and create a all.ini intents file. 
       
       Parse haroun/intents folder to list of intents file.
       Normally one file per available domains.
@@ -121,7 +140,7 @@ class Brain:
       
       Returns
       _______
-      void
+      intents : Rhasspy NLU intents list.
     
     """
     
@@ -132,8 +151,8 @@ class Brain:
     intentsFiles = []    
     for(dirPath, dirNames, fileNames) in os.walk(intentsPath):
       # [DEBUG]
-      print('Looking in intent directory : '+intentsPath+", listing files :")
-      print(fileNames)
+      #print('Looking in intent directory : '+intentsPath+", listing files :")
+      #print(fileNames)
       intentsFiles.extend(fileNames)
       break
       
@@ -157,9 +176,11 @@ class Brain:
           # Read the data from file. 
           fileIntents = fileBuffer.read()
           
-          # Write it in allIntentsFileBuffer and add '\n' to enter data from next line
-          allIntentsFileBuffer.write(fileIntents+"\n")
-    
+          # Write it in allIntentsFileBuffer and add '\n\n' to enter data from next line
+          allIntentsFileBuffer.write("# "+fileName+" file content : \n")
+          allIntentsFileBuffer.write(fileIntents+"\n\n")
+          
+              
     # Load file for rhasspy-nlu.
     intents = rhasspynlu.parse_ini(Path(allIntentsFilePath))
     
@@ -170,16 +191,73 @@ class Brain:
     
     # Return
     return intents
+  
+  @debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
+  def getSlots(self):
     
+    """ 
+      Acquire slots file list and create a replacements_slots dict. 
+      
+      Returns
+      _______
+      replacement_slot : Rhasspy NLU slots dict.
+    
+    """
+    
+    # Slots directory path.
+    slotsPath=DOSSIER_RACINE+"slots/"
+    
+    # Browse through slots files 
+    slotsFiles = []    
+    for(dirPath, dirNames, fileNames) in os.walk(slotsPath):
+      # [DEBUG]
+      #print('Looking in slots directory : '+slotsPath+", listing files :")
+      #print(fileNames)
+      slotsFiles.extend(fileNames)
+      break
+      
+    """ Create replacements_slots dict from slots files. """
+    
+    # Replacement slots dict.
+    replacements_slots = {}
+      
+    # Iterate through slotsFiles list
+    for fileName in slotsFiles:
+      
+      # Construct file path.
+      filePath = slotsPath+fileName
+      
+      # Retrieve slot file content.
+      with open(filePath) as fileBuffer:
+        
+        # Read the data from file. 
+        FileContent = fileBuffer.read()
+        
+        # Retrieve all slots in file and separate them with pipe.
+        slots = FileContent.replace("\n", " | ")
+      
+        # Construct replacements_slots.
+        key = "$"+fileName
+        value = [rhasspynlu.Sentence.parse(slots)]
+        
+        # Add it to replacement slots dict.
+        replacements_slots[key] = value
+    
+    # Return
+    return replacements_slots
+      
   
   # ! - NLU training.
   
+  @debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
   def training(self):
     
     """ 
       Acquire domains knowledge. 
       
-      Transform intents into graph training.
+      Transform intents into graph training, replace slots if necessary.
       
       Returns
       _______
@@ -187,14 +265,14 @@ class Brain:
     
     """
     
-    # Generate intents training graph from list of known intents.
-    self.intents_graph = rhasspynlu.intents_to_graph(self.intents)
-    
     # [DEBUG]
-    #print('Intents graph : ')
-    #print(self.intents_graph)
+    #print('Replacement slots : ')
+    #print(self.replacements_slots)
     #print('----------------------------------------')
-        
+    
+    # Generate intents training graph from list of known intents.
+    self.intents_graph = rhasspynlu.intents_to_graph(self.intents, replacements = self.replacements_slots)
+            
     # End.
     return
       
@@ -206,6 +284,11 @@ class Brain:
       
       .skills files contains "Intent to Skill" association for each domain.
       This function retrieve Skills files list for each domain and parse them to fill the "Intent to Skill" associated dictionnary.
+      
+      Parameters
+      ----------
+      interaction : Interaction
+        Interaction created from stimulus.
       
       Returns
       _______
@@ -290,8 +373,6 @@ class Brain:
     return interaction
     
     
-
-  
   def initiate(self, interaction):
     
     """ 
@@ -315,11 +396,10 @@ class Brain:
     """
     
     # Interaction sentence NLU analysis thanks to intents training graph.
-    interaction.interpreter(self.intents_graph)
-    
-    # [DEBUG]
-    print("Interaction object : ")
-    print(interaction)
+    if not interaction.interpreter(self.intents_graph) :
+      # [DEBUG]
+      print("Interaction interpretation failed. [Error #4].")
+      print('----------------------------------------')
     
     # Defined Skill that is associated with this intents.
     skill = self.analysis(interaction)
@@ -328,6 +408,9 @@ class Brain:
     if(skill):
       # And then execute the Skill via the Domain.
       skill_execution_results = self.executeSkill(skill)
+    else:  
+      # [DEBUG]
+      return
       
     # If there is a skill execution result.
     if(skill_execution_results):
@@ -343,21 +426,19 @@ class Brain:
     # Return modified interaction.
     return interaction    
 
-    
+  #@debug("verbose", True)
   def analysis(self, interaction):
     
     """ 
-      Analyse interaction intent and slots to define the skill to apply. 
+      Analyse interaction to define skill from intent. 
       
-      Interaction analysis, check NLU of the interaction sentence to defined instance.
-      Correct slots if neccessary.
-      
+      Interaction analysis, check NLU recognition dict of the interaction to define skill to apply.
+      Correct intent entities if necessary and define slots from them.
       
       Parameters
       ----------
       interaction : Interaction
         Interaction concept object generate from trigger Stimulus.
-      
       
       Returns
       _______
@@ -366,8 +447,22 @@ class Brain:
       
     """
     
+    # [DEBUG]
+    print('----------------------------------------')
+    print("Intent object  : ")
+    print(interaction.intent)
+    print('----------------------------------------')
+    # [DEBUG]
+    return
+    
     # Find Skill from Interaction Intent label.
-    skill_infos = self.intentToSkill[interaction.intent.label]
+    try:
+      skill_infos = self.intentToSkill[interaction.intent.label]
+    except KeyError:
+      print("No skill found for this intent. [Error #5]")
+    
+    # [DEBUG]
+    return
     
     # Create Skill from skill_info.
     skill = Skill()

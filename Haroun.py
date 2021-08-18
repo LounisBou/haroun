@@ -4,7 +4,7 @@
 # Core dependencies : 
 from core.Brain import *
 #
-# ! - Globals : 
+# ! - Globals :  coucou
 #
 # Text encode type
 Encodage = 'utf-8'
