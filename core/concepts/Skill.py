@@ -26,110 +26,70 @@ class Skill:
   
   """ Concept of Haroun Skill. """
   
-  def __init__(self):
+  def __init__(self, domain_name, method_name):
     
-    """ Skill class constructor. """    
+    """ Skill class constructor. """   
     
-    # Keywords.
-    self.keywords = []
-    # Params.
-    self.params = {}
-    # Variables.
-    self.vars = {}  
-    # Domain of skill.
-    self.domain = ''
-    # Action of skill.
-    self.action = ''
+    # Domain the skill is link.
+    self.domain_name = domain_name
+    # Method of domain the skill is link.
+    self.method_name = method_name
     
-    # Skill exectution answer.
-    self.answer_infos = []    
-    # Reaction Competence.
-    self.reaction = ''    
-    # Error flag.
+    # Skill exectution return values.
+    self.return_values = None
+    
+    # Skill exectution return values.
+    self.return_values = None  
+    
+    # Skill execution parameters.
+    self.parameters = None
+    
+    # Skill prepared flag.
+    self.prepared = False
+    
+    # Skill exectution error flag.
     self.error = -1
   
   
-  """ Getters/Setters """
-
-  def addKeyword(self, keyword):
-    self.keywords.append(keyword)
-    
-  def setKeywords(self, keywords):
-    self.keywords = keywords
-  
-  def addParam(self, paramName, positions):
-    self.params[paramName] = positions
-    
-  def setParams(self, params):
-    self.params = params
-    
-  def addVariable(self, varName, value):
-    self.variables[varName] = value
-    
-  def setVariables(self, variables):
-    self.variables = variables
-  
-  def setDomaine(self, domaine):
-    self.domaine = domaine
-    
-  def setAction(self, action):
-    self.action = action
-    
-  def addReponse(self, reponse):
-    self.reponses.append(reponse)   
-    
-  def setReponses(self, reponses):
-    self.reponses = reponses
-  
-  def getParam(self, paramName):
-    return self.params[paramName] 
-    
-  def getKeyword(self, position):
-    return self.keywords[position]  
+ 
   
   
   """ Skill management methods : """
   
-  def prepare(self):
+  def prepare(self, intent, method_args):
     
     """
       Prepare skill for execution.
-      
-      Prepare skill data to perform action domain skill execution.
-      
+      Match intent with methods args to create skills execution parameters.
+      ---
+      Parameters
+        intent : Intent
+          Interaction intent Object.
+        method_args : Tupple
+          Domain method arguments list.
+      ---
       Returns
-      -------
-      void.
+        Boolean : Intent match method_args, skill is prepared.
     """
     
-    # End.
-    return
+    # Skill execution parameters.
+    self.parameters = {}
+    
+    # Parse intent entities to create parameters.
+    for entity in intent.entities :
+      # Get entity name and value.
+      entity_name = entity['entity']
+      entity_value = entity['value']
+      # Check if entity exist in method args.
+      if entity_name in method_args :
+        # Create parameter.
+        self.parameters[entity_name] = entity_value
+      
+    # Skill prepared flag.
+    self.prepared = False
+    
+    # Return prepared status.
+    return self.prepared
     
   
-  def execute(self):
-    
-    """
-      Execute the skill.
-      
-      Execute the method of domain link to the skill action, and retrieve stdOut output.
-      
-      Execution via : subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
-        command : Shell command to execute.
-        shell : Flag to use shell.
-        stderr : Flag to redirect stdErr.
-      
-      Returns
-      -------
-      execution_code : Int
-        Return value of skill execution.
-    """
-    
-    # Excécution de la Competence 
-    # et récuperaction de la sortie standard
-    # Version DEBUG : Sortie erreur redirigé vers sortie standard
-    # result = subprocess.check_output([batcmd], stderr=subprocess.STDOUT)
-    self.reaction = subprocess.check_output(self.action, shell=True)
-    
-    # End.
-    return 1
     

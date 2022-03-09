@@ -1,8 +1,10 @@
 #!/usr/bin/env python3 
 # -*- coding: utf-8 -*-
 #
+# Import sys
+import sys
 # Core dependencies : 
-from core.Brain import *
+from core.Brain import Brain
 #
 # ! - Globals :  coucou
 #
@@ -42,37 +44,38 @@ class Haroun:
       
       Returns
       _______
-      stimulus : Stimulus
-        Stimulus concept object created from call infos.
+      Response : String 
+        Interaction response text.
     """
     
     # Generate stimulus from call info.
     stimulus = self.brain.generateStimulus(source, source_id, sentence, parent_interaction_id)
     
     # If we manage to understand stimulus.
-    if(stimulus):
+    if stimulus :
       # Check if stimulus need interaction.
-      if(stimulus.needInteraction()):
+      if stimulus.needInteraction() :
         # Haroun create an interaction with user.
         interaction = self.brain.createInteraction(stimulus);
         # If interaction is ready.
-        if(interaction):
+        if interaction :
           # Ask Haroun to initiate interaction.
-          self.brain.initiate(interaction)
+          interaction = self.brain.initiate(interaction)
           # When interaction treatment is done, return interaction response.
-          return interaction.response
+          #return interaction.response
+          return f"Intent found : {interaction.intent} \n Response : {interaction.response.raw_text}"
         else:
           # [DEBUG]
-          print("Interaction error. [Error #3]")
+          return "Interaction error. [Error #3]" 
       else:
         # [DEBUG]
-        return ("No interaction needed. [Error #2]")
+        return "No interaction needed. [Error #2]"
     else:
       # [DEBUG]
-      return ("Stimulus error. [Error #1]")
+      return "Stimulus error. [Error #1]"
     
     # [DEBUG]
-    return False
+    return "Call error. [Error #0]"
     
 
 #####################################################################################################   
@@ -81,11 +84,11 @@ class Haroun:
 
 # ! Init Haroun :
 
-'''Haroun instanciation'''
-Haroun = Haroun()
-
 # Execute if run as script. 
 if __name__ == "__main__":
+
+  '''Haroun instanciation'''
+  Haroun = Haroun()
 
   '''Main executed code, for script call.'''
   

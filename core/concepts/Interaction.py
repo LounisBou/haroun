@@ -26,9 +26,8 @@ from utils.debug import *
 # Haroun dependancies :
 #
 # Import core concept Intent.
-from core.concepts.Intent import *
-# Import core concept Response.
-from core.concepts.Response import *
+from core.concepts.Intent import Intent
+
 #
 #
 # Globals :
@@ -86,8 +85,12 @@ class Interaction:
     # Intent : Intent that match the Interaction (defined by Recognition)
     self.intent = Intent()
     # Response : Interaction Response.
-    self.response = Response()
+    self.response = None
     
+    # Domain matching intent.
+    self.domain = None
+    # Skill for interaction execution.
+    self.skill = None
     
 
   # ! NLU (Natural Language Understanding)
@@ -145,7 +148,7 @@ class Interaction:
       self.stimulus.duration = self.recognition['wav_seconds']
       
       # Define intent.
-      self.defineIntent()
+      self.intent.checkRecognition(self.stimulus, self.recognition)
       
       # Return
       return True
@@ -153,22 +156,6 @@ class Interaction:
     else:
       # Return
       return False
-      
-  
-  def defineIntent(self):
-    
-    """ 
-      Define Intent attribut from recognition.
-      
-      Try to retrieve intent label, entities, tokens, ect... from recognition dict.
-      
-      Returns
-      _______
-      Boolean : Ìntent defined with success.
-      
-    """
-    
-    return self.intent.checkRecognition(self.stimulus, self.recognition)
   
   
   # Fonctions de manipulations : 

@@ -5,9 +5,9 @@
 # Libraries dependancies :
 #
 # Import system library.
-import sys
+#import sys
 # Import OS library.
-import os
+#import os
 #
 #
 # 
@@ -17,7 +17,7 @@ class Ego:
   
   def __init__(self):
     
-    """ Ego class constructor. """  
+    """ Me class constructor. """  
     
     # Mood
     self.mood = 0

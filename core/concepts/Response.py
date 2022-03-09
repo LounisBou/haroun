@@ -26,7 +26,19 @@ class Response:
   
   def __init__(self):
     
-    """ Stimulus class constructor. """	
+    """ 
+      __init__ : Response class constructor.
+    """	
+    
+    # Raw text.
+    self.raw_text = None
+    # Message text.
+    self.msg_text = None
+    # HTML text.
+    self.html_text = None
+    # HTML text.
+    self.json_text = None
     
     # Flag error.
     self.error = 0
+    

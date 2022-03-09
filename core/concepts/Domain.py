@@ -6,77 +6,152 @@
 #
 # Import system library.
 import sys
+# Import Python Object Inspector library.
+import inspect
 # Import OS library.
-import os
+from os import path
 #
 #
 # Globals :
 #
 # Current, parent, and root paths.
-DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))
-DOSSIER_PARENT = os.path.dirname(DOSSIER_COURRANT)
-DOSSIER_RACINE = os.path.dirname(DOSSIER_PARENT)
+DOSSIER_COURRANT = path.dirname(path.abspath(__file__))
+DOSSIER_PARENT = path.dirname(DOSSIER_COURRANT)
+DOSSIER_RACINE = path.dirname(DOSSIER_PARENT)
 sys.path.append(DOSSIER_RACINE)
+import domains
 #
 #
+DOMAINS_PATH = f"{DOSSIER_RACINE}/domains"
 #
 class Domain:
   
   """ Concept of Haroun Domain. """
   
   # Fonction : Constructeur
-  def __init__(self):
+  def __init__(self, name):
     
-    """ Domain class constructor. """   
+    """ 
+      __init__ : Domain class constructor. 
+      ---
+      Parameters : String
+        domaine_name : Name of the domain class.
+    """   
   
-    # Action to manage via domain.
-    action = ""
+    # Domain name.
+    self.name = name
+    
+    # Instanciate domain class.
+    self.instance = None
+    # Domains modules.
+    self.modules = None
+    # Domain module.
+    self.module = None
+    # Domain class.
+    self.class_name = None
+    
+    # Domain methods list.
+    self.methods = {}
+    
+    # Instanciate domain.
+    self.__instanciate()
+    
+    # Get domain instance methods.
+    self.__get_methods()
+    
+    
   
-  # Fonction d'import
-  def my_import(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-      mod = getattr(mod, comp)
-    return mod
-  
-  # Fonction : execution
-  def execute(self, competence):
+  def __instanciate(self):
     
-    # Récupération des paramètres de la compétence.
+    """
+      __instanciate : Create an instance of domain class.
+    """
     
-    # Récupération du nom du domaine.
-    domaine_name = competence.domaine
-    # Récupération du nom de la class.    
-    class_name = competence.domaine
-    # Chemin import class
-    class_import_path = 'domaines.'+domaine_name 
+    # Import domains module.
+    self.modules = __import__(f"domains", fromlist=[self.name])
     
-    # DEBUG
-    #print('Chemin : '+class_import_path)
+    # Get domain class
+    self.module = getattr(self.modules, self.name)
+    self.class_name = getattr(self.module, self.name)
+        
+    # Instanciate domain class.
+    self.instance = self.class_name()
     
-    # ! Domaine
     
-    # Import du domaine
-    domaine_module = __import__(class_import_path, fromlist = [class_name])
-    # On récupère la class
-    domaine_class = getattr(domaine_module, class_name)
-    # Instance du domaine
-    domaine_instance = domaine_class()
     
-    # ! Action 
+  def __get_methods(self):
     
-    # Récupération de l'action.
-    action_name =  competence.action
+    """
+      __get_methods : Retrieve domain methods instance list. 
+    """
     
-    # Si la fonction "action_name" existe bien.
-    if(hasattr(domaine_instance, action_name)):
+    # Get methods names and args.
+    domains_instance_methods_and_locations = inspect.getmembers(self.instance, predicate=inspect.ismethod)    
+    for method_and_location in domains_instance_methods_and_locations :
+    
+      # Get method name.
+      method_name = method_and_location[0]
       
-      # Récupération fonction à actionner.
-      action_func = getattr(domaine_instance, action_name)
-    
-      # Execution de la fonction "action_name".
-      competence.reaction = action_func(**competence.variables)
+      # Get domain instance method.
+      method = getattr(self.instance, method_name)
       
-      # On crée la variable "reponse"
-      competence.variables['reponse'] = competence.reaction
+      # Save methods name and args.
+      self.methods[method_name] = method
+    
+  
+  def methodExist(self, method_name):
+    
+    """
+      methodExist : Check if method_name is a valid method for domain.
+      ---
+      Parameters : 
+        method_name : String
+          Method name to check in domain instance.
+      ---
+      Return Boolean
+        Method is valid for domain.
+    """ 
+    
+    # Return
+    return method_name in self.methods
+    
+    
+  def methodGetArgs(self, method_name):
+    
+    """
+      methodExist : Get methods arguments list as tuple.
+      ---
+      Parameters : 
+        method_name : String
+          Method name in domain instance.
+      ---
+      Return Tuple
+        Method arguments.
+    """ 
+    
+    # Get Skill method.
+    method = self.methods[method_name]
+    
+    # Return methods args.
+    return inspect.getargspec(method).args
+  
+  def executeSkill(self, skill):
+    
+    """
+      executeSkill : Execute the skill on a domain class method.
+      ---
+      Parameters : 
+        skill : Skill
+          Skill to execute.
+      ---
+      Return skill : modified skill.
+    """ 
+    
+    # Get methods.
+    method = self.methods[skill.method_name]
+    
+    # Execute methods with skill parameters
+    skill.return_values = self.methods[skill.method_name](**skill.parameters)
+    
+    # Return modified skill
+    return skill

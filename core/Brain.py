@@ -6,22 +6,33 @@
 #
 # Haroun dependancies : 
 #
+# Import sys
+import sys
+# Import os
+import os
+# Import rhasspynlu
+import rhasspynlu
+# Import Path from pathlib
+from pathlib import Path
 #
 # Import consciousness class.
-from core.consciousness.Conscious import *
-from core.consciousness.Me import *
+from core.consciousness.Conscious import Conscious
+from core.consciousness.Ego import Ego
 #
 # Import concepts class.
-from core.concepts.Domain import *
-from core.concepts.Skill import *
-from core.concepts.Stimulus import *
-from core.concepts.Interaction import *
-from core.concepts.Intent import *
-from core.concepts.Memory import *
+from core.concepts.Domain import Domain
+from core.concepts.Skill import Skill
+from core.concepts.Stimulus import Stimulus
+from core.concepts.Interaction import Interaction
+from core.concepts.Intent import Intent
+from core.concepts.Response import Response
+from core.concepts.Memory import Memory
 # Import functools
 from functools import *
 # Import utils
 from utils.debug import *
+# Import json library.
+import json
 #
 #
 #
@@ -50,7 +61,7 @@ class Brain:
     self.domains = self.getDomains()
     
     # Available skills list. 
-    self.skills = self.getSkills()
+    #self.skills = self.getSkills()
     
     # Available intents list. 
     self.intents =  self.getIntents()
@@ -59,7 +70,16 @@ class Brain:
     self.replacements_slots = self.getSlots()
     
     # IntentToSkill dictionnary, create a dict for "Intent to Skill" conversion. 
-    self.intentToSkill = {}
+    self.intentToSkill = {
+      "OH_QUESTION" : {
+        "class" : "openhab",
+        "method" : "question"
+      },
+      "OH_ACTION" : {
+        "class" : "openhab",
+        "method" : "action"
+      }
+    }
     
     # Training rhasspy-nlu graph from known intents. 
     self.intents_graph = None
@@ -80,27 +100,24 @@ class Brain:
       Acquire domains available list. 
       
       Parse haroun/domains folder to define list of available domains.
-      
+      ---
       Returns
-      _______
-      void
+        domains : List[String]
+          Domains avialable list.
     
     """
     
     # Browse through domains files 
-    files = []
+    domains = []
     for(dirpath, dirnames, filenames) in os.walk(DOSSIER_RACINE+"domains"):
-      files.extend(filenames)
+      # Remove filenames extensions
+      filenames = [os.path.splitext(filename)[0] for filename in filenames]
+      # Add directory filenames without extension to domains list.
+      domains.extend(filenames)
       break
     
-    # Load every domain class to create all specifics slots.
-    domains = {}
-    for file in files :
-      print("Domain : "+file)
-      #loadSpecificsSlots = getattr(__import__("domains."+file.split('.')[0], fromlist=["loadSpecificsSlots"]), "loadSpecificsSlots")
-    
     # Return
-    return files
+    return domains
   
   @debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
@@ -111,20 +128,25 @@ class Brain:
       
       Parse haroun/skills folder to define list of available skills.
       
+       
+      ____
       Returns
-      _______
+        skills : List[String] : List des nom de skills
       void
     
     """
     
     # Browse through skills files 
-    files = []
+    skills = []
     for(dirpath, dirnames, filenames) in os.walk(DOSSIER_RACINE+"skills"):
-      files.extend(filenames)
+      # Remove filenames extensions
+      filenames = [os.path.splitext(filename)[0] for filename in filenames]
+      # Add directory filenames without extension to skills list.
+      skills.extend(filenames)
       break
     
     # Return
-    return files
+    return skills
     
   
   @debug("verbose", True)
@@ -275,35 +297,64 @@ class Brain:
             
     # End.
     return
-      
     
-  def SkillsIntentsAnalysis(self, interaction):
-   
+  # ! NLU (Natural Language Understanding)
+  
+  def interpreter(self, interaction):
+    
     """ 
-      Create a conversion dict from intent to skill. 
-      
-      .skills files contains "Intent to Skill" association for each domain.
-      This function retrieve Skills files list for each domain and parse them to fill the "Intent to Skill" associated dictionnary.
-      
+      Interpreter method, apply NLU analysis on Interaction sentence.
+      Interpretation of Interaction sentence via rhasspy-nlu.
+      Try to retrieve a recognition dict, if success then create define an the interaction intent attribut from it.
+      ---
       Parameters
-      ----------
-      interaction : Interaction
-        Interaction created from stimulus.
-      
+        interaction : Interaction
+          Interaction concept object generate from trigger Stimulus.
+      ---
       Returns
-      _______
-      void
-    
+        interaction : Interpretation of interaction success, recognition and intent attributs are now defined.
     """
     
-    # Retrieve Skills files list.
+    # [DEBUG]
+    #print('Interaction sentence : '+self.stimulus.sentence)
+    #print('----------------------------------------')
     
-    # For each file.
+    # Stimulus sentence pre-treatment.
+    interaction.stimulus.sentence = interaction.stimulus.sentence.lower()
+    interaction.stimulus.sentence = interaction.stimulus.sentence.replace(',',"")
     
-      # Load "Intent to Skill" file. 
-  
-    # End.
-    return
+    # Perform intent recognition in Interaction sentence thanks to training graph.
+    recognitions = rhasspynlu.recognize(interaction.stimulus.sentence, self.intents_graph, fuzzy=True)
+    
+    # [DEBUG]
+    #print("Recognitions  : ")
+    #print(recognitions)
+    #print('----------------------------------------')
+    
+    # If rhasspynlu perform recognition without problem.
+    if not recognitions :
+      # Return
+      return None
+      
+    # Format recognitions as dict.
+    recognitions_dict = recognitions[0].asdict()
+    # Format recognition dict as json string.
+    recognition_string = json.dumps(recognitions_dict)
+    
+    # Format recognition as Object.
+    interaction.recognition = json.loads(recognition_string)
+    
+    # Retrieve recognition duration
+    interaction.recognition_duration = interaction.recognition['recognize_seconds'] 
+    
+    # Retrieve stimulus duration
+    interaction.stimulus.duration = interaction.recognition['wav_seconds']
+    
+    # Define intent.
+    interaction.intent.checkRecognition(interaction.stimulus, interaction.recognition)
+    
+    # Return
+    return interaction      
   
 
   # ! - Stimulus management.
@@ -312,25 +363,21 @@ class Brain:
   
     """ 
       Generate Stimulus concept object. 
-      
       Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
-      
+      ---
       Parameters
-      ----------
-      source : String
-        Label for stimulus source origin.
-      source_id : String
-        Uniq identifier for stimulus source origin.
-      sentence : String (optionnal)
-        Sentence of the stimulus. [Default = '']
-      parent_interaction_id : String (optionnal)
-        Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
-      
+        source : String
+          Label for stimulus source origin.
+        source_id : String
+          Uniq identifier for stimulus source origin.
+        sentence : String (optionnal)
+          Sentence of the stimulus. [Default = '']
+        parent_interaction_id : String (optionnal)
+          Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
+      ---
       Returns
-      _______
-      stimulus : Stimulus
-        Stimulus concept object created with scripts call infos.
-      
+        stimulus : Stimulus
+          Stimulus concept object created with scripts call infos.
     """
     
     # Create stimulus from script call infos.
@@ -351,19 +398,15 @@ class Brain:
   
     """ 
       Generate Interaction concept object. 
-      
       Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
-      
+      ---
       Parameters
-      ----------
-      stimulus : Stimulus
-        Stimulus source origin of the interaction.
-          
+        stimulus : Stimulus
+          Stimulus source origin of the interaction.
+      ---
       Returns
-      _______
-      interaction : Interaction
-        Interaction concept object created with stimulus infos.
-      
+        Interaction : Modified interaction with domain and skill infos.
+          Return None if error.
     """
     
     # Create interaction from stimulus.
@@ -377,51 +420,49 @@ class Brain:
     
     """ 
       Initiate interaction. 
-      
       Interaction analysis, check NLU of the interaction sentence to defined instance.
       Correct slots if neccessary.
-      
-      
+      ---
       Parameters
-      ----------
-      interaction : Interaction
-        Interaction concept object generate from trigger Stimulus.
-      
-      
+        interaction : Interaction
+          Interaction concept object generate from trigger Stimulus.
+      ---
       Returns
-      _______
-      interaction : Interaction
-        Interaction concept object modified with intents and slots.
-      
+        Interaction : Modified interaction with domain and skill infos.
+          Return None if error.
     """
     
-    # Interaction sentence NLU analysis thanks to intents training graph.
-    if not interaction.interpreter(self.intents_graph) :
+    # Interaction interpretation. 
+    interaction = self.interpreter(interaction)
+    # if interpretation failed.
+    if not interaction :
       # [DEBUG]
       print("Interaction interpretation failed. [Error #4].")
       print('----------------------------------------')
     
-    # Defined Skill that is associated with this intents.
-    skill = self.analysis(interaction)
-    
-    # If Interaction analysis defined a skill 
-    if(skill):
-      # And then execute the Skill via the Domain.
-      skill_execution_results = self.executeSkill(skill)
-    else:  
+    # Defined Domain & Skill for this interaction.
+    interaction = self.analysis(interaction)
+    # If Interaction analysis failed. 
+    if not interaction :
       # [DEBUG]
-      return
+      print("Interaction analysys failed. [Error #10].")
+      print('----------------------------------------')
       
-    # If there is a skill execution result.
-    if(skill_execution_results):
-      # We have to analyse results to create an interaction response.
-      response_infos = skill.analysis(skill_execution_results)
-      # Add response_infos to interaction.response
-      interaction.response.add(response_infos)
-      
-      
+    # Execute the Skill via the Domain.
+    interaction = self.executeSkill(interaction)
+    # If Interaction execution failed. 
+    if not interaction :
+      # [DEBUG]
+      print("Interaction skill execution failed. [Error #20].")
+      print('----------------------------------------')
+        
     # Generate interaction response.
-    self.response(interaction)
+    interaction = self.response(interaction)
+    # If response creation failed. 
+    if not interaction :
+      # [DEBUG]
+      print("Interaction skill execution failed. [Error #20].")
+      print('----------------------------------------')
     
     # Return modified interaction.
     return interaction    
@@ -434,43 +475,51 @@ class Brain:
       
       Interaction analysis, check NLU recognition dict of the interaction to define skill to apply.
       Correct intent entities if necessary and define slots from them.
-      
+      ---
       Parameters
-      ----------
-      interaction : Interaction
-        Interaction concept object generate from trigger Stimulus.
-      
+        interaction : Interaction
+          Interaction concept object generate from trigger Stimulus.
+      ---
       Returns
-      _______
-      skill : Skill
-        Skill concept object defined from Interaction intent.
+        Interaction : Modified interaction with domain and skill infos.
+          Return None if error.
       
     """
     
-    # [DEBUG]
-    print('----------------------------------------')
-    print("Intent object  : ")
-    print(interaction.intent)
-    print('----------------------------------------')
-    # [DEBUG]
-    return
+    # Find Domain from Interaction Intent label.
+    for domain in self.domains :
+      # If domain match label.
+      if interaction.intent.label.split(".")[0].lower() == domain.lower():
+        # Define interaction domain name.
+        interaction_domain_name = domain
+        # Retieve interaction method name.
+        interaction_method_name = interaction.intent.label.split(".")[1]
     
-    # Find Skill from Interaction Intent label.
-    try:
-      skill_infos = self.intentToSkill[interaction.intent.label]
-    except KeyError:
-      print("No skill found for this intent. [Error #5]")
-    
-    # [DEBUG]
-    return
-    
-    # Create Skill from skill_info.
-    skill = Skill()
-    
-    # Return skill
-    return skill
+    # Check if interaction domain found.
+    if interaction_domain_name is None :
+      # [DEBUG]
+      print(f"No domain '{interaction_domain_name}' found for this intent. [Error #5]")
+      # Return None (error)
+      return None
+      
+    # Instanciate domain on interaction.
+    interaction.domain = Domain(interaction_domain_name)
+      
+    # Check if method exist.
+    if interaction_method_name is not None :
+      if not interaction.domain.methodExist(interaction_method_name) :
+        # [DEBUG]
+        print(f"No method '{interaction_method_name}' found for this intent on domain '{interaction_domain_name}'. [Error #5]")
+        # Return None (error)
+        return None
+      
+    # Instanciation interaction skill.
+    interaction.skill = Skill(interaction_domain_name, interaction_method_name)
+      
+    # Return modified interaction.
+    return interaction
         
-  def executeSkill(self):
+  def executeSkill(self, interaction):
     
     """ 
       Execute Skill via Domain function.  
@@ -479,58 +528,60 @@ class Brain:
       
       Parameters
       ----------
-      skill : Skill
-        Skill concept object to execute.
-      
+      interaction : Interaction
+        Interaction concept object generate from trigger Stimulus.
       Returns
       _______
-      response_infos : Dict
-        Domain method execution returned infos.
+      Interaction : Modified interaction with domain and skill infos.
+        Return None if error.
       
     """
     
-    # We can find a Domain for this Skill.
-    domain = skill.getDomain()
-  
-    # Execute the Skill via the Domain, and retrieve returned infos.
-    response_infos = domain.execute(skill)
+    # Get domain methods args list to prepare skill.
+    method_args = interaction.domain.methodGetArgs(interaction.skill.method_name)
     
-    # Return response_infos.
-    return response_infos
+    # Prepare skill for execution.
+    preparation_flag = interaction.skill.prepare(interaction.intent, method_args)
+    
+    # Excute skill on domain.
+    execution_flag = interaction.domain.executeSkill(interaction.skill)
+    
+    # Return modified interaction.
+    return interaction
 
   def response(self, interaction):
     
     """ 
       Create interaction response.  
-      
       Parse interaction data, to generate an response with datas and sentence.
-      
+      ---
       Parameters
-      ----------
-      interaction : Interaction
-        Interaction for which to generate response.
-      
+        interaction : Interaction
+          Interaction for which to generate response.
+      ---
       Returns
-      _______
-      void
-      
+        Interaction : Modified interaction with domain and skill infos.
+          Return None if error.
     """
     
     # Generate response from interaction.
+    interaction.response = Response()
     
+    # Retrieve skill execution return values.
+    interaction.response.raw_text = interaction.skill.return_values
     
-    return
+    # DEBUG
+    interaction.response.msg_text = interaction.intent
+    
+    # Return modified interaction
+    return interaction
 
   # ! Consciousness (Reflexivity)
 
   def awareness(self):
     
     """ 
-      Awareness method, allow reflexivity management.  
-      
-      Returns
-      _______
-      void.
+      Awareness method, allow reflexivity management.
       
     """
     
