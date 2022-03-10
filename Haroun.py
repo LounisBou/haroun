@@ -59,11 +59,16 @@ class Haroun:
         interaction = self.brain.createInteraction(stimulus);
         # If interaction is ready.
         if interaction :
-          # Ask Haroun to initiate interaction.
-          interaction = self.brain.initiate(interaction)
-          # When interaction treatment is done, return interaction response.
-          #return interaction.response
-          return f"Intent found : {interaction.intent} \n Response : {interaction.response.raw_text}"
+          # Ask Haroun to manage interaction.
+          interaction = self.brain.manageInteraction(interaction)
+          # When interaction treatment is done, get interaction response msg_text.
+          interaction_reponse_msg = f"{interaction.response.msg_text}"
+          # If error occured.
+          if interaction.error :
+            # Add error message to interaction response error_text.
+            interaction_reponse_msg = f"Error : {interaction.response.error_text}"
+          # Return interaction response message.
+          return interaction_reponse_msg
         else:
           # [DEBUG]
           return "Interaction error. [Error #3]" 

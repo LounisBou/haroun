@@ -27,7 +27,8 @@ from utils.debug import *
 #
 # Import core concept Intent.
 from core.concepts.Intent import Intent
-
+# Import core concept Intent.
+from core.concepts.Response import Response
 #
 #
 # Globals :
@@ -85,80 +86,57 @@ class Interaction:
     # Intent : Intent that match the Interaction (defined by Recognition)
     self.intent = Intent()
     # Response : Interaction Response.
-    self.response = None
+    self.response = Response()
     
     # Domain matching intent.
     self.domain = None
     # Skill for interaction execution.
     self.skill = None
     
-
-  # ! NLU (Natural Language Understanding)
-  
-  def interpreter(self, training_graph):
+    # Interaction state of mind.
+    self.mind = None
     
-    """ 
-      Interpreter method, apply NLU analysis on Interaction sentence.
-      
-      Interpretation of Interaction sentence via rhasspy-nlu.
-      Try to retrieve a recognition dict, if success then create define an the interaction intent attribut from it.
-      
+
+  # Fonctions de manipulations : 
+  
+  def addResponse(self, raw_text):
+    
+    """
+      addResponse : 
+      ---
       Parameters
-      ----------
-      training_graph : DiGraph—Directed (See https://networkx.org/documentation/networkx-2.3/reference/classes/digraph.html)
-        rhasspy-nlu DiGraph—Directed training result is a directed graph whose states are words and edges are input/output labels.
-      
-      Returns
-      _______
-      Boolean : Interpretation of interaction success, recognition and intent attributs are now defined.
-      
+        raw_text : String
+          Response raw text.
+      ---
+      Return
+        None
+    """
+    # Add raw_text to response object.
+    self.response.addRawText(raw_text)
+    
+    # Done flag.
+    self.done = True
+    
+  
+  def addError(self, error_text):
+    
+    """
+      addError : 
+      ---
+      Parameters
+        error_text : String
+          Error message.
+      ---
+      Return
+        None
     """
     
-    # [DEBUG]
-    #print('Interaction sentence : '+self.stimulus.sentence)
-    #print('----------------------------------------')
+    # Add error_text to response object.
+    self.response.addError(error_text)
     
-    # Stimulus sentence pre-treatment.
-    self.stimulus.sentence = self.stimulus.sentence.lower()
-    self.stimulus.sentence = self.stimulus.sentence.replace(',',"")
-    
-    # Perform intent recognition in Interaction sentence thanks to training graph.
-    recognitions = rhasspynlu.recognize(self.stimulus.sentence, training_graph, fuzzy=True)
-    
-    # [DEBUG]
-    #print("Recognitions  : ")
-    #print(recognitions)
-    #print('----------------------------------------')
-    
-    # If rhasspynlu perform recognition without problem.
-    if(recognitions):
-      
-      # Format recognitions as dict.
-      recognitions_dict = recognitions[0].asdict()
-      # Format recognition dict as json string.
-      recognition_string = json.dumps(recognitions_dict)
-      
-      # Format recognition as Object.
-      self.recognition = json.loads(recognition_string)
-      
-      # Retrieve recognition duration
-      self.recognition_duration = self.recognition['recognize_seconds'] 
-      
-      # Retrieve stimulus duration
-      self.stimulus.duration = self.recognition['wav_seconds']
-      
-      # Define intent.
-      self.intent.checkRecognition(self.stimulus, self.recognition)
-      
-      # Return
-      return True
-      
-    else:
-      # Return
-      return False
-  
-  
-  # Fonctions de manipulations : 
+    # Flag error.
+    self.error = True
+
   
   def containsWord(self, word):
 

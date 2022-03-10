@@ -76,15 +76,16 @@ class Intent:
     """ Intent print method. """
     
     # Text
-    print_str = f" label : {str(self.label)} \n"
-    print_str += f" text  : {str(self.text)} \n"
+    print_str = f"Intent : \n"
+    print_str += f"  label : {str(self.label)} \n"
+    print_str += f"  text  : {str(self.text)} \n"
     #print_str += f" raw_text  : {str(self.raw_text)} \n"
     #print_str += f" confidence  : {str(self.confidence)} \n"
-    print_str += f"entities  : \n"
+    print_str += f"  entities  : \n"
     if self.entities : 
-      print_str += "\n".join([" - "+str(entity['entity'])+" : "+str(entity['value']) for entity in self.entities])+"\n"
+      print_str += "\n".join(["    - "+str(entity['entity'])+" : "+str(entity['value']) for entity in self.entities])+"\n"
     if self.orphan_entity :
-      print_str += f" - orphan entity : {self.orphan_entity} \n"
+      print_str += f"    - orphan entity : {self.orphan_entity} \n"
     #print_str += f"tokens  : \n"
     #if self.tokens : 
       #print_str += "\n".join([str(token) for token in self.tokens])+"\n"
@@ -95,8 +96,11 @@ class Intent:
     # Ponctuation counter :
     for key, value in self.ponctuation_marks.items():
       if value > 0 :
-        print_str += f" - {key} = {value}"
-      
+        print_str += f"    - {key} = {value}"
+    
+    print_str += f"\n"
+    
+    
     return print_str
     
   

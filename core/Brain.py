@@ -67,7 +67,7 @@ class Brain:
     self.intents =  self.getIntents()
     
     # Available slots for replacements in intents.
-    self.replacements_slots = self.getSlots()
+    self.slots = self.getSlots()
     
     # IntentToSkill dictionnary, create a dict for "Intent to Skill" conversion. 
     self.intentToSkill = {
@@ -88,11 +88,11 @@ class Brain:
     self.memories = Memory()
     
     # Training brain by creating intents graph.
-    self.training()
+    self.nlu_training()
 
   # ! - Initialisation.
   
-  @debug("verbose", True)
+  #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
   def getDomains(self):
     
@@ -119,7 +119,7 @@ class Brain:
     # Return
     return domains
   
-  @debug("verbose", True)
+  #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
   def getSkills(self):
     
@@ -149,7 +149,7 @@ class Brain:
     return skills
     
   
-  @debug("verbose", True)
+  #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
   def getIntents(self):
     
@@ -214,16 +214,16 @@ class Brain:
     # Return
     return intents
   
-  @debug("verbose", True)
+  #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
   def getSlots(self):
     
     """ 
-      Acquire slots file list and create a replacements_slots dict. 
+      Acquire slots file list and create a slots dict. 
       
       Returns
       _______
-      replacement_slot : Rhasspy NLU slots dict.
+      slots : Rhasspy NLU slots dict.
     
     """
     
@@ -238,11 +238,16 @@ class Brain:
       #print(fileNames)
       slotsFiles.extend(fileNames)
       break
-      
-    """ Create replacements_slots dict from slots files. """
+    
+    """ Get slots from domains files and add them to slots files. """
+    
+    # [TO DO]
+    #self.domains
+    
+    """ Create slots dict from slots files. """
     
     # Replacement slots dict.
-    replacements_slots = {}
+    slots = {}
       
     # Iterate through slotsFiles list
     for fileName in slotsFiles:
@@ -256,25 +261,25 @@ class Brain:
         # Read the data from file. 
         FileContent = fileBuffer.read()
         
-        # Retrieve all slots in file and separate them with pipe.
-        slots = FileContent.replace("\n", " | ")
+        # Retrieve all slots entries in file and separate them with pipe.
+        slots_entries = FileContent.replace("\n", " | ")
       
-        # Construct replacements_slots.
+        # Construct slots.
         key = "$"+fileName
-        value = [rhasspynlu.Sentence.parse(slots)]
+        value = [rhasspynlu.Sentence.parse(slots_entries)]
         
         # Add it to replacement slots dict.
-        replacements_slots[key] = value
+        slots[key] = value
     
     # Return
-    return replacements_slots
+    return slots
       
   
-  # ! - NLU training.
+  # ! - A.I. Training.
   
   @debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
-  def training(self):
+  def nlu_training(self):
     
     """ 
       Acquire domains knowledge. 
@@ -289,17 +294,137 @@ class Brain:
     
     # [DEBUG]
     #print('Replacement slots : ')
-    #print(self.replacements_slots)
+    #print(self.slots)
     #print('----------------------------------------')
     
     # Generate intents training graph from list of known intents.
-    self.intents_graph = rhasspynlu.intents_to_graph(self.intents, replacements = self.replacements_slots)
+    self.intents_graph = rhasspynlu.intents_to_graph(self.intents, replacements = self.slots)
             
     # End.
     return
-    
-  # ! NLU (Natural Language Understanding)
   
+  # ! - Stimulus management.
+    
+  def generateStimulus(self, source, source_id, sentence, parent_id):
+  
+    """ 
+      Generate Stimulus concept object. 
+      Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
+      ---
+      Parameters
+        source : String
+          Label for stimulus source origin.
+        source_id : String
+          Uniq identifier for stimulus source origin.
+        sentence : String (optionnal)
+          Sentence of the stimulus. [Default = '']
+        parent_interaction_id : String (optionnal)
+          Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
+      ---
+      Returns
+        stimulus : Stimulus
+          Stimulus concept object created with scripts call infos.
+    """
+    
+    # Create stimulus from script call infos.
+    stimulus = Stimulus(source, source_id, sentence, parent_id)
+    
+    # Check if stimulus is valid.
+    if(stimulus.isValid()):
+      # End.
+      return stimulus
+    else:
+      # Error.
+      return False
+    
+    
+  # ! - Interaction creation.
+  
+  def createInteraction(self, stimulus):
+  
+    """ 
+      Generate Interaction concept object. 
+      Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
+      ---
+      Parameters
+        stimulus : Stimulus
+          Stimulus source origin of the interaction.
+      ---
+      Returns
+        Interaction : Modified interaction with domain and skill infos.
+          Return None if error.
+    """
+    
+    # Create interaction from stimulus.
+    interaction = Interaction(stimulus)
+    
+    # Return interaction ready to interact.
+    return interaction
+    
+  # ! - Interaction management.
+  
+  def manageInteraction(self, interaction):
+    
+    """ 
+      Manage interaction. 
+      Interaction analysis, check NLU of the interaction sentence to defined instance.
+      Correct slots if neccessary.
+      ---
+      Parameters
+        interaction : Interaction
+          Interaction concept object generate from trigger Stimulus.
+      ---
+      Returns
+        Interaction : Modified interaction with domain and skill infos.
+          Return None if error.
+    """
+    
+    # Interaction interpretation. 
+    modified_interaction = self.interpreter(interaction)
+    # if interpretation failed.
+    if not modified_interaction :
+      # Return interaction message error.
+      interaction.addError(f"Interaction interpretation failed. [Error #4].")
+    else:
+      # [DEBUG]
+      interaction.addResponse(str(interaction.intent))
+      # Defined Domain & Skill for this interaction.
+      modified_interaction = self.analysis(modified_interaction)
+      # If Interaction analysis failed. 
+      if not modified_interaction :
+        # Return interaction message error.
+        interaction.addError(f"Interaction analysis failed. [Error #10].")
+      else:
+      
+        # [TODO]
+        # Get Consciousness state of mind to add in the interaction.
+        # Consciousness current interaction states may be used 
+        # by interaction to generate alternative response during skill execution.
+        modified_interaction.mind = self.getStatesOfMind()
+        
+        # Execute the Skill via the Domain.
+        modified_interaction = self.executeSkill(modified_interaction)
+        # If Interaction execution failed. 
+        if not modified_interaction :
+          # Return interaction message error.
+          interaction.addError(f"Interaction skill execution failed. [Error #20].")
+        else:   
+          # Generate interaction response.
+          modified_interaction = self.response(modified_interaction)
+          # If response creation failed. 
+          if not modified_interaction :
+            # Return interaction message error.
+            interaction.addError(f"Interaction skill execution failed. [Error #20].")
+          else:
+            # If all step successfully pass, override interaction with modified interaction.
+            interaction = modified_interaction
+    
+    # Return modified interaction.
+    return interaction 
+    
+  # ! - Interaction steps.
+    
+  @debug("verbose", True) 
   def interpreter(self, interaction):
     
     """ 
@@ -354,118 +479,7 @@ class Brain:
     interaction.intent.checkRecognition(interaction.stimulus, interaction.recognition)
     
     # Return
-    return interaction      
-  
-
-  # ! - Stimulus management.
-    
-  def generateStimulus(self, source, source_id, sentence, parent_id):
-  
-    """ 
-      Generate Stimulus concept object. 
-      Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
-      ---
-      Parameters
-        source : String
-          Label for stimulus source origin.
-        source_id : String
-          Uniq identifier for stimulus source origin.
-        sentence : String (optionnal)
-          Sentence of the stimulus. [Default = '']
-        parent_interaction_id : String (optionnal)
-          Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
-      ---
-      Returns
-        stimulus : Stimulus
-          Stimulus concept object created with scripts call infos.
-    """
-    
-    # Create stimulus from script call infos.
-    stimulus = Stimulus(source, source_id, sentence, parent_id)
-    
-    # Check if stimulus is valid.
-    if(stimulus.isValid()):
-      # End.
-      return stimulus
-    else:
-      # Error.
-      return False
-    
-    
-  # ! - Interaction management.
-  
-  def createInteraction(self, stimulus):
-  
-    """ 
-      Generate Interaction concept object. 
-      Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
-      ---
-      Parameters
-        stimulus : Stimulus
-          Stimulus source origin of the interaction.
-      ---
-      Returns
-        Interaction : Modified interaction with domain and skill infos.
-          Return None if error.
-    """
-    
-    # Create interaction from stimulus.
-    interaction = Interaction(stimulus)
-    
-    # Return interaction ready to interact.
-    return interaction
-    
-    
-  def initiate(self, interaction):
-    
-    """ 
-      Initiate interaction. 
-      Interaction analysis, check NLU of the interaction sentence to defined instance.
-      Correct slots if neccessary.
-      ---
-      Parameters
-        interaction : Interaction
-          Interaction concept object generate from trigger Stimulus.
-      ---
-      Returns
-        Interaction : Modified interaction with domain and skill infos.
-          Return None if error.
-    """
-    
-    # Interaction interpretation. 
-    interaction = self.interpreter(interaction)
-    # if interpretation failed.
-    if not interaction :
-      # [DEBUG]
-      print("Interaction interpretation failed. [Error #4].")
-      print('----------------------------------------')
-    
-    # Defined Domain & Skill for this interaction.
-    interaction = self.analysis(interaction)
-    # If Interaction analysis failed. 
-    if not interaction :
-      # [DEBUG]
-      print("Interaction analysys failed. [Error #10].")
-      print('----------------------------------------')
-      
-    # Execute the Skill via the Domain.
-    interaction = self.executeSkill(interaction)
-    # If Interaction execution failed. 
-    if not interaction :
-      # [DEBUG]
-      print("Interaction skill execution failed. [Error #20].")
-      print('----------------------------------------')
-        
-    # Generate interaction response.
-    interaction = self.response(interaction)
-    # If response creation failed. 
-    if not interaction :
-      # [DEBUG]
-      print("Interaction skill execution failed. [Error #20].")
-      print('----------------------------------------')
-    
-    # Return modified interaction.
-    return interaction    
+    return interaction   
 
   #@debug("verbose", True)
   def analysis(self, interaction):
@@ -486,6 +500,10 @@ class Brain:
       
     """
     
+    # Define interaction domain and method name.
+    interaction_domain_name = None
+    interaction_method_name = None
+    
     # Find Domain from Interaction Intent label.
     for domain in self.domains :
       # If domain match label.
@@ -497,8 +515,8 @@ class Brain:
     
     # Check if interaction domain found.
     if interaction_domain_name is None :
-      # [DEBUG]
-      print(f"No domain '{interaction_domain_name}' found for this intent. [Error #5]")
+      # Error message.
+      interaction.addError(f"No domain '{interaction.intent.label}' found for this intent. [Error #5]")
       # Return None (error)
       return None
       
@@ -508,8 +526,8 @@ class Brain:
     # Check if method exist.
     if interaction_method_name is not None :
       if not interaction.domain.methodExist(interaction_method_name) :
-        # [DEBUG]
-        print(f"No method '{interaction_method_name}' found for this intent on domain '{interaction_domain_name}'. [Error #5]")
+        # Error message.
+        interaction.addError(f"No method '{interaction.intent.label}' found for this intent on domain '{interaction_domain_name}'. [Error #5]")
         # Return None (error)
         return None
       
@@ -564,24 +582,21 @@ class Brain:
           Return None if error.
     """
     
-    # Generate response from interaction.
-    interaction.response = Response()
-    
     # Retrieve skill execution return values.
-    interaction.response.raw_text = interaction.skill.return_values
-    
-    # DEBUG
-    interaction.response.msg_text = interaction.intent
+    interaction.addResponse(interaction.skill.return_values)
     
     # Return modified interaction
     return interaction
 
   # ! Consciousness (Reflexivity)
 
-  def awareness(self):
+  def getStatesOfMind(self):
     
     """ 
-      Awareness method, allow reflexivity management.
+      getStatesOfMind method, allow reflexivity management.
+      --- 
+      Return 
+        Curent states of mind.
       
     """
     
@@ -589,5 +604,5 @@ class Brain:
     
     
     # Return
-    return
+    return {}
 
