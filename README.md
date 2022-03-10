@@ -1,5 +1,5 @@
 # Haroun
-Haroun is a python home assistant. Manage text interaction between user and domains API.
+Haroun is a python home assistant. Manage text interaction between user and domains modules.
 
 # What is Haroun ?
 
