@@ -51,7 +51,7 @@ class Stimulus:
     self.raw_sentence = sentence
     
     # Sentence
-    self.sentence = sentence
+    self.sentence = self.raw_sentence
     
     # Parent interaction ID if one.
     self.parent_interaction_id = parent_interaction_id
@@ -65,6 +65,26 @@ class Stimulus:
     # Stimulus duration.
     self.duration = None
     
+    # Clean sentence.
+    self.__clean_sentence()
+  
+  def __clean_sentence(self):
+    
+    """ 
+      __clean_sentence : Clean stimulus sentence. 
+      
+      Improve sentence such for NLU parsing.      
+    """	
+    
+    # Spacers : add space before defined character.
+    spacers = ('°', '%', '$', '€', '£')
+    
+    # Add spacers.
+    for spacer in spacers :
+      # Replace splac
+      self.sentence = self.sentence.replace(spacer, f" {spacer}")    
+    
+     
     
   def isValid(self):
     

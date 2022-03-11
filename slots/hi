@@ -1,8 +1,7 @@
-bonjour
-yo
-salut
-hi
-hello
-hey
-slt
-bjr
+(bonjour | bjr):(bonjour)
+(yo):(yo)
+(salut | slt):(salut)
+(hi | hello):(hello)
+(hey):(hey)
+(coucou):(coucou)
+(ola | hola):(ola)

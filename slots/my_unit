@@ -1,0 +1,6 @@
+(° | °c | °C | degré [celsius] | degrés [celsius]):(CELCIUS_DEGREE)
+(° | °f | °F | degré [fahrenheit] | degrés [fahrenheit]):(CELCIUS_FAHRENHEIT)
+(% | pourcent | percent):(PERCENT)
+(euro | euros | €):(EURO)
+(dollar | dollars | \$):(DOLLAR)
+(pound | pounds | livre sterling | livres sterling | £):(POUND)

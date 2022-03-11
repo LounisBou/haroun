@@ -1,16 +1,18 @@
-entrée
-salon
-salle à manger
-cuisine
-salle de bain
-chambre
-chambre 1
-chambre 2
-chambre 3
-bureau
-garage
-maison
-couloir premier étage
-couloir deuxième étage
-couloir 1er étage
-couloir 2ème étage
+(maison | home):(MAISON)
+(entrée):(ENTREE)
+(rez-de-chaussez | rez de chaussez | rdc | zone [de] vie | sejour):(zone de vie)
+(salon):(SALON)
+(salle [à] manger):(SALLE_A_MANGER)
+(cuisine):(CUISINE)
+(wc | toilette[s]):(TOILETTES)
+(salle de bain | sdb):(SALLE_DE_BAIN)
+(chambre | chambre 1 | chambre parental):(CHAMBRE_1)
+(chambre Maya | chambre 2):(CHAMBRE_2)
+(chambre 3 | bureau [de] laura):(CHAMBRE_3)
+(bureau | bureau [de] lounes):(BUREAU)
+(couloir (premier | 1er) étage):(COULOIR_1ER)
+(couloir (deuxième | 2ème) étage):(COULOIR_2EME)
+(garage):(GARAGE)
+(jardin):(JARDIN)
+(terrasse):(TERRASSE)
+(cave | cellier):(CAVE)

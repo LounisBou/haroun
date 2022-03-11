@@ -14,7 +14,8 @@ import os
 import rhasspynlu
 # Import Path from pathlib
 from pathlib import Path
-#
+# Import configparser.
+from configparser import ConfigParser
 # Import consciousness class.
 from core.consciousness.Conscious import Conscious
 from core.consciousness.Ego import Ego
@@ -57,6 +58,12 @@ class Brain:
     self.conscious = Conscious()
     self.ego = Ego()
     
+    # Config vars.
+    self. config = None
+    
+    # Load config from config files.
+    self.loadConfig()
+    
     # Available domains list. 
     self.domains = self.getDomains()
     
@@ -65,6 +72,9 @@ class Brain:
     
     # Available intents list. 
     self.intents =  self.getIntents()
+    
+    # Execute slots programs.
+    self.executeSlotsPrograms()
     
     # Available slots for replacements in intents.
     self.slots = self.getSlots()
@@ -91,6 +101,42 @@ class Brain:
     self.nlu_training()
 
   # ! - Initialisation.
+  
+  #@debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
+  def loadConfig(self):
+    
+    """ 
+      getConfig : Get config files and load config vars.
+    """
+    
+    # Config path.
+    configPath = DOSSIER_RACINE+"config"
+    
+    # Browse through config files 
+    configFiles = []
+    for(dirpath, dirnames, filenames) in os.walk(configPath):
+      # Add directory filenames without extension to domains list.
+      configFiles.extend(filenames)
+      break
+    
+    # [TODO]
+    # See configparser 
+    configParser = ConfigParser()
+    
+    # Iterate through slotsProgramsFiles list
+    for fileName in configFiles: 
+      # Parse config file.
+      configParser.read(configPath+'/'+fileName)
+      
+    # Get config parser sections.
+    sections = configParser.sections()
+    print(f"Config sections : {sections}")
+    # Get default section.
+    default_section = configParser['DEFAULT']
+    print(f"Config default : {default_section}")
+      
+    
   
   #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
@@ -216,14 +262,45 @@ class Brain:
   
   #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
+  def executeSlotsPrograms(self):
+    
+    """ 
+      Execute slots programs. Slots programs are independents scripts that generate slots.
+      ---
+      Return
+    """
+    
+    # Slots directory path.
+    slotsProgramPath=DOSSIER_RACINE+"slotsPrograms/"
+    
+    # Browse through slots files 
+    slotsProgramsFiles = []    
+    for(dirPath, dirNames, fileNames) in os.walk(slotsProgramPath):
+      # [DEBUG]
+      #print('Looking in slotsPrograms directory : '+slotsProgramPath+", listing files :")
+      #print(fileNames)
+       # Add fileNames to slotsProgramsFiles list.
+      slotsProgramsFiles.extend(fileNames)
+      break
+      
+    # Iterate through slotsProgramsFiles list
+    for fileName in slotsProgramsFiles:
+      # Execute the slot program.
+      # [TODO]
+      pass
+    
+    # Return
+    return None
+  
+  #@debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
   def getSlots(self):
     
     """ 
       Acquire slots file list and create a slots dict. 
-      
-      Returns
-      _______
-      slots : Rhasspy NLU slots dict.
+      ---
+      Return : slots
+        Rhasspy NLU slots dict.
     
     """
     
@@ -236,6 +313,7 @@ class Brain:
       # [DEBUG]
       #print('Looking in slots directory : '+slotsPath+", listing files :")
       #print(fileNames)
+      # Add fileNames to slotsFiles list.
       slotsFiles.extend(fileNames)
       break
     
@@ -440,17 +518,23 @@ class Brain:
         interaction : Interpretation of interaction success, recognition and intent attributs are now defined.
     """
     
-    # [DEBUG]
-    #print('Interaction sentence : '+self.stimulus.sentence)
-    #print('----------------------------------------')
+
     
     # Stimulus sentence pre-treatment.
     interaction.stimulus.sentence = interaction.stimulus.sentence.lower()
     interaction.stimulus.sentence = interaction.stimulus.sentence.replace(',',"")
     
-    # Perform intent recognition in Interaction sentence thanks to training graph.
-    recognitions = rhasspynlu.recognize(interaction.stimulus.sentence, self.intents_graph, fuzzy=True)
+    # [DEBUG]
+    #print('Interaction sentence : '+interaction.stimulus.sentence)
+    #print('----------------------------------------')
     
+    # Perform intent recognition in Interaction sentence thanks to training graph.
+    try:
+      recognitions = rhasspynlu.recognize(interaction.stimulus.sentence, self.intents_graph, fuzzy=True)
+    except ZeroDivisionError :
+      # Return
+      return None
+      
     # [DEBUG]
     #print("Recognitions  : ")
     #print(recognitions)

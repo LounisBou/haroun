@@ -1,14 +1,11 @@
-lumière
-lampe
-volet
-porte
-fenêtre
-humidité
-capteur d'humidité
-température
-capteur de température
-inondation
-capteur d'inondation
-chauffage
-radiateur
-pression
+(intensité [de] [la] lumière | luminosité):(BRIGHTNESS)
+(lampe | ampoule | lumière):(LIGHT)
+(volet[s] [roulant]):(BLIND)
+(porte[s]):(DOOR)
+(fenêtre[s]):(WINDOW)
+([capteur] [(l' | d')]humidité):(HUMIDITY)
+([capteur] [de] (température | temperature)):(TEMPERATURE)
+([capteur] [d'] inondation | ):(WATER_LEAK)
+(chauffage | radiateur):(HEATER)
+(thermostat):(THERMOSTAT)
+([capteur] [de]  pression):(PRESSURE)

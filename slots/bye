@@ -1,8 +1,6 @@
 au revoir
-bye
 a+
 @+
-tcho
-tchao
-bye bye
-a plus tard
+(ciao | tcho | tchao):(ciao)
+([bye] bye):(bye)
+((a | à) plus [tard]):(à plus)

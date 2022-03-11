@@ -3,79 +3,52 @@
 #
 # Libraries dependancies : #
 #
-# ! SLOTS
-# 
-"""
-  List of slots used in this domain.
-  Add listed slots below will be added to the corresponding slots.
-  SLOTS constant MUST RESPECT following format :
-  
-  SLOTS = {
-    "slot_name_1" : { 
-      "<group_1>" : {
-        "entry_1",
-        "entry_2",
-      },
-      "group_2" : {
-        "entry_3",
-        "entry_4",
-      },
-      "entry_5",
-      "entry_6",
-    },
-    "slot_name_2" : {
-      "group_3" : {
-       "entry_7",
-       "entry_8",
-       "entry_9",
-      },     
-    },
-    "slot_name_3" : {
-      "entry_10",
-    },
-  } 
+# Random library import.
+import random
+#
+#
+# Domain statics attributs : 
+#
+# Openhab API connection infos.
+OPENHAB_IP = "192.168.0.115"
+OPENHAB_PORT = "8080"
+OPENHAB_API_URL = "https://"+OPENHAB_IP+":"+OPENHAB_PORT
+OPENHAB_API_VERSION = "1"
+OPENHAB_VERSION = "3"
 
-  This will result by adding entry_1, entry_2, entry_3, entry_4, entry_5 and entry_6 to slot_name_1,
-  entry_7, entry_8 and entry_9 to slot_name_2,
-  and entry_10 to slot_name_3.
-"""
-#
-# Here defined the slots you will use in this domain :
-#
-SLOTS = {
-  #
-  "room" : {
-    
-    "MAISON" : {
-      "maison",
-      "home",
-    }
-  },
-  "item_type" : {
-    "CTX_TEMP" : {
-      "temperature",
-      "chaleur",
-      "degré",
-    }
-    
-  }
+# Languages dictionnary.
+LANGUAGES = {}
+
+# Openhab language code.
+LANG_CODE = 'fr'
+
+# Define french language.
+LANGUAGES['fr'] = {
+  "WHAT_ROOM_ITEM_INFO" : [
+    "Ok mais dans quelle pièce souhaitez-vous connaitre {item_type_lang} ?",
+    "Très bien je veux bien vous donner {item_type_lang} mais de quelle pièce ?",
+  ],
+  "WHAT_ROOM_ITEM_ACTION" : [
+    "Ok mais dans quelle pièce souhaitez-vous modifier {item_type_lang} ?",
+    "Très bien je veux bien modifier {item_type_lang} mais de quelle pièce ?",
+  ],
+  "TEMPERATURE" : "la température",
+  "BRIGHTNESS" : "la luminosité",
+  "LIGHT" : "la lumière",
+  "BLIND" : "le volet roulant",
+  "DOOR" : "la porte",
+  "WINDOW" : "la fenetre",
+  "HUMIDITY" : "l'humidité",
+  "WATER_LEAK" : "l'inondation",
+  "HEATER" : "le chauffage",
+  "PRESSURE" : "la pression",
+  "THERMOSTAT" : "le thermostat"
 }
+#
 #
 # ! DOMAIN 
 #
 class Openhab:
-    
-  """ 
-    Domain statics attributs. 
-    They should not be place outside class.
-  """
-  
-  # Openhab API connection infos :
-  OPENHAB_IP = "192.168.0.115"
-  OPENHAB_PORT = "8080"
-  OPENHAB_API_URL = "https://"+OPENHAB_IP+":"+OPENHAB_PORT
-  OPENHAB_API_VERSION = "1"
-  OPENHAB_VERSION = "3"
   
   def __init__(self):
     
@@ -83,39 +56,85 @@ class Openhab:
       __init__ : Domain constructor.      
     """
     
-    pass
+  def __get_lang(self, lang_entry_code):
+    
+    """ 
+      __get_lang : Get language string by code. Provide random string if code entry value is list.
+      ---
+      Parameters 
+        lang_entry_code : String
+          Language entry code.
+      ---
+      Return String
+        Language string.
+    """
+    
+    # Get current language entry code value.
+    lang_entry_value = LANGUAGES[LANG_CODE][lang_entry_code]
+    
+    # If language entry value is list.
+    if type(lang_entry_value) == list :
+      # Return random value.
+      return random.choice(lang_entry_value)
+    else:
+      # Return value.
+      return lang_entry_value
+    
   
   
-  def question(self, item_type, room = None):
+  def question(self, item_type, room = None, value = None, question_trigger = None, orphan = None):
   	
-  	""" 
-  	  Create domain specifics slots files.
+    """ 
+      Answer to Openhab item state question.
+      ---
+      Parameters
+        item : String
+          Openhab item type
+        room : String (optionnal)
+          Openhab sitemap room
+        Value : String (optionnal)
+          Openhab current item value to check.
+        question_trigger : String (optionnal)
+          Part of the sentence that indicate question interrogation form.
+    """
+    
+    # Get item type lang.
+    item_type_lang = self.__get_lang(item_type)
+    
+    # Check if room not provide.
+    if not room :
+      # Ask for room information.
+      return self.__get_lang("WHAT_ROOM_ITEM_INFO").format(**locals(), **globals())
+      
+    # Return response. 
+    return f"Call 'Openhab' method 'question' with params : item_type='{item_type}', room='{room}', value='{value}', question_trigger='{question_trigger}'"
+  
+  	
+  def action(self, item_type, room = None, value = None, action_trigger = None, orphan = None):
+    
+    """ 
+      Make Openhab item state action.
       ---
       Parameters
         item : String
           Openhab item type
         room : String
           Openhab sitemap room
-          
+        value : String (optionnal)
+          Item new value
+        action_trigger : String (optionnal)
+          Part of the sentence that indicate the action to make.
     """
-  	
-  	# Rooms slots
-  	
-  	# Items slots
-  	
-  	# 
-  	return f"Call 'Openhab' method 'question' with params : item_type='{item_type}', room='{room}'"
-  	
-  	
-  def action(self, item_type, room, value):
-  	
-  	""" Create domain specifics slots files. """
-  	
-  	# Rooms slots
-  	
-  	# Items slots
-  	
-  	# 
-  	return f"Call 'Openhab' method 'action' with params : item_type='{item_type}', room='{room}', value='{value}'"
+    
+    # Get item type lang.
+    item_type_lang = self.__get_lang(item_type)
+    
+    # Check if room not provide.
+    if not room :
+      # Ask for room information.
+      return self.__get_lang("WHAT_ROOM_ITEM_ACTION").format(**locals(), **globals())
+    
+    # Return response. 
+    return f"Call 'Openhab' method 'action' with params : item_type='{item_type}', room='{room}', value='{value}', action_trigger='{action_trigger}'"
   	
   	
