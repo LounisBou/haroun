@@ -1,5 +1,17 @@
 # Haroun
-Haroun is a python home assistant. Manage text interaction between user and domains API.
+Haroun is a python home assistant. Manage text interaction between user and domains modules.
+
+# What is Haroun ?
+
+Haroun is a python evolutive personnal bot for textual interaction.
+Haroun is based on rhasspy NLU python library, it transform text sentence into intent and transmit interpretation information to execute skills on domains modules that manage interpreted interaction. Haroun also have memory and ego, that simulate consciousness, giving each interaction information about Haroun current states of mind to allow domains modules to use them to generate alternatives responses and behaviours.
+
+Haroun brain class recieved stimulus and generate interaction if needed. Then brain manage interaction threw NLU interpretation, intents analysis, skills execution on domains modules and response generation.
+
+Domains modules have to be created in association with intents definition files. Intents names must be defined such as they match domain_name.method_name pattern.
+Additionnal domain module specifique slots may be defined in domain module file. (See haroun/core/concept/domain.py)
+
+Domain are python class that are must be named same as the python file. They contains methods that match intents naming and attributs that match intent definition slots. 
 
 ![schema](docs/Haroun-schema.png)
 
