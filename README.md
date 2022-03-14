@@ -15,7 +15,22 @@ Domain are python class that are must be named same as the python file. They con
 
 ![schema](docs/Haroun-schema.png)
 
-# Operation
+# What is the continuation of dev ?
+
+    * RoadMap
+    
+        • Part 1 :
+            
+        • Part 2 :
+            
+        • Part 3 : 
+            
+        • Part 4 : 
+            
+        • Part 5 :
+            
+
+# Working schema :
 
 ![design](docs/Haroun-design.png)
 
