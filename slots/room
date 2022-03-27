@@ -1,4 +1,4 @@
-(maison | home):(MAISON)
+(maison | home | partout):(MAISON)
 (entrée):(ENTREE)
 (rez-de-chaussez | rez de chaussez | rdc | zone [de] vie | sejour):(zone de vie)
 (salon):(SALON)

@@ -103,17 +103,26 @@ if __name__ == "__main__":
   if(len(sys.argv) > 1):
     # Sentence from triggered interaction.
     sentence = sys.argv[1]
-  else:
+     
+     # ! - Init interaction :
+      
+    # Launch Haroun stimulus analisys.
+    response = Haroun.call("DEBUG", 0, sentence, None)
+    
     # [DEBUG]
-    print("Vous n'avez rien demandé")
-    # End.
-    sys.exit()
-  
-  # ! - Init interaction :
-  
-  # Launch Haroun stimulus analisys.
-  response = Haroun.call("DEBUG", 0, sentence, None)
-  
-  # [DEBUG]
-  print(response)
+    print(response)
+  else:
+
+    while True :
+      
+      # Ask user for sentence.
+      sentence = input(" -?- : ")
+      
+      # ! - Init interaction :
+      
+      # Launch Haroun stimulus analisys.
+      response = Haroun.call("DEBUG", 0, sentence, None)
+      
+      # [DEBUG]
+      print(response)
   

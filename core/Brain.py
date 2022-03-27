@@ -10,6 +10,10 @@
 import sys
 # Import os
 import os
+# Import subprocess
+import subprocess
+# Import python nlu spacy
+#import spacy
 # Import rhasspynlu
 import rhasspynlu
 # Import Path from pathlib
@@ -52,7 +56,9 @@ class Brain:
     
   def __init__(self):
     
-    """ Brain class constructor. """
+    """ 
+      __init__ : Brain class constructor.
+    """
     
     # Consciousness (Reflexivity).
     self.conscious = Conscious()
@@ -60,6 +66,37 @@ class Brain:
     
     # Config vars.
     self. config = None
+    
+    # Available domains list. 
+    self.domains = None
+    
+    # Available skills list. 
+    #self.skills = None
+    
+    # Available intents list. 
+    self.intents = None
+    
+    # Available slots for replacements in intents.
+    self.slots = None
+    
+    # Training rhasspy-nlu graph from known intents. 
+    self.intents_graph = None
+  
+    # Memories 
+    self.memories = None
+    
+    # Wake up : initialisation of Brain class.
+    self.wakeUp()
+
+  # ! - Initialisation.
+  
+  #@debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
+  def wakeUp(self):
+    
+    """
+      wakeUp : Initialise Brain Class.
+    """
     
     # Load config from config files.
     self.loadConfig()
@@ -78,29 +115,14 @@ class Brain:
     
     # Available slots for replacements in intents.
     self.slots = self.getSlots()
-    
-    # IntentToSkill dictionnary, create a dict for "Intent to Skill" conversion. 
-    self.intentToSkill = {
-      "OH_QUESTION" : {
-        "class" : "openhab",
-        "method" : "question"
-      },
-      "OH_ACTION" : {
-        "class" : "openhab",
-        "method" : "action"
-      }
-    }
-    
-    # Training rhasspy-nlu graph from known intents. 
-    self.intents_graph = None
   
     # Memories 
     self.memories = Memory()
     
     # Training brain by creating intents graph.
     self.nlu_training()
-
-  # ! - Initialisation.
+    
+    
   
   #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
@@ -108,6 +130,8 @@ class Brain:
     
     """ 
       getConfig : Get config files and load config vars.
+      ---
+      Return : None
     """
     
     # Config path.
@@ -126,16 +150,52 @@ class Brain:
     
     # Iterate through slotsProgramsFiles list
     for fileName in configFiles: 
-      # Parse config file.
-      configParser.read(configPath+'/'+fileName)
+      # Get filename extension.
+      extension = os.path.splitext(fileName)[1]
+      print(f"extension = {extension}")
       
+      # If .ini file.
+      if extension == ".ini" :
+        # Parse INI config file.
+        configParser.read(configPath+'/'+fileName)
+      
+      # [TODO]
+      # If .json file.
+      elif extension == ".json" :
+        # Parse JSON config file.
+        pass
+     
     # Get config parser sections.
     sections = configParser.sections()
     print(f"Config sections : {sections}")
     # Get default section.
     default_section = configParser['DEFAULT']
     print(f"Config default : {default_section}")
+    
+  
+  #@debug("verbose", True)
+  @lru_cache(maxsize=128, typed=True)
+  def loadLanguage(self, language):
+    
+    """ 
+      loadLanguage : Get language file and load values in languages var.
+      ---
+      Parameters
+        language : String
+          Language to load.
+      ---
+      Return : None
+    """
+    
+    # Languages path.
+    languagesPath = DOSSIER_RACINE+"languages"
+    
+    # Language file path.
+    languageFile = languagesPath+'/'+language+".json"
       
+    # [TODO]
+    # Parse JSON language file.
+    pass
     
   
   #@debug("verbose", True)
@@ -143,14 +203,11 @@ class Brain:
   def getDomains(self):
     
     """ 
-      Acquire domains available list. 
-      
+      getDomains : Acquire domains available list. 
       Parse haroun/domains folder to define list of available domains.
       ---
-      Returns
-        domains : List[String]
-          Domains avialable list.
-    
+      Return : List[String]
+        Domains available list.
     """
     
     # Browse through domains files 
@@ -170,16 +227,11 @@ class Brain:
   def getSkills(self):
     
     """ 
-      Acquire skills available list. 
-      
+      getSkills : Acquire skills available list. 
       Parse haroun/skills folder to define list of available skills.
-      
-       
-      ____
-      Returns
-        skills : List[String] : List des nom de skills
-      void
-    
+      ---
+      Return : List[String]
+        List des nom de skills
     """
     
     # Browse through skills files 
@@ -200,16 +252,13 @@ class Brain:
   def getIntents(self):
     
     """ 
-      Acquire intents file list and create a all.ini intents file. 
-      
+      getIntents : Acquire intents file list and create a all.ini intents file. 
       Parse haroun/intents folder to list of intents file.
       Normally one file per available domains.
       Generate one intents file and parse it with rhasspy-nlu.
-      
-      Returns
-      _______
-      intents : Rhasspy NLU intents list.
-    
+      ---
+      Return : intents 
+        Rhasspy NLU intents list.
     """
     
     # Intents directory path.
@@ -265,12 +314,15 @@ class Brain:
   def executeSlotsPrograms(self):
     
     """ 
-      Execute slots programs. Slots programs are independents scripts that generate slots.
+      executeSlotsPrograms : Execute slots programs. Slots programs are independents scripts that generate slots.
       ---
-      Return
+      Return : None
     """
     
     # Slots directory path.
+    slotsPath=DOSSIER_RACINE+"slots/"
+    
+    # Slots programs directory path.
     slotsProgramPath=DOSSIER_RACINE+"slotsPrograms/"
     
     # Browse through slots files 
@@ -284,11 +336,44 @@ class Brain:
       break
       
     # Iterate through slotsProgramsFiles list
-    for fileName in slotsProgramsFiles:
-      # Execute the slot program.
-      # [TODO]
-      pass
+    for programSlotFileName in slotsProgramsFiles:
+      
+      # Get file name without extension as programSlotName.
+      programSlotName = os.path.splitext(programSlotFileName)[0]
     
+      # Get program path.
+      program_path = slotsProgramPath+programSlotFileName
+      
+      # Create slot file with program slot name.
+      slotFilePath = slotsPath+programSlotName
+      # If slot file doesn't already exist.
+      if not os.path.exists(slotFilePath) :
+      
+        # Execute program slot file.
+        process = subprocess.Popen(
+          [program_path],
+          shell=True,
+          stdin=None,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          close_fds=True
+        )
+        
+        # Get program slot file execution outputs.
+        output, error = process.communicate()
+        
+        # Retrieve output string.
+        slotFileContent = output.decode()
+                
+        # Open file : create if not exist, truncate if exist.
+        with open(slotFilePath, 'w') as slotFile:
+          # Write program slot file execution output.
+          slotFile.write(f"{slotFileContent}")
+          
+      else:
+        # Error message.
+        print(f"Slot {programSlotName} already exist. Program slot file '{programSlotFileName}' can't be executed. Delete slot {programSlotName} to re-generate it.")
+        
     # Return
     return None
   
@@ -297,11 +382,10 @@ class Brain:
   def getSlots(self):
     
     """ 
-      Acquire slots file list and create a slots dict. 
+      getSlots : Acquire slots file list and create a slots dict. 
       ---
       Return : slots
         Rhasspy NLU slots dict.
-    
     """
     
     # Slots directory path.
@@ -360,14 +444,10 @@ class Brain:
   def nlu_training(self):
     
     """ 
-      Acquire domains knowledge. 
-      
+      nlu_training : Acquire domains knowledge. 
       Transform intents into graph training, replace slots if necessary.
-      
-      Returns
-      _______
-      void
-    
+      ---
+      Return : None
     """
     
     # [DEBUG]
@@ -386,7 +466,7 @@ class Brain:
   def generateStimulus(self, source, source_id, sentence, parent_id):
   
     """ 
-      Generate Stimulus concept object. 
+      generateStimulus : Generate Stimulus concept object. 
       Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
       ---
       Parameters
@@ -399,9 +479,8 @@ class Brain:
         parent_interaction_id : String (optionnal)
           Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
       ---
-      Returns
-        stimulus : Stimulus
-          Stimulus concept object created with scripts call infos.
+      Return : Stimulus
+        Stimulus concept object created with scripts call infos.
     """
     
     # Create stimulus from script call infos.
@@ -421,16 +500,15 @@ class Brain:
   def createInteraction(self, stimulus):
   
     """ 
-      Generate Interaction concept object. 
+      createInteraction : Generate Interaction concept object. 
       Transform script call infos, to create a Haroun Stimulus containing infos to generate an Interaction.
       ---
       Parameters
         stimulus : Stimulus
           Stimulus source origin of the interaction.
       ---
-      Returns
-        Interaction : Modified interaction with domain and skill infos.
-          Return None if error.
+      Return : Interaction
+        Modified interaction with domain and skill infos, None if error.
     """
     
     # Create interaction from stimulus.
@@ -444,7 +522,7 @@ class Brain:
   def manageInteraction(self, interaction):
     
     """ 
-      Manage interaction. 
+      manageInteraction : Manage interaction. 
       Interaction analysis, check NLU of the interaction sentence to defined instance.
       Correct slots if neccessary.
       ---
@@ -452,9 +530,8 @@ class Brain:
         interaction : Interaction
           Interaction concept object generate from trigger Stimulus.
       ---
-      Returns
-        Interaction : Modified interaction with domain and skill infos.
-          Return None if error.
+      Return : Interaction
+        Modified interaction with domain and skill infos, None if error.
     """
     
     # Interaction interpretation. 
@@ -506,7 +583,7 @@ class Brain:
   def interpreter(self, interaction):
     
     """ 
-      Interpreter method, apply NLU analysis on Interaction sentence.
+      interpreter : Interpreter method, apply NLU analysis on Interaction sentence.
       Interpretation of Interaction sentence via rhasspy-nlu.
       Try to retrieve a recognition dict, if success then create define an the interaction intent attribut from it.
       ---
@@ -514,10 +591,11 @@ class Brain:
         interaction : Interaction
           Interaction concept object generate from trigger Stimulus.
       ---
-      Returns
-        interaction : Interpretation of interaction success, recognition and intent attributs are now defined.
+      Return : interaction 
+        Interpretation of interaction success, recognition and intent attributs are now defined.
     """
     
+    #
 
     
     # Stimulus sentence pre-treatment.
@@ -578,10 +656,8 @@ class Brain:
         interaction : Interaction
           Interaction concept object generate from trigger Stimulus.
       ---
-      Returns
-        Interaction : Modified interaction with domain and skill infos.
-          Return None if error.
-      
+      Return : Interaction, None if error.
+        Modified interaction with domain and skill infos.      
     """
     
     # Define interaction domain and method name.
@@ -624,19 +700,15 @@ class Brain:
   def executeSkill(self, interaction):
     
     """ 
-      Execute Skill via Domain function.  
-      
+      executeSkill : Execute Skill via Domain function.  
       Instanciate the correct domain class for the skill. Prepare domain method call with correct info from intent. Then execute the method and retrieve execute return infos.
-      
+      ---
       Parameters
-      ----------
-      interaction : Interaction
-        Interaction concept object generate from trigger Stimulus.
-      Returns
-      _______
-      Interaction : Modified interaction with domain and skill infos.
-        Return None if error.
-      
+        interaction : Interaction
+          Interaction concept object generate from trigger Stimulus.
+      ---
+      Return : Interaction
+        Modified interaction with domain and skill infos, None if error/      
     """
     
     # Get domain methods args list to prepare skill.
@@ -654,16 +726,15 @@ class Brain:
   def response(self, interaction):
     
     """ 
-      Create interaction response.  
+      response : Create interaction response.  
       Parse interaction data, to generate an response with datas and sentence.
       ---
       Parameters
         interaction : Interaction
           Interaction for which to generate response.
       ---
-      Returns
-        Interaction : Modified interaction with domain and skill infos.
-          Return None if error.
+      Return : Interaction
+        Modified interaction with domain and skill infos, None if error.
     """
     
     # Retrieve skill execution return values.
@@ -677,11 +748,10 @@ class Brain:
   def getStatesOfMind(self):
     
     """ 
-      getStatesOfMind method, allow reflexivity management.
+      getStatesOfMind : method, allow reflexivity management.
       --- 
-      Return 
+      Return : 
         Curent states of mind.
-      
     """
     
     # Re-calculate awareness values.
