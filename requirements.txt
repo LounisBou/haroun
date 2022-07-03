@@ -3,4 +3,5 @@ protobuf==4.21.2
 pyaudio==0.2.11
 rhasspy_nlu==0.4.0
 six==1.16.0
+Telethon==1.24.0
 termcolor==1.1.0
