@@ -8,7 +8,7 @@ User=pi
 Group=pi
 ExecStart=/home/pi/.pyenv/shims/python /opt/haroun/Haroun.py
 SyslogIdentifier=Haroun
-StandardOutput=file:/opt/haroun/log/current.log
+StandardOutput=append:/opt/haroun/log/current.log
 Environment=PYTHONUNBUFFERED=1
 
 

@@ -38,6 +38,15 @@ class Haroun(object):
     
     """ Haroun class constructor """
     
+    # [DEBUG]
+    print('')
+    print('')
+    print('')
+    print('')
+    print('')
+    print(f"Haroun is starting...")
+    print('')
+    
     # Brain instanciation.
     self.brain = Brain()
 
@@ -112,9 +121,7 @@ class Haroun(object):
     
     # [DEBUG]
     return "Call error. [Error #0]"
-    
-    # ! Telegram session manager :
-    
+        
   
   async def startTelegramSession(self, tg_client_name, tg_client_api_id, tg_client_api_hash, tg_haroun_bot_token, tg_chat_id):
       
@@ -153,7 +160,7 @@ class Haroun(object):
       #started = await client.start(bot_token=tg_haroun_bot_token)        
       
       # list all sessions
-      print(client.session.list_sessions())
+      #print(client.session.list_sessions())
       
       # Create new message event listener method.
       @client.on(events.NewMessage(chats=[tg_chat_id]))
@@ -171,7 +178,12 @@ class Haroun(object):
         tg_response_chat_id = event.peer_id.channel_id
         
         # [DEBUG]
-        print(f"{event.message}")
+        print('')
+        print('----------------------------------------')
+        print('')
+        print(f"Incoming message : ")
+        print('')
+        #print(f"{event.message}")
         print(f" #{message_id} new message from {user_id} at {message_datetime}")
         print(f" {message_content} ")
         
@@ -194,6 +206,11 @@ class Haroun(object):
         
         # Send response back.
         await client.send_message(entity=chat_entity, message=response)
+      
+      # [DEBUG]
+      print('')
+      print(f"Haroun is listening...")
+      print('')
       
       # Async loop for client.
       await client.run_until_disconnected()
