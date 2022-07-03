@@ -1,0 +1,16 @@
+[Unit]
+Description=Haroun service
+After=multi-user.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+ExecStart=/home/pi/.pyenv/shims/python /opt/haroun/Haroun.py
+SyslogIdentifier=Haroun
+StandardOutput=file:/opt/haroun/log/current.log
+Environment=PYTHONUNBUFFERED=1
+
+
+[Install]
+WantedBy=multi-user.target

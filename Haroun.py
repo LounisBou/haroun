@@ -141,13 +141,16 @@ class Haroun(object):
     """   
     
     # Create the client and connect
-    async with TelegramClient(tg_client_name, tg_client_api_id, tg_client_api_hash) as client :
+    client = await TelegramClient(None, tg_client_api_id, tg_client_api_hash).start(bot_token=tg_haroun_bot_token)
+    
+    # Use async telegram client.
+    async with client :
     
       # Start the client with Izno user session.
       #started = await client.start(phone="0768229203")
       
       # Start the client with Haroun bot session.
-      started = await client.start(bot_token=tg_haroun_bot_token)        
+      #started = await client.start(bot_token=tg_haroun_bot_token)        
       
       # list all sessions
       print(client.session.list_sessions())
@@ -172,8 +175,7 @@ class Haroun(object):
         print(f" #{message_id} new message from {user_id} at {message_datetime}")
         print(f" {message_content} ")
         
-        # Try to call for Haroun answer.
-        # Launch Haroun stimulus analisys.
+        # Call for Haroun.
         response = await self.call(
           tg_client_name, 
           tg_chat_id, 
@@ -196,7 +198,10 @@ class Haroun(object):
       # Async loop for client.
       await client.run_until_disconnected()
       
-      # delete current session (current session is associated with `username` variable)
+      # [DEBUG]
+      print(f"Haroun telegram bot have been disconnected.")
+      
+      # Delete client bot current session.
       #await client.log_out()
         
 
