@@ -463,7 +463,7 @@ class Brain:
   
   # ! - Stimulus management.
     
-  def generateStimulus(self, source, source_id, sentence, parent_id):
+  def generateStimulus(self, source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime):
   
     """ 
       generateStimulus : Generate Stimulus concept object. 
@@ -476,15 +476,21 @@ class Brain:
           Uniq identifier for stimulus source origin.
         sentence : String (optionnal)
           Sentence of the stimulus. [Default = '']
-        parent_interaction_id : String (optionnal)
+        user_id : Int (optionnal)
+          Uniq identifier for user who initiate interaction. [Default = null]
+        interaction_id : Int (optionnal)
+          Uniq identifier for interaction. [Default = null]
+        parent_interaction_id : Int (optionnal)
           Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
+        origin_datetime : Datetime (optionnal)
+          Datetime origin for stimulus. [Default = null]
       ---
       Return : Stimulus
         Stimulus concept object created with scripts call infos.
     """
     
     # Create stimulus from script call infos.
-    stimulus = Stimulus(source, source_id, sentence, parent_id)
+    stimulus = Stimulus(source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime)
     
     # Check if stimulus is valid.
     if(stimulus.isValid()):

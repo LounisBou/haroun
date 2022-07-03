@@ -16,9 +16,21 @@ from core.Brain import Brain
 #
 # Text encode type
 Encodage = 'utf-8'
+# Text encode type
+# See https://my.telegram.org/apps
+TG_CLIENT_NAME = "Haroun"
+TG_CLIENT_API_ID = 13960268
+TG_CLIENT_API_HASH = "f081cd15e48f08f3743443975326189f"
+
+# Haroun bot token.
+TG_HAROUN_BOT_TOKEN = "1785349151:AAHtHZafv_Hx9cBRk0eO6-RjrRqm06ENjdA"
+
+# Haroun listening chat id.
+TG_HAROUN_CHAT_ID = -1001368892848
+
 #
 #
-class Haroun:
+class Haroun(object):
   
   """ Haroun home assistant main class. """
   
@@ -30,7 +42,7 @@ class Haroun:
     self.brain = Brain()
 
 
-  def call(self, source, source_id, sentence, parent_interaction_id): 
+  async def call(self, source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime): 
     
     """ 
       Retrieve call info. 
@@ -45,9 +57,14 @@ class Haroun:
         Uniq identifier for stimulus source origin.
       sentence : String (optionnal)
         Sentence of the stimulus. [Default = '']
-      parent_interaction_id : String (optionnal)
+      user_id : Int (optionnal)
+          Uniq identifier for user who initiate interaction. [Default = null]
+      interaction_id : Int (optionnal)
+          Uniq identifier for interaction. [Default = null]
+      parent_interaction_id : Int (optionnal)
         Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = None]
-      
+      origin_datetime : Datetime (optionnal)
+        Datetime origin for stimulus. [Default = null]
       Returns
       _______
       Response : String 
@@ -55,7 +72,15 @@ class Haroun:
     """
     
     # Generate stimulus from call info.
-    stimulus = self.brain.generateStimulus(source, source_id, sentence, parent_interaction_id)
+    stimulus = self.brain.generateStimulus(
+      source, 
+      source_id, 
+      sentence, 
+      user_id, 
+      interaction_id, 
+      parent_interaction_id, 
+      origin_datetime
+    )
     
     # If we manage to understand stimulus.
     if stimulus :
@@ -88,80 +113,112 @@ class Haroun:
     # [DEBUG]
     return "Call error. [Error #0]"
     
-# ! Telegram session manager :
-
-async def startTelegramSession(Haroun):
+    # ! Telegram session manager :
+    
+  
+  async def startTelegramSession(self, tg_client_name, tg_client_api_id, tg_client_api_hash, tg_haroun_bot_token, tg_chat_id):
+      
+    """ 
+      Start Telegram client session.
+    
+      Create new message function handler on chat group and call Haroun on every new message.
+      
+      Parameters
+      ----------
+      tg_client_name : String
+        Telegram client name.
+      tg_client_api_id : Int
+        API Uniq identifier for client app.
+      tg_client_api_hash : String
+        API client app hash.
+      tg_haroun_bot_token : String
+        Uniq token identifier for haroun telegram bot.
+      tg_chat_id : Int
+        Uniq telegram chat id, where haroun bot will listen for message. Haroun bot should already be a chat member.
+      
+      -----------
+      Return 
+    """   
     
     # Create the client and connect
-    #client = TelegramClient(username, api_id, api_hash)
-    async with TelegramClient("Haroun", 13960268, "f081cd15e48f08f3743443975326189f") as client :
+    async with TelegramClient(tg_client_name, tg_client_api_id, tg_client_api_hash) as client :
     
-    
-        # Start the client with Izno user session.
-        #started = await client.start(phone="0768229203")
+      # Start the client with Izno user session.
+      #started = await client.start(phone="0768229203")
+      
+      # Start the client with Haroun bot session.
+      started = await client.start(bot_token=tg_haroun_bot_token)        
+      
+      # list all sessions
+      print(client.session.list_sessions())
+      
+      # Create new message event listener method.
+      @client.on(events.NewMessage(chats=[tg_chat_id]))
+      async def new_message_handler(event):
         
-        # Start the client with Haroun bot session.
-        started = await client.start(bot_token="1785349151:AAHtHZafv_Hx9cBRk0eO6-RjrRqm06ENjdA")
+        # Get message id.
+        message_id = event.message.id
+        # Get message datetime.
+        message_datetime = event.message.date
+        # Get message content.
+        message_content = event.message.message
+        # Get user id that send message.
+        user_id = event.message.from_id.user_id
+        # Get current channel id.
+        tg_response_chat_id = event.peer_id.channel_id
         
+        # [DEBUG]
+        print(f"{event.message}")
+        print(f" #{message_id} new message from {user_id} at {message_datetime}")
+        print(f" {message_content} ")
         
+        # Try to call for Haroun answer.
+        # Launch Haroun stimulus analisys.
+        response = await self.call(
+          tg_client_name, 
+          tg_chat_id, 
+          message_content,
+          user_id, 
+          message_id, 
+          None, 
+          message_datetime
+        )
         
-        # list all sessions
-        print(client.session.list_sessions())
+        # [DEBUG]
+        print(response)
         
-        # Create new message event listener method.
-        @client.on(events.NewMessage(chats=[-1001368892848]))
-        async def new_message_handler(event):
-            # Get message id.
-            message_id = event.message.id
-            # Get message datetime.
-            message_datetime = event.message.date
-            # Get message content.
-            message_content = event.message.message
-            # Get user id that send message.
-            user_id = event.message.from_id.user_id
-            print(f" #{message_id} new message from {user_id} at {message_datetime}")
-            print(f" {message_content} ")
-            
-            # Try to call for Haroun answer.
-            # Launch Haroun stimulus analisys.
-            response = Haroun.call("Haroun Telegram Bot", 0, message_content, None)
-            
-            # [DEBUG]
-            print(response)
-            
-            # Get chat entity by chat_id.
-            entity = await client.get_entity(-1001368892848)
-            
-            # Send response back.
-            await client.send_message(entity=entity, message=response)
-            
+        # Get chat entity with message channel id.
+        chat_entity = await client.get_entity(tg_response_chat_id)
         
-        # Async loop for client.
-        await client.run_until_disconnected()
-        
-        # delete current session (current session is associated with `username` variable)
-        #await client.log_out()
+        # Send response back.
+        await client.send_message(entity=chat_entity, message=response)
+      
+      # Async loop for client.
+      await client.run_until_disconnected()
+      
+      # delete current session (current session is associated with `username` variable)
+      #await client.log_out()
         
 
 #####################################################################################################   
 #                                            MAIN                                                   #
 #####################################################################################################   
 
-
-
-
-
-
-
-# ! Init Haroun :
-
 # Execute if run as script. 
 if __name__ == "__main__":
-
+  
   # Haroun instanciation
-  Haroun = Haroun()
+  haroun = Haroun()
   
   # Launch telegram session     
-  asyncio.run(startTelegramSession(Haroun))
+  asyncio.run(
+    haroun.startTelegramSession(
+      TG_CLIENT_NAME, 
+      TG_CLIENT_API_ID, 
+      TG_CLIENT_API_HASH, 
+      TG_HAROUN_BOT_TOKEN, 
+      TG_HAROUN_CHAT_ID
+    )
+  )
   
   

@@ -24,7 +24,7 @@ class Stimulus:
     
   """ Concept of Haroun Stimulus. """
   
-  def __init__(self, source, source_id, sentence, parent_interaction_id):
+  def __init__(self, source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime):
     
     """ Stimulus class constructor. """	
     
@@ -37,8 +37,14 @@ class Stimulus:
         Uniq identifier for stimulus source origin.
       sentence : String (optionnal)
         Sentence of the stimulus. [Default = '']
-      parent_interaction_id : String (optionnal)
+      user_id : Int (optionnal)
+          Uniq identifier for user who initiate interaction. [Default = null]
+      interaction_id : Int (optionnal)
+          Uniq identifier for interaction. [Default = null]  
+      parent_interaction_id : Int (optionnal)
         Uniq identifier for parent interaction if Stimulus is due cause of previous interaction. [Default = null]
+      origin_datetime : Datetime (optionnal)
+        Datetime origin for stimulus. [Default = null]
     """ 
     
     # Source label
@@ -53,8 +59,17 @@ class Stimulus:
     # Sentence
     self.sentence = self.raw_sentence
     
+    # Interaction user ID.
+    self.user_id = user_id
+    
+    # Interaction ID if one.
+    self.interaction_id =interaction_id
+    
     # Parent interaction ID if one.
     self.parent_interaction_id = parent_interaction_id
+    
+    # Datetime origin of the stimulus.
+    self.origin_datetime = origin_datetime
     
     # Error flag.
     self.error = False
