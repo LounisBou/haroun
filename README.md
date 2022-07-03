@@ -79,12 +79,21 @@ Haroun.py (Main file launch assistance process. Init brain, receive interaction 
 
 # Installation :
 
+- Haroun should be placed in folder /opt/haroun
+cd /opt
+mkdir haroun
+cd haroun
+
+- Retrieve Haroun project.
+git clone git@github.com:LounisBou/haroun.git
+
 - You should use python 3.8+ for best compatibilities.
 
 - Install librairies requirements.
 pip install -r requirement.txt
 
-- Haroun should be placed in folder /opt/haroun
+- Test Haroun.
+python ./Haroun.py
 
 - Install Haroun as service.
 sudo cp Haroun.service /etc/systemd/system/Haroun.service
