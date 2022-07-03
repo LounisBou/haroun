@@ -77,3 +77,21 @@ Haroun.py (Main file launch assistance process. Init brain, receive interaction 
     
 ![structure](docs/Haroun-structure.png)
 
+# Installation :
+
+- You should use python 3.8+ for best compatibilities.
+
+- Install librairies requirements.
+pip install -r requirement.txt
+
+- Haroun should be placed in folder /opt/haroun
+
+- Install Haroun as service.
+sudo cp Haroun.service /etc/systemd/system/Haroun.service
+sudo systemctl daemon-reload
+sudo service Haroun start
+
+- See log in /opt/haroun/log/current.log
+watch tail -n 50 /opt/haroun/log/current.log
+
+
