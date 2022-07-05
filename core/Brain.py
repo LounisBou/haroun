@@ -65,7 +65,7 @@ class Brain:
     self.ego = Ego()
     
     # Config vars.
-    self. config = None
+    self.config = {}
     
     # Available domains list. 
     self.domains = None
@@ -152,8 +152,7 @@ class Brain:
     for fileName in configFiles: 
       # Get filename extension.
       extension = os.path.splitext(fileName)[1]
-      print(f"extension = {extension}")
-      
+            
       # If .ini file.
       if extension == ".ini" :
         # Parse INI config file.
@@ -167,10 +166,10 @@ class Brain:
      
     # Get config parser sections.
     sections = configParser.sections()
-    print(f"Config sections : {sections}")
-    # Get default section.
-    default_section = configParser['DEFAULT']
-    print(f"Config default : {default_section}")
+    
+    # Get all sections.
+    for section_name in sections:
+      self.config[section_name] = configParser[section_name]
     
   
   #@debug("verbose", True)

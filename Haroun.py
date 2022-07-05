@@ -12,23 +12,6 @@ from telethon.errors import SessionPasswordNeededError
 # Core dependencies : 
 from core.Brain import Brain
 #
-# ! - Globals :  coucou
-#
-# Text encode type
-Encodage = 'utf-8'
-# Text encode type
-# See https://my.telegram.org/apps
-TG_CLIENT_NAME = "Haroun"
-TG_CLIENT_API_ID = 13960268
-TG_CLIENT_API_HASH = "f081cd15e48f08f3743443975326189f"
-
-# Haroun bot token.
-TG_HAROUN_BOT_TOKEN = "1785349151:AAHtHZafv_Hx9cBRk0eO6-RjrRqm06ENjdA"
-
-# Haroun listening chat id.
-TG_HAROUN_CHAT_ID = -1001368892848
-
-#
 #
 class Haroun(object):
   
@@ -123,6 +106,38 @@ class Haroun(object):
     return "Call error. [Error #0]"
         
   
+  async def start(self):
+    
+    """
+      Start Haroun listening session.
+      
+      Create a telegram session with asyncio loop to retrieve message.
+      
+    """
+    
+    # Retrieving Telegram config from brain config.
+    try:
+      tg_client_name = self.brain.config['telegram']['TG_CLIENT_NAME']
+      tg_client_api_id = int(self.brain.config['telegram']['TG_CLIENT_API_ID'])
+      tg_client_api_hash = self.brain.config['telegram']['TG_CLIENT_API_HASH']
+      tg_haroun_bot_token = self.brain.config['telegram']['TG_HAROUN_BOT_TOKEN']
+      tg_chat_id = int(self.brain.config['telegram']['TG_HAROUN_CHAT_ID'])
+    except:
+      print(f"Enable to get Telegram config to initiate Telegram session. Please check your config file.")
+    
+    # [DEBUG]
+    #print(tg_client_name, tg_client_api_id, tg_client_api_hash, tg_haroun_bot_token, tg_chat_id)
+    
+    # Launch telegram bot listening session.
+    await self.startTelegramSession(
+      tg_client_name, 
+      tg_client_api_id, 
+      tg_client_api_hash, 
+      tg_haroun_bot_token, 
+      tg_chat_id
+    )
+    
+  
   async def startTelegramSession(self, tg_client_name, tg_client_api_id, tg_client_api_hash, tg_haroun_bot_token, tg_chat_id):
       
     """ 
@@ -146,7 +161,7 @@ class Haroun(object):
       -----------
       Return 
     """   
-    
+        
     # Create the client and connect
     client = await TelegramClient(None, tg_client_api_id, tg_client_api_hash).start(bot_token=tg_haroun_bot_token)
     
@@ -233,14 +248,6 @@ if __name__ == "__main__":
   haroun = Haroun()
   
   # Launch telegram session     
-  asyncio.run(
-    haroun.startTelegramSession(
-      TG_CLIENT_NAME, 
-      TG_CLIENT_API_ID, 
-      TG_CLIENT_API_HASH, 
-      TG_HAROUN_BOT_TOKEN, 
-      TG_HAROUN_CHAT_ID
-    )
-  )
+  asyncio.run(haroun.start())
   
   

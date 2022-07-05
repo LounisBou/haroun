@@ -1,0 +1,10 @@
+[haroun]
+LANG = fr
+ENCODAGE = utf-8
+
+[telegram]
+TG_CLIENT_NAME = 
+TG_CLIENT_API_ID = 
+TG_CLIENT_API_HASH = 
+TG_HAROUN_BOT_TOKEN = 
+TG_HAROUN_CHAT_ID = 
