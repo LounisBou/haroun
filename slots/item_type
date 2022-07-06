@@ -4,7 +4,7 @@
 (porte[s]):(DOOR)
 (fenêtre[s]):(WINDOW)
 ([capteur] [(l' | d')]humidité):(HUMIDITY)
-([capteur] [de] (température | temperature)):(TEMPERATURE)
+([capteur] [de] (température | temperature)):(TEMP)
 ([capteur] [d'] inondation | ):(WATER_LEAK)
 (chauffage | radiateur):(HEATER)
 (thermostat):(THERMOSTAT)

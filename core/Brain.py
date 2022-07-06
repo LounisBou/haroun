@@ -705,7 +705,7 @@ class Brain:
       # Return None (error)
       return None
     
-    # Instanciate domain on interaction.
+    # Retrieve domain instance for interaction.
     interaction.domain = self.domains[interaction_domain_name]
     
     # DEPRECATED CODE : Since Intent Handler decorator.

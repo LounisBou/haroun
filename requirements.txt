@@ -1,5 +1,7 @@
 playsound==1.3.0
 protobuf==4.21.2
+pyaudio==0.2.11
+python_openhab==2.17.0
 rhasspy_nlu==0.4.0
 six==1.16.0
 Telethon==1.24.0

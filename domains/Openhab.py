@@ -9,14 +9,16 @@ import random
 from core.concepts.Domain import Domain 
 # Import core concept skill.
 from core.concepts.Skill import Skill 
+# Import Openhab library.
+from openhab import OpenHAB
 #
 #
 # Domain statics attributs : 
 #
 # Openhab API connection infos.
-OPENHAB_IP = "192.168.0.115"
+OPENHAB_IP = "192.168.1.115"
 OPENHAB_PORT = "8080"
-OPENHAB_API_URL = "https://"+OPENHAB_IP+":"+OPENHAB_PORT
+OPENHAB_API_URL = f"http://{OPENHAB_IP}:{OPENHAB_PORT}/rest"
 OPENHAB_API_VERSION = "1"
 OPENHAB_VERSION = "3"
 
@@ -36,7 +38,7 @@ LANGUAGES['fr'] = {
     "Ok mais dans quelle pièce souhaitez-vous modifier {item_type_lang} ?",
     "Très bien je veux bien modifier {item_type_lang} mais de quelle pièce ?",
   ],
-  "TEMPERATURE" : "la température",
+  "TEMP" : "la température",
   "BRIGHTNESS" : "la luminosité",
   "LIGHT" : "la lumière",
   "BLIND" : "le volet roulant",
@@ -60,7 +62,48 @@ class Openhab:
       __init__ : Domain constructor.      
     """
     
-    return None
+    # Openhab API connector.
+    self.openhab = None
+    
+    # Openhab available items.
+    self.items = None
+    
+    # Initialisation.
+    
+    # Initiate openhab connexion.
+    self.__connect()
+    
+    # Retrieve aviable items.
+    self.__get_items()
+    
+    
+  def __connect(self):
+    
+    """
+      __connect : Initiate openhab API connexion.
+      ---
+      Return Boolean
+        Connexion init successful.
+    """
+    
+    # Initiate openhab API connexion.
+    self.openhab = OpenHAB(OPENHAB_API_URL)
+    
+    # [TODO]
+    # Check for Openhab connexion.
+    connected = True
+    
+    # Return 
+    return connected
+    
+  def __get_items(self):
+    
+    """
+      __get_items : Retrieve Openhab available items list.
+    """
+    
+    self.items = self.openhab.fetch_all_items()
+    
     
   def __get_lang(self, lang_entry_code):
     
@@ -111,9 +154,26 @@ class Openhab:
     if not room :
       # Ask for room information.
       return self.__get_lang("WHAT_ROOM_ITEM_INFO").format(**locals(), **globals())
-      
+    
+    # Define openhab item name to check.
+    openhab_item_name = f"{room}_{item_type}"
+    
+    # [DEBUG]
+    #print(f"check for {openhab_item_name}")
+    
+    # Retrieve item state from Openhab.
+    item_state = self.items.get(openhab_item_name).state
+    
+    # [DEBUG]
+    #print(f"{openhab_item_name} value = {item_state}")
+    
+    if item_state :
+      response = f"{item_state}"
+    else:
+      response = f"Call 'Openhab' method 'question' with params : item_type='{item_type}', room='{room}', value='{value}', question_trigger='{question_trigger}'"
+    
     # Return response. 
-    return f"Call 'Openhab' method 'question' with params : item_type='{item_type}', room='{room}', value='{value}', question_trigger='{question_trigger}'"
+    return response
   
   @Skill.match_intent("openhab.action")
   def action(self, item_type, room = None, value = None, action_trigger = None, orphan = None):
