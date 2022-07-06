@@ -10,6 +10,13 @@ import sys
 import os
 # Import subprocess library.
 import subprocess
+# Import Python Object Inspector library.
+import inspect
+# Import functools wraps for decorators.
+from functools import wraps
+# Import core domain concept class.
+from core.concepts.Domain import Domain
+
 #
 #
 # Globals :
@@ -92,4 +99,69 @@ class Skill:
     return self.prepared
     
   
+  # ! Decorators :
+  
+  @staticmethod
+  def match_intent(intent_name):
     
+    """
+      Decorator that allow a function to match a specific intent.
+      ---
+      Parameters
+        intent_name : String
+          Name of intent to match.
+      ---
+      Return Function
+        Decorator inner function.
+    """
+    
+    def inner_function(function):
+      
+      """
+        inner_function that received the original function in parameters.
+        --- 
+        Parameters
+          function : Function
+            Function on which the decorator was applied.
+        ---
+        Return Function
+          Decorator function wrapper
+      """
+    
+      @wraps(function)
+      def wrapper(self_instance, *args, **kwargs):
+        
+        """
+          match_intent wrapper function. Execute decorator code.
+        """
+        
+        # [DEBUG]
+        #print(f"Intent name : {intent_name}")
+        #print(f"Instance : {self_instance}")
+        #print(f"args :  {args}")
+        #print(f"kwargs : {kwargs}")
+        #print(f"Before Calling {function.__name__}")
+        
+        # Call the original function.
+        result = function(self_instance, *args, **kwargs)
+        
+        # [DEBUG]
+        #print(f"After Calling {function.__name__}")
+        
+        # Return result.
+        return result
+      
+      # Try to maintain method signature.
+      wrapper.__signature__ = inspect.signature(function)  # the magic is here!
+            
+      # Registering function as intent handler.
+      Domain.register_handled_intent(function.__name__, intent_name)
+            
+      # [DEBUG]
+      #print(f"Decorator for domain {function.getattr()}, method {function.__name__} : {intent_name}")
+      
+      # Return the wrapper function.
+      return wrapper
+          
+    # Return inner_function
+    return inner_function

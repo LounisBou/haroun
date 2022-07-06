@@ -6,10 +6,12 @@
 #
 # Import system library.
 import sys
-# Import Python Object Inspector library.
-import inspect
 # Import OS library.
 from os import path
+# Import Python Object Inspector library.
+import inspect
+# Import functools wraps for decorators.
+from functools import wraps
 #
 #
 # Globals :
@@ -28,6 +30,14 @@ class Domain:
   
   """ Concept of Haroun Domain. """
   
+  # Static variables :
+  
+  # Store next loading domain name.
+  loading_domain_name = None
+  
+  # Store intents handlers for each instanciate domains
+  intents_handlers = {}
+  
   # Fonction : Constructeur
   def __init__(self, name):
     
@@ -37,7 +47,10 @@ class Domain:
       Parameters : String
         domaine_name : Name of the domain class.
     """   
-  
+    
+    # Prepare for loading domain.
+    Domain.loading_domain_name = name
+    
     # Domain name.
     self.name = name
     
@@ -76,6 +89,12 @@ class Domain:
         
     # Instanciate domain class.
     self.instance = self.class_name()
+
+    # Set name of the last instanciate domain.
+    Domain.last_instanciate_domain_name = self.name
+        
+    # [DEBUG]
+    #print(f"Domain {Domain.loading_domain_name} loaded.")
     
     
     
@@ -114,7 +133,7 @@ class Domain:
     
     # Return
     return method_name in self.methods
-    
+      
     
   def methodGetArgs(self, method_name):
     
@@ -132,8 +151,16 @@ class Domain:
     # Get Skill method.
     method = self.methods[method_name]
     
+    # Retrieve method arguments.
+    args = inspect.getargspec(method).args
+    
+    # [DEBUG]
+    print(f"{method_name} args : {args}")
+    
     # Return methods args.
-    return inspect.getargspec(method).args
+    return args
+    
+  
   
   def executeSkill(self, skill):
     
@@ -155,3 +182,34 @@ class Domain:
     
     # Return modified skill
     return skill
+  
+  @staticmethod
+  def register_handled_intent(function_name, intent_name):
+    
+    """
+      Register the function that handle intent.
+    """
+    
+    # [DEBUG]
+    #print(f"Preparing intent handler for {Domain.loading_domain_name}")
+        
+    # If intent_name entry don't exist. 
+    if intent_name not in Domain.intents_handlers.keys() :
+      # Create intent handler entry in intents_handlers.
+      Domain.intents_handlers[intent_name] = {
+        "domain" : Domain.loading_domain_name,
+        "method" : function_name
+      }
+      # [DEBUG]
+      print(f"Register {Domain.loading_domain_name}.{function_name} as handling {intent_name}")
+    else:    
+      # [DEBUG]
+      print(f"Intent handler for {intent_name} already exist !")  
+    
+    
+    
+    
+    
+  
+
+

@@ -68,7 +68,7 @@ class Brain:
     self.config = {}
     
     # Available domains list. 
-    self.domains = None
+    self.domains = {}
     
     # Available skills list. 
     #self.skills = None
@@ -209,14 +209,34 @@ class Brain:
         Domains available list.
     """
     
+    # Dict of domains instances.
+    domains = {}
+    
+    # List of domains names.
+    domains_names = []
+    
     # Browse through domains files 
-    domains = []
     for(dirpath, dirnames, filenames) in os.walk(DOSSIER_RACINE+"domains"):
       # Remove filenames extensions
       filenames = [os.path.splitext(filename)[0] for filename in filenames]
-      # Add directory filenames without extension to domains list.
-      domains.extend(filenames)
+      # Add domains filenames without extension to domains list.
+      domains_names.extend(filenames)
       break
+    
+    # Instanciate domains to retrieve intent handlers.
+    for domain_name in domains_names :
+     
+      # Check if domain exist and is not __init__ file.
+      if domain_name and domain_name != '__init__' :
+      
+        # [DEBUG]
+        #print(f"BEFORE domain {domain_name} instantiation.")        
+        
+        # Instanciate domain.
+        domains[domain_name] = Domain(domain_name)
+        
+        # [DEBUG]
+        #print(f"AFTER domain {domain_name} instantiation.")
     
     # Return
     return domains
@@ -669,34 +689,35 @@ class Brain:
     interaction_domain_name = None
     interaction_method_name = None
     
-    # Find Domain from Interaction Intent label.
-    for domain in self.domains :
-      # If domain match label.
-      if interaction.intent.label.split(".")[0].lower() == domain.lower():
-        # Define interaction domain name.
-        interaction_domain_name = domain
-        # Retieve interaction method name.
-        interaction_method_name = interaction.intent.label.split(".")[1]
+    # [DEBUG]
+    #print(f"Interaction intent found : {interaction.intent.label}")
+    #print(f"Intent handlers : {Domain.intents_handlers}")
     
     # Check if interaction domain found.
-    if interaction_domain_name is None :
+    if Domain.intents_handlers[interaction.intent.label] :
+      # Define interaction domain name.
+      interaction_domain_name = Domain.intents_handlers[interaction.intent.label]['domain']
+      # Retieve interaction method name.
+      interaction_method_name = Domain.intents_handlers[interaction.intent.label]['method']
+    else:
       # Error message.
       interaction.addError(f"No domain '{interaction.intent.label}' found for this intent. [Error #5]")
       # Return None (error)
       return None
-      
+    
     # Instanciate domain on interaction.
-    interaction.domain = Domain(interaction_domain_name)
+    interaction.domain = self.domains[interaction_domain_name]
+    
+    # DEPRECATED CODE : Since Intent Handler decorator.
+    # Check if method exist. 
+    #if interaction_method_name is not None :
+    #  if not interaction.domain.methodExist(interaction_method_name) :
+    #    # Error message.
+    #    interaction.addError(f"No method '{interaction.intent.label}' found for this intent on domain '{interaction_domain_name}'. [Error #5]")
+    #    # Return None (error)
+    #    return None
       
-    # Check if method exist.
-    if interaction_method_name is not None :
-      if not interaction.domain.methodExist(interaction_method_name) :
-        # Error message.
-        interaction.addError(f"No method '{interaction.intent.label}' found for this intent on domain '{interaction_domain_name}'. [Error #5]")
-        # Return None (error)
-        return None
-      
-    # Instanciation interaction skill.
+    # instantiation interaction skill.
     interaction.skill = Skill(interaction_domain_name, interaction_method_name)
       
     # Return modified interaction.

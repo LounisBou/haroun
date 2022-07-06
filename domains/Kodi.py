@@ -23,7 +23,7 @@ class Kodi:
   
     """ Domain class constructor. """	
     
-    return True
+    return None
     
   # ! - Methods.
   

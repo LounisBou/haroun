@@ -5,6 +5,10 @@
 #
 # Random library import.
 import random
+# Import core concept domain.
+from core.concepts.Domain import Domain 
+# Import core concept skill.
+from core.concepts.Skill import Skill 
 #
 #
 # Domain statics attributs : 
@@ -56,6 +60,8 @@ class Openhab:
       __init__ : Domain constructor.      
     """
     
+    return None
+    
   def __get_lang(self, lang_entry_code):
     
     """ 
@@ -81,7 +87,7 @@ class Openhab:
       return lang_entry_value
     
   
-  
+  @Skill.match_intent("openhab.question")
   def question(self, item_type, room = None, value = None, question_trigger = None, orphan = None):
   	
     """ 
@@ -109,7 +115,7 @@ class Openhab:
     # Return response. 
     return f"Call 'Openhab' method 'question' with params : item_type='{item_type}', room='{room}', value='{value}', question_trigger='{question_trigger}'"
   
-  	
+  @Skill.match_intent("openhab.action")
   def action(self, item_type, room = None, value = None, action_trigger = None, orphan = None):
     
     """ 
