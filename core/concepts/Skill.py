@@ -21,11 +21,6 @@ from core.concepts.Domain import Domain
 #
 # Globals :
 #
-# Current, parent, and root paths.
-DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))
-DOSSIER_PARENT = os.path.dirname(DOSSIER_COURRANT)
-DOSSIER_RACINE = os.path.dirname(DOSSIER_PARENT)
-sys.path.append(DOSSIER_RACINE)
 #
 #
 #
@@ -105,7 +100,7 @@ class Skill:
   def match_intent(intent_name):
     
     """
-      Decorator that allow a function to match a specific intent.
+      Decorator that allow a domain method to match a specific intent.
       ---
       Parameters
         intent_name : String
@@ -122,7 +117,7 @@ class Skill:
         --- 
         Parameters
           function : Function
-            Function on which the decorator was applied.
+            Domain method on which the decorator was applied.
         ---
         Return Function
           Decorator function wrapper
@@ -133,6 +128,16 @@ class Skill:
         
         """
           match_intent wrapper function. Execute decorator code.
+          ---
+          Parameters
+            self_instance : Class instance
+              Domain instance on which method have been called.
+            *args : List
+              List of arguments pass on function call.
+            *kargs : Dict
+              Dict of arguments_names : arguments pass on function call.
+          ---
+          Return : result of function call.
         """
         
         # [DEBUG]

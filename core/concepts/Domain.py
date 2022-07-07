@@ -17,14 +17,13 @@ from functools import wraps
 # Globals :
 #
 # Current, parent, and root paths.
-DOSSIER_COURRANT = path.dirname(path.abspath(__file__))
-DOSSIER_PARENT = path.dirname(DOSSIER_COURRANT)
-DOSSIER_RACINE = path.dirname(DOSSIER_PARENT)
-sys.path.append(DOSSIER_RACINE)
+CURRENT_PATH = path.dirname(path.abspath(__file__))+'/'
+PARENT_PATH = path.dirname(path.abspath(CURRENT_PATH))+'/'
+ROOT_PATH = path.dirname(path.abspath(PARENT_PATH))+'/'
+sys.path.append(ROOT_PATH)
 import domains
 #
 #
-DOMAINS_PATH = f"{DOSSIER_RACINE}/domains"
 #
 class Domain:
   
@@ -117,6 +116,68 @@ class Domain:
       # Save methods name and args.
       self.methods[method_name] = method
     
+  @staticmethod
+  def getSlot(slot_file_name):
+    
+    """ 
+      getSlot : Acquire a slot file and return all slot entries in dict. 
+      ---
+      Parameters 
+        slot_file_name : String 
+          Slot file name
+      ---
+      Return : Dict
+        Dict of Slots in file.
+    """
+    
+    # Slots directory path.
+    slots_path=ROOT_PATH+"slots/"
+    
+    """ Create slot entries dict from slot file. """
+    
+    # Slot entries dict.
+    slot_entries = {}
+
+    # Construct file path.
+    slot_file_path = slots_path+slot_file_name
+      
+    # Retrieve slot file content.
+    with open(slot_file_path) as fileBuffer:
+      
+      # Read file lines. 
+      fileLines = fileBuffer.readlines()
+      
+      # For each lines.
+      for line in fileLines :
+        
+        # Split line on ':'
+        entry_parts = line.split(':')
+        
+        # If split is ok.
+        if len(entry_parts) == 2 :
+        
+          # Create slot_entry_key from second part.
+          slot_entry_key = entry_parts[1].strip().replace("(", "").replace(")", "")
+          slot_entry_key = slot_entry_key.strip()
+          
+          # Create slot_entry_value from second part.
+          slot_entry_value = entry_parts[0].strip().replace("(", "").replace(")", "")
+          slot_entry_value = slot_entry_value.split('|')
+          slot_entry_value = slot_entry_value[0]
+          slot_entry_value = slot_entry_value.replace("[", "").replace("]", "")
+          slot_entry_value = slot_entry_value.strip()
+          
+          # Set second part as key, first part as value.
+          slot_entries[slot_entry_key] = slot_entry_value
+          
+        else :
+          # [DEBUG]
+          print(f"Slot line can't be interpreted. File slot {slot_file_name} error on : {line}")
+            
+        
+    # Return slot_entries
+    return slot_entries
+  
   
   def methodExist(self, method_name):
     
@@ -155,7 +216,7 @@ class Domain:
     args = inspect.getargspec(method).args
     
     # [DEBUG]
-    print(f"{method_name} args : {args}")
+    #print(f"{method_name} args : {args}")
     
     # Return methods args.
     return args
@@ -177,6 +238,9 @@ class Domain:
     # Get methods.
     method = self.methods[skill.method_name]
     
+    # [DEBUG]
+    print(f"Skills parameters = {skill.parameters}")
+    
     # Execute methods with skill parameters
     skill.return_values = self.methods[skill.method_name](**skill.parameters)
     
@@ -184,10 +248,16 @@ class Domain:
     return skill
   
   @staticmethod
-  def register_handled_intent(function_name, intent_name):
+  def register_handled_intent(method_name, intent_name):
     
     """
-      Register the function that handle intent.
+      Register domain method that handle an intent with Skill.match_intent decorator.
+      ---
+      Parameters
+        method_name : Function
+          Domain method that match the intent.
+        intent_name : String
+          Name of the intent to match.
     """
     
     # [DEBUG]
@@ -198,14 +268,14 @@ class Domain:
       # Create intent handler entry in intents_handlers.
       Domain.intents_handlers[intent_name] = {
         "domain" : Domain.loading_domain_name,
-        "method" : function_name
+        "method" : method_name
       }
       # [DEBUG]
-      print(f"Register {Domain.loading_domain_name}.{function_name} as handling {intent_name}")
+      #print(f"Register {Domain.loading_domain_name}.{method_name} as handling {intent_name}")
     else:    
       # [DEBUG]
-      print(f"Intent handler for {intent_name} already exist !")  
-    
+      #print(f"Intent handler for {intent_name} already exist !")  
+      pass
     
     
     

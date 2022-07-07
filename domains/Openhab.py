@@ -28,6 +28,15 @@ LANGUAGES = {}
 # Openhab language code.
 LANG_CODE = 'fr'
 
+# Needed slots list.
+SLOTS_FILES = [
+  "oh_item_type",
+  "oh_room",
+  "oh_value",
+#  "oh_question_trigger",
+#  "oh_action_trigger",
+]
+
 # Define french language.
 LANGUAGES['fr'] = {
   "WHAT_ROOM_ITEM_INFO" : [
@@ -38,17 +47,9 @@ LANGUAGES['fr'] = {
     "Ok mais dans quelle pièce souhaitez-vous modifier {item_type_lang} ?",
     "Très bien je veux bien modifier {item_type_lang} mais de quelle pièce ?",
   ],
-  "TEMP" : "la température",
-  "BRIGHTNESS" : "la luminosité",
-  "LIGHT" : "la lumière",
-  "BLIND" : "le volet roulant",
-  "DOOR" : "la porte",
-  "WINDOW" : "la fenetre",
-  "HUMIDITY" : "l'humidité",
-  "WATER_LEAK" : "l'inondation",
-  "HEATER" : "le chauffage",
-  "PRESSURE" : "la pression",
-  "THERMOSTAT" : "le thermostat"
+  "QUESTION_ANSWER" : [
+    "{item_type_lang} de {room_lang} est de {item_state}",
+  ]
 }
 #
 #
@@ -68,6 +69,9 @@ class Openhab:
     # Openhab available items.
     self.items = None
     
+    # Slots entries.
+    self.slots_entries = {}
+    
     # Initialisation.
     
     # Initiate openhab connexion.
@@ -75,6 +79,9 @@ class Openhab:
     
     # Retrieve aviable items.
     self.__get_items()
+    
+    # Retrieve needed slots.
+    self.__get_slots_entries()
     
     
   def __connect(self):
@@ -95,6 +102,22 @@ class Openhab:
     
     # Return 
     return connected
+    
+  def __get_slots_entries(self):
+    
+    # Retrieve slots entries for each specified files.
+    for slot_file_name in SLOTS_FILES :
+    
+      # Use Domain static method getSlot to get slot file entries.
+      slot_entries = Domain.getSlot(slot_file_name)
+      
+      # [DEBUG]
+      #print(f"Slot file {slot_file_name} entries : {slot_entries}")
+      
+      # Add slot_entries to self.slots_entries dict.
+      self.slots_entries.update(slot_entries)
+    
+      
     
   def __get_items(self):
     
@@ -128,6 +151,30 @@ class Openhab:
     else:
       # Return value.
       return lang_entry_value
+      
+  def __improve_answer(self, answer):
+    
+    """ 
+      __improve_answer : Improve answer syntaxe.
+      ---
+      Parameters 
+        answer : String
+          Answer sentence.
+      ---
+      Return String
+        Improved answer sentence.
+    """
+    
+    # Check for french syntax error.
+    answer = answer.replace("de le", "du")
+    answer = answer.replace("de fermé", "fermée")
+    answer = answer.replace("de ouvert", "ouverte")
+    
+    # Capitalize.
+    answer = answer.capitalize()
+    
+    # return answer.
+    return answer
     
   
   @Skill.match_intent("openhab.question")
@@ -148,12 +195,15 @@ class Openhab:
     """
     
     # Get item type lang.
-    item_type_lang = self.__get_lang(item_type)
+    item_type_lang = self.slots_entries[item_type]
     
     # Check if room not provide.
     if not room :
       # Ask for room information.
       return self.__get_lang("WHAT_ROOM_ITEM_INFO").format(**locals(), **globals())
+      
+    # Get room lang.
+    room_lang = self.slots_entries[room]
     
     # Define openhab item name to check.
     openhab_item_name = f"{room}_{item_type}"
@@ -161,16 +211,28 @@ class Openhab:
     # [DEBUG]
     #print(f"check for {openhab_item_name}")
     
-    # Retrieve item state from Openhab.
-    item_state = self.items.get(openhab_item_name).state
+    # Retrieve item from Openhab.   
+    item = self.items.get(openhab_item_name) 
+    # If item exist.
+    if item : 
+      # Get item state.
+      item_state = item.state
+      # If item state is string, check for lang translation.
+      if item_state in self.slots_entries.keys():
+        item_state = self.slots_entries[item_state]
+    else: 
+      # [DEBUG] Say item not found.
+      return f"Je n'ai pas pu trouver d'item {openhab_item_name}"
     
-    # [DEBUG]
-    #print(f"{openhab_item_name} value = {item_state}")
-    
+    # If item state retrieve succefully.
     if item_state :
-      response = f"{item_state}"
+      response = self.__get_lang("QUESTION_ANSWER").format(**locals(), **globals())
     else:
+      # [DEBUG]
       response = f"Call 'Openhab' method 'question' with params : item_type='{item_type}', room='{room}', value='{value}', question_trigger='{question_trigger}'"
+    
+    # Improve response (answer) syntax.
+    response = self.__improve_answer(response)
     
     # Return response. 
     return response

@@ -30,5 +30,5 @@
 (trente | 30):(30)
 (à fond | a fond | complètement | en entier):(FULL)
 (zero | 0):(0)
-(ouvert):(OPEN)
-(fermé | fermer):(CLOSE)
+(ouvert | ouverte | ouvertes):(OPEN)
+(fermé | fermer):(CLOSED)

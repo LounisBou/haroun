@@ -44,9 +44,9 @@ import json
 # Gloabls : 
 #
 # Current, and root paths.
-DOSSIER_COURRANT = os.path.dirname(os.path.abspath(__file__))+'/'
-DOSSIER_RACINE = os.path.dirname(os.path.abspath(DOSSIER_COURRANT))+'/'
-sys.path.append(DOSSIER_RACINE)
+CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))+'/'
+ROOT_PATH = os.path.dirname(os.path.abspath(CURRENT_PATH))+'/'
+sys.path.append(ROOT_PATH)
 #
 #
 #
@@ -135,7 +135,7 @@ class Brain:
     """
     
     # Config path.
-    configPath = DOSSIER_RACINE+"config"
+    configPath = ROOT_PATH+"config"
     
     # Browse through config files 
     configFiles = []
@@ -187,7 +187,7 @@ class Brain:
     """
     
     # Languages path.
-    languagesPath = DOSSIER_RACINE+"languages"
+    languagesPath = ROOT_PATH+"languages"
     
     # Language file path.
     languageFile = languagesPath+'/'+language+".json"
@@ -216,7 +216,7 @@ class Brain:
     domains_names = []
     
     # Browse through domains files 
-    for(dirpath, dirnames, filenames) in os.walk(DOSSIER_RACINE+"domains"):
+    for(dirpath, dirnames, filenames) in os.walk(ROOT_PATH+"domains"):
       # Remove filenames extensions
       filenames = [os.path.splitext(filename)[0] for filename in filenames]
       # Add domains filenames without extension to domains list.
@@ -255,7 +255,7 @@ class Brain:
     
     # Browse through skills files 
     skills = []
-    for(dirpath, dirnames, filenames) in os.walk(DOSSIER_RACINE+"skills"):
+    for(dirpath, dirnames, filenames) in os.walk(ROOT_PATH+"skills"):
       # Remove filenames extensions
       filenames = [os.path.splitext(filename)[0] for filename in filenames]
       # Add directory filenames without extension to skills list.
@@ -281,7 +281,7 @@ class Brain:
     """
     
     # Intents directory path.
-    intentsPath=DOSSIER_RACINE+"intents/"
+    intentsPath=ROOT_PATH+"intents/"
     
     # Browse through intents files 
     intentsFiles = []    
@@ -339,10 +339,10 @@ class Brain:
     """
     
     # Slots directory path.
-    slotsPath=DOSSIER_RACINE+"slots/"
+    slotsPath=ROOT_PATH+"slots/"
     
     # Slots programs directory path.
-    slotsProgramPath=DOSSIER_RACINE+"slotsPrograms/"
+    slotsProgramPath=ROOT_PATH+"slotsPrograms/"
     
     # Browse through slots files 
     slotsProgramsFiles = []    
@@ -401,14 +401,14 @@ class Brain:
   def getSlots(self):
     
     """ 
-      getSlots : Acquire slots file list and create a slots dict. 
+      getSlots : Acquire all slots files and create a Rhasspy NLU slots dict. 
       ---
-      Return : slots
+      Return : Rhasspy NLU slots
         Rhasspy NLU slots dict.
     """
     
     # Slots directory path.
-    slotsPath=DOSSIER_RACINE+"slots/"
+    slotsPath=ROOT_PATH+"slots/"
     
     # Browse through slots files 
     slotsFiles = []    
@@ -567,7 +567,8 @@ class Brain:
       interaction.addError(f"Interaction interpretation failed. [Error #4].")
     else:
       # [DEBUG]
-      interaction.addResponse(str(interaction.intent))
+      #interaction.addResponse(str(interaction.intent))
+      print(str(interaction.intent))
       # Defined Domain & Skill for this interaction.
       modified_interaction = self.analysis(modified_interaction)
       # If Interaction analysis failed. 
@@ -693,15 +694,22 @@ class Brain:
     #print(f"Interaction intent found : {interaction.intent.label}")
     #print(f"Intent handlers : {Domain.intents_handlers}")
     
-    # Check if interaction domain found.
-    if Domain.intents_handlers[interaction.intent.label] :
-      # Define interaction domain name.
-      interaction_domain_name = Domain.intents_handlers[interaction.intent.label]['domain']
-      # Retieve interaction method name.
-      interaction_method_name = Domain.intents_handlers[interaction.intent.label]['method']
+    # Check if there is a domain method that handle this intent.
+    if interaction.intent.label in Domain.intents_handlers.keys():
+      # Check if interaction domain found.
+      if Domain.intents_handlers[interaction.intent.label] :
+        # Define interaction domain name.
+        interaction_domain_name = Domain.intents_handlers[interaction.intent.label]['domain']
+        # Retieve interaction method name.
+        interaction_method_name = Domain.intents_handlers[interaction.intent.label]['method']
+      else:
+        # Error message.
+        interaction.addError(f"No domain '{interaction.intent.label}' found for this intent. [Error #5]")
+        # Return None (error)
+        return None
     else:
       # Error message.
-      interaction.addError(f"No domain '{interaction.intent.label}' found for this intent. [Error #5]")
+      interaction.addError(f"No handler for intent '{interaction.intent.label}' found. [Error #6]")
       # Return None (error)
       return None
     
