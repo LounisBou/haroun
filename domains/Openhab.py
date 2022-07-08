@@ -70,6 +70,9 @@ class Openhab(Domain):
         
     # Initialisation.
     
+    # Get config.
+    self.loadConfig()
+    
     # Retrieve needed slots.
     self.get_slots_entries(SLOTS_FILES)
 

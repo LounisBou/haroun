@@ -6,12 +6,14 @@
 #
 # Import system library.
 import sys
-# Import OS library.
+# Import os.path
 from os import path
 # Import Python Object Inspector library.
 import inspect
 # Import functools wraps for decorators.
 from functools import wraps
+# Import configparser.
+from configparser import ConfigParser
 #
 #
 # Globals :
@@ -39,9 +41,59 @@ class Domain:
     
     """ __init__ : Domain class constructor. """ 
     
-    # Slots entries.
-    self.slots_entries = {}  
+    # Get domain class name.
+    self.domain_class_name = type(self).__name__
     
+    # Configuration file
+    self.config_file_name = f"{self.domain_class_name}.ini"
+    
+    # Language file name.
+    self.lang_file_name = f"{self.domain_class_name}.lang"
+    
+    # Config dict.
+    self.config = {}
+        
+    # Slots entries.
+    self.slots_entries = {}
+    
+  
+  def loadConfig(self, config_file_name = None):
+    
+    """ 
+      Get config from config/{config_file_name} 
+      ---
+      Parameters
+        config_file_name : String (optionnal)
+          Domain config file name if not same name as domain class name.
+    """
+    
+    # Check if config_file_name is overwrite.
+    if config_file_name :
+      self.config_file_name = config_file_name
+    
+    # Domain config file path.
+    domain_config_file_path = f"{ROOT_PATH}config/{self.config_file_name}"
+    
+    # Check if config exist.
+    if path.exists(domain_config_file_path):
+    
+      # See configparser 
+      configParser = ConfigParser()
+    
+      # Parse domain config file.
+      configParser.read(f"{domain_config_file_path}")
+            
+      # Get config parser sections.
+      sections = configParser.sections()
+      
+      # Get all sections.
+      for section_name in sections:
+        self.config[section_name] = configParser[section_name]
+        
+    else:
+      # [DEBUG]
+      print(f"Error config file {domain_config_file_path} doesn't exist.")
+  
   @staticmethod
   def __get_slot(slot_file_name):
     
@@ -145,9 +197,6 @@ class Domain:
     # Retrieve method arguments.
     args = inspect.getargspec(method).args
     
-    # [DEBUG]
-    #print(f"{method_name} args : {args}")
-    
     # Return methods args.
     return args
     
@@ -192,9 +241,6 @@ class Domain:
         intent_name : String
           Name of the intent to match.
     """
-    
-    # [DEBUG]
-    #print(f"Preparing intent handler for {Domain.loading_domain_name}")
         
     # If intent_name entry don't exist. 
     if intent_name not in Domain.intents_handlers.keys() :
@@ -204,11 +250,9 @@ class Domain:
         "class" : class_name,
         "method" : method_name,
       }
-      # [DEBUG]
-      #print(f"Register {Domain.loading_domain_name}.{method_name} as handling {intent_name}")
     else:    
       # [DEBUG]
-      #print(f"Intent handler for {intent_name} already exist !")  
+      print(f"Intent handler for {intent_name} already exist !")  
       pass
     
     
@@ -259,18 +303,8 @@ class Domain:
           Return : result of function call.
         """
         
-        # [DEBUG]
-        #print(f"Intent name : {intent_name}")
-        #print(f"Instance : {self_instance}")
-        #print(f"args :  {args}")
-        #print(f"kwargs : {kwargs}")
-        #print(f"Before Calling {function.__name__}")
-        
         # Call the original function.
         result = function(self_instance, *args, **kwargs)
-        
-        # [DEBUG]
-        #print(f"After Calling {function.__name__}")
         
         # Return result.
         return result
@@ -284,7 +318,7 @@ class Domain:
       method_name = function.__qualname__.split('.')[1]
       
       # [DEBUG]
-      print(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
+      #print(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
            
       # Registering function as intent handler.
       Domain.register_handled_intent(module_name, class_name, method_name, intent_name)

@@ -6,10 +6,10 @@
 #
 # Haroun dependancies : 
 #
-# Import sys
-import sys
-# Import os
-import os
+# Import sys.path as syspath
+from sys import path as syspath
+# Import os.path and os.walk
+from os import path, walk
 # Import subprocess
 import subprocess
 # Import python nlu spacy
@@ -46,9 +46,9 @@ import json
 # Gloabls : 
 #
 # Current, and root paths.
-CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))+'/'
-ROOT_PATH = os.path.dirname(os.path.abspath(CURRENT_PATH))+'/'
-sys.path.append(ROOT_PATH)
+CURRENT_PATH = path.dirname(path.abspath(__file__))+'/'
+ROOT_PATH = path.dirname(path.abspath(CURRENT_PATH))+'/'
+syspath.append(ROOT_PATH)
 #
 #
 #
@@ -87,35 +87,8 @@ class Brain:
     # Wake up : initialisation of Brain class.
     self.wakeUp()
   
-  @staticmethod
-  def __get_domain_class(domain_module_name, domain_class_name): 
-    
-    """ 
-      Return domain class from domain name. 
-      ---
-      Parameters 
-        domain_name : String
-          Domain module and class name.
-      ---
-      Return Class
-        Domain class from domain module.
-    """
-    
-    # Retrieve domain module.
-    domain_module = globals()[domain_module_name]
-    
-    # Retrieve domain class.
-    domain_class = getattr(domain_module, domain_class_name)
-    
-    # Return domain class. 
-    return domain_class
-
-  
-
   # ! - Initialisation.
   
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
   def wakeUp(self):
     
     """
@@ -146,58 +119,62 @@ class Brain:
     # Training brain by creating intents graph.
     self.nlu_training()
     
-    
+    # ! - Utility methods.
   
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
-  def loadConfig(self):
+  @staticmethod
+  def __get_domain_class(domain_module_name, domain_class_name): 
     
     """ 
-      getConfig : Get config files and load config vars.
+      Return domain class from domain name. 
       ---
-      Return : None
+      Parameters 
+        domain_name : String
+          Domain module and class name.
+      ---
+      Return Class
+        Domain class from domain module.
     """
     
-    # Config path.
-    configPath = ROOT_PATH+"config"
+    # Retrieve domain module.
+    domain_module = globals()[domain_module_name]
     
-    # Browse through config files 
-    configFiles = []
-    for(dirpath, dirnames, filenames) in os.walk(configPath):
-      # Add directory filenames without extension to domains list.
-      configFiles.extend(filenames)
-      break
+    # Retrieve domain class.
+    domain_class = getattr(domain_module, domain_class_name)
     
-    # [TODO]
-    # See configparser 
-    configParser = ConfigParser()
+    # Return domain class. 
+    return domain_class
+
+
+  def loadConfig(self):
     
-    # Iterate through slotsProgramsFiles list
-    for fileName in configFiles: 
-      # Get filename extension.
-      extension = os.path.splitext(fileName)[1]
-            
-      # If .ini file.
-      if extension == ".ini" :
-        # Parse INI config file.
-        configParser.read(configPath+'/'+fileName)
+    """ Get config from config/Haroun.ini. """
+    
+    # Haroun config file path.
+    haroun_config_file_path = f"{ROOT_PATH}config/Haroun.ini"
+    
+    # Check if config exist.
+    if path.exists(haroun_config_file_path):
+    
+      # See configparser 
+      configParser = ConfigParser()
+    
+      # Parse haroun.ini config file.
+      configParser.read(haroun_config_file_path)
+       
+      # Get config parser sections.
+      sections = configParser.sections()
       
-      # [TODO]
-      # If .json file.
-      elif extension == ".json" :
-        # Parse JSON config file.
-        pass
-     
-    # Get config parser sections.
-    sections = configParser.sections()
-    
-    # Get all sections.
-    for section_name in sections:
-      self.config[section_name] = configParser[section_name]
-    
+      # Get all sections.
+      for section_name in sections:
+        self.config[section_name] = configParser[section_name]
+        
+    else:
+      # [DEBUG]
+      print(f"Fatal error : config file {haroun_config_file_path} doesn't exist.")
+      # Exit program.
+      quit()
   
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
+  
   def loadLanguage(self, language):
     
     """ 
@@ -221,8 +198,6 @@ class Brain:
     pass
     
   
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
   def getIntents(self):
     
     """ 
@@ -240,7 +215,7 @@ class Brain:
     
     # Browse through intents files 
     intentsFiles = []    
-    for(dirPath, dirNames, fileNames) in os.walk(intentsPath):
+    for(dirPath, dirNames, fileNames) in walk(intentsPath):
       # [DEBUG]
       #print('Looking in intent directory : '+intentsPath+", listing files :")
       #print(fileNames)
@@ -278,8 +253,7 @@ class Brain:
     # Return
     return intents
   
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
+  
   def executeSlotsPrograms(self):
     
     """ 
@@ -294,7 +268,7 @@ class Brain:
     
     # Browse through slots files 
     slotsProgramsFiles = []    
-    for(dirPath, dirNames, fileNames) in os.walk(slotsProgramPath):
+    for(dirPath, dirNames, fileNames) in walk(slotsProgramPath):
       # [DEBUG]
       #print('Looking in slotsPrograms directory : '+slotsProgramPath+", listing files :")
       #print(fileNames)
@@ -306,7 +280,7 @@ class Brain:
     for programSlotFileName in slotsProgramsFiles:
       
       # Get file name without extension as programSlotName.
-      programSlotName = os.path.splitext(programSlotFileName)[0]
+      programSlotName = path.splitext(programSlotFileName)[0]
     
       # Get program path.
       program_path = slotsProgramPath+programSlotFileName
@@ -314,7 +288,7 @@ class Brain:
       # Create slot file with program slot name.
       slotFilePath = slotsPath+programSlotName
       # If slot file doesn't already exist.
-      if not os.path.exists(slotFilePath) :
+      if not path.exists(slotFilePath) :
       
         # Execute program slot file.
         process = subprocess.Popen(
@@ -338,12 +312,11 @@ class Brain:
           slotFile.write(f"{slotFileContent}")
           
       else:
-        # Error message.
-        print(f"Slot {programSlotName} already exist. Program slot file '{programSlotFileName}' can't be executed. Delete slot {programSlotName} to re-generate it.")
+        # [DEBUG] warning message.
+        print(f"Warning : Slot {programSlotName} already exist. Program slot file '{programSlotFileName}' can't be executed. Delete slot {programSlotName} to re-generate it.")
+        print("")
   
   
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
   def getSlots(self):
     
     """ 
@@ -358,7 +331,7 @@ class Brain:
     
     # Browse through slots files 
     slotsFiles = []    
-    for(dirPath, dirNames, fileNames) in os.walk(slotsPath):
+    for(dirPath, dirNames, fileNames) in walk(slotsPath):
       # [DEBUG]
       #print('Looking in slots directory : '+slotsPath+", listing files :")
       #print(fileNames)
@@ -405,7 +378,7 @@ class Brain:
   # ! - A.I. Training.
   
   @debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
+  #@lru_cache(maxsize=128, typed=True)
   def nlu_training(self):
     
     """ 
@@ -605,7 +578,6 @@ class Brain:
     # Return
     return interaction   
 
-  #@debug("verbose", True)
   def analysis(self, interaction):
     
     """ 
@@ -622,20 +594,15 @@ class Brain:
         Modified interaction with domain and skill infos.      
     """
     
-    # Define interaction domain var.
-    domain_module_name = None
-    domain_class_name = None
-    domain_method_name = None
-    
     # [DEBUG]
-    print(f"Interaction intent found : {interaction.intent.label}")
-    print(f"Intent handlers : {Domain.intents_handlers}")
+    #print(f"Interaction intent found : {interaction.intent.label}")
+    #print(f"Intent handlers : {Domain.intents_handlers}")
     
     # Check if there is a domain method that handle this intent.
     if interaction.intent.label in Domain.intents_handlers.keys():
       # Check if interaction domain found.
       if Domain.intents_handlers[interaction.intent.label] :
-      # Define interaction domain module name.
+        # Define interaction domain module name.
         domain_module_name = Domain.intents_handlers[interaction.intent.label]['module']
         # Define interaction domain class name.
         domain_class_name = Domain.intents_handlers[interaction.intent.label]['class']

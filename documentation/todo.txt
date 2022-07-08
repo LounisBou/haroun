@@ -1,0 +1,4 @@
+Domain :
+- Fonction de chargement des fichiers de langues.
+
+Create debug fonction with level.
