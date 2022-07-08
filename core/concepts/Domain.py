@@ -38,13 +38,15 @@ class Domain:
   def __init__(self):
     
     """ __init__ : Domain class constructor. """ 
-    pass  
+    
+    # Slots entries.
+    self.slots_entries = {}  
     
   @staticmethod
-  def getSlot(slot_file_name):
+  def __get_slot(slot_file_name):
     
     """ 
-      getSlot : Acquire a slot file and return all slot entries in dict. 
+      Acquire a slot file and return all slot entries in dict. 
       ---
       Parameters 
         slot_file_name : String 
@@ -100,6 +102,29 @@ class Domain:
     
     # Return slot_entries
     return slot_entries
+    
+  def get_slots_entries(self, slots_files_names):
+    
+    """
+      Retrieve slots entries from specified slots files names.
+      Add entries to self.slots_entries.
+      ---
+      Parameters
+        slots_files_names : List
+          List of slots files names to import.
+    """
+    
+    # Retrieve slots entries for each specified files.
+    for slot_file_name in slots_files_names :
+    
+      # Use Domain static method getSlot to get slot file entries.
+      slot_entries = Domain.__get_slot(slot_file_name)
+      
+      # [DEBUG]
+      #print(f"Slot file {slot_file_name} entries : {slot_entries}")
+      
+      # Add slot_entries to self.slots_entries dict.
+      self.slots_entries.update(slot_entries)
     
   def methodGetArgs(self, method_name):
     

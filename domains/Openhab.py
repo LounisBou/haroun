@@ -57,29 +57,28 @@ class Openhab(Domain):
   
   def __init__(self):
     
-    """ 
-      __init__ : Domain constructor.      
-    """
+    """ Class constructor. """
+    
+    # Init parent class Domain.
+    super().__init__()
     
     # Openhab API connector.
     self.openhab = None
     
     # Openhab available items.
     self.items = None
-    
-    # Slots entries.
-    self.slots_entries = {}
-    
+        
     # Initialisation.
     
+    # Retrieve needed slots.
+    self.get_slots_entries(SLOTS_FILES)
+
     # Initiate openhab connexion.
     self.__connect()
     
     # Retrieve aviable items.
     self.__get_items()
     
-    # Retrieve needed slots.
-    self.__get_slots_entries()
     
     
   def __connect(self):
@@ -100,21 +99,6 @@ class Openhab(Domain):
     
     # Return 
     return connected
-    
-  def __get_slots_entries(self):
-    
-    # Retrieve slots entries for each specified files.
-    for slot_file_name in SLOTS_FILES :
-    
-      # Use Domain static method getSlot to get slot file entries.
-      slot_entries = Domain.getSlot(slot_file_name)
-      
-      # [DEBUG]
-      #print(f"Slot file {slot_file_name} entries : {slot_entries}")
-      
-      # Add slot_entries to self.slots_entries dict.
-      self.slots_entries.update(slot_entries)
-    
       
     
   def __get_items(self):

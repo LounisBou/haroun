@@ -21,7 +21,10 @@ class Plex(Domain):
   
   def __init__(self):
   
-    """ Domain class constructor. """	
+    """ Class constructor. """
+        
+    # Init parent class Domain.
+    super().__init__()
     
     # Plex server instance.
     self.plex = None
