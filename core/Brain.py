@@ -12,11 +12,9 @@ from sys import path as syspath
 from os import path, walk
 # Import subprocess
 import subprocess
-# Import python nlu spacy
-#import spacy
 # Import rhasspynlu
 import rhasspynlu
-# Import Path from pathlib
+# Import pathlib.Path for rhasspynlu.parse_ini
 from pathlib import Path
 # Import configparser.
 from configparser import ConfigParser
@@ -34,8 +32,6 @@ from core.concepts.Response import Response
 from core.concepts.Memory import Memory
 # Import domains.
 from domains import *
-# Import functools
-from functools import *
 # Import utils
 from utils.debug import *
 # Import json library.
