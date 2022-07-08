@@ -1,4 +1,5 @@
 playsound==1.3.0
+PlexAPI==4.11.2
 protobuf==4.21.2
 pyaudio==0.2.11
 python_openhab==2.17.0

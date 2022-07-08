@@ -3,7 +3,8 @@
 #
 # Libraries dependancies :
 #
-#
+# Import sqlite library.
+import sqlite3
 #
 # Globals :
 #
