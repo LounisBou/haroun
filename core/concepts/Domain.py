@@ -5,7 +5,7 @@
 # Libraries dependancies :
 #
 # Import system library.
-import sys
+from sys import path as syspath
 # Import os.path
 from os import path
 # Import Python Object Inspector library.
@@ -22,7 +22,7 @@ from configparser import ConfigParser
 CURRENT_PATH = path.dirname(path.abspath(__file__))+'/'
 PARENT_PATH = path.dirname(path.abspath(CURRENT_PATH))+'/'
 ROOT_PATH = path.dirname(path.abspath(PARENT_PATH))+'/'
-sys.path.append(ROOT_PATH)
+syspath.append(ROOT_PATH)
 import domains
 #
 #

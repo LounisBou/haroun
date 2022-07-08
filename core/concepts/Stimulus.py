@@ -4,10 +4,6 @@
 #
 # Libraries dependancies :
 #
-# Import system library.
-import sys
-# Import OS library.
-import os
 #
 #
 # Globals :

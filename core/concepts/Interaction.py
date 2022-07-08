@@ -4,24 +4,6 @@
 #
 # Libraries dependancies :
 #
-# Import system library.
-import sys
-# Import OS library.
-import os
-# Import Path function form pathlib library.
-from pathlib import Path
-# Import json library.
-import json
-# Test spacy for POS-Tagging
-# import spacy
-# from spacy_lefff import LefffLemmatizer
-# from spacy.language import Language
-# Import rhasspy-nlu library. 
-import rhasspynlu
-#
-# Import utils
-from utils.debug import *
-#
 #
 # Haroun dependancies :
 #
