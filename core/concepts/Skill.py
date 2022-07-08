@@ -28,14 +28,16 @@ class Skill:
   
   """ Concept of Haroun Skill. """
   
-  def __init__(self, domain_name, method_name):
+  def __init__(self, domain_module_name, domain_class_name, domain_method_name):
     
     """ Skill class constructor. """   
     
-    # Domain the skill is link.
-    self.domain_name = domain_name
-    # Method of domain the skill is link.
-    self.method_name = method_name
+    # Domain module the skill is link to.
+    self.module_name = domain_module_name
+    # Domain class the skill is link to.
+    self.class_name = domain_class_name
+    # Domain method the skill is link to.
+    self.method_name = domain_method_name
     
     # Skill exectution return values.
     self.return_values = None
@@ -88,85 +90,10 @@ class Skill:
         self.parameters[entity_name] = entity_value
       
     # Skill prepared flag.
-    self.prepared = False
+    self.prepared = True
     
     # Return prepared status.
     return self.prepared
     
   
-  # ! Decorators :
-  
-  @staticmethod
-  def match_intent(intent_name):
-    
-    """
-      Decorator that allow a domain method to match a specific intent.
-      ---
-      Parameters
-        intent_name : String
-          Name of intent to match.
-      ---
-      Return Function
-        Decorator inner function.
-    """
-    
-    def inner_function(function):
-      
-      """
-        inner_function that received the original function in parameters.
-        --- 
-        Parameters
-          function : Function
-            Domain method on which the decorator was applied.
-        ---
-        Return Function
-          Decorator function wrapper
-      """
-    
-      @wraps(function)
-      def wrapper(self_instance, *args, **kwargs):
-        
-        """
-          match_intent wrapper function. Execute decorator code.
-          ---
-          Parameters
-            self_instance : Class instance
-              Domain instance on which method have been called.
-            *args : List
-              List of arguments pass on function call.
-            *kargs : Dict
-              Dict of arguments_names : arguments pass on function call.
-          ---
-          Return : result of function call.
-        """
-        
-        # [DEBUG]
-        #print(f"Intent name : {intent_name}")
-        #print(f"Instance : {self_instance}")
-        #print(f"args :  {args}")
-        #print(f"kwargs : {kwargs}")
-        #print(f"Before Calling {function.__name__}")
-        
-        # Call the original function.
-        result = function(self_instance, *args, **kwargs)
-        
-        # [DEBUG]
-        #print(f"After Calling {function.__name__}")
-        
-        # Return result.
-        return result
-      
-      # Try to maintain method signature.
-      wrapper.__signature__ = inspect.signature(function)  # the magic is here!
-            
-      # Registering function as intent handler.
-      Domain.register_handled_intent(function.__name__, intent_name)
-            
-      # [DEBUG]
-      #print(f"Decorator for domain {function.getattr()}, method {function.__name__} : {intent_name}")
-      
-      # Return the wrapper function.
-      return wrapper
-          
-    # Return inner_function
-    return inner_function
+ 

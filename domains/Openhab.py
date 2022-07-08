@@ -7,8 +7,6 @@
 import random
 # Import core concept domain.
 from core.concepts.Domain import Domain 
-# Import core concept skill.
-from core.concepts.Skill import Skill 
 # Import Openhab library.
 from openhab import OpenHAB
 #
@@ -55,7 +53,7 @@ LANGUAGES['fr'] = {
 #
 # ! DOMAIN 
 #
-class Openhab:
+class Openhab(Domain):
   
   def __init__(self):
     
@@ -177,7 +175,7 @@ class Openhab:
     return answer
     
   
-  @Skill.match_intent("openhab.question")
+  @Domain.match_intent("openhab.question")
   def question(self, item_type, room = None, value = None, question_trigger = None, orphan = None):
   	
     """ 
@@ -237,7 +235,7 @@ class Openhab:
     # Return response. 
     return response
   
-  @Skill.match_intent("openhab.action")
+  @Domain.match_intent("openhab.action")
   def action(self, item_type, room = None, value = None, action_trigger = None, orphan = None):
     
     """ 

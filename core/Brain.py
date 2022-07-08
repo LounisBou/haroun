@@ -32,6 +32,8 @@ from core.concepts.Interaction import Interaction
 from core.concepts.Intent import Intent
 from core.concepts.Response import Response
 from core.concepts.Memory import Memory
+# Import domains.
+from domains import *
 # Import functools
 from functools import *
 # Import utils
@@ -87,6 +89,30 @@ class Brain:
     
     # Wake up : initialisation of Brain class.
     self.wakeUp()
+    
+  def __get_domain_class(self, domain_module_name, domain_class_name): 
+    
+    """ 
+      Return domain class from domain name. 
+      ---
+      Parameters 
+        domain_name : String
+          Domain module and class name.
+      ---
+      Return Class
+        Domain class from domain module.
+    """
+    
+    # Retrieve domain module.
+    domain_module = globals()[domain_module_name]
+    
+    # Retrieve domain class.
+    domain_class = getattr(domain_module, domain_class_name)
+    
+    # Return domain class. 
+    return domain_class
+
+  
 
   # ! - Initialisation.
   
@@ -102,7 +128,7 @@ class Brain:
     self.loadConfig()
     
     # Available domains list. 
-    self.domains = self.getDomains()
+    #self.domains = self.getDomains()
     
     # Available skills list. 
     #self.skills = self.getSkills()
@@ -226,14 +252,14 @@ class Brain:
     # Instanciate domains to retrieve intent handlers.
     for domain_name in domains_names :
      
-      # Check if domain exist and is not __init__ file.
-      if domain_name and domain_name != '__init__' :
-      
-        # [DEBUG]
-        #print(f"BEFORE domain {domain_name} instantiation.")        
+      # Check if name exist and is a module.
+      if domain_name and not domain_name.startswith('__') and domain_name.endswith('.py'):     
         
+        # Retrieve domain class.
+        domain_class = self.__get_domain_class(domain_name)
+                
         # Instanciate domain.
-        domains[domain_name] = Domain(domain_name)
+        domains[domain_name] = domain_class()
         
         # [DEBUG]
         #print(f"AFTER domain {domain_name} instantiation.")
@@ -686,22 +712,25 @@ class Brain:
         Modified interaction with domain and skill infos.      
     """
     
-    # Define interaction domain and method name.
-    interaction_domain_name = None
-    interaction_method_name = None
+    # Define interaction domain var.
+    domain_module_name = None
+    domain_class_name = None
+    domain_method_name = None
     
     # [DEBUG]
-    #print(f"Interaction intent found : {interaction.intent.label}")
-    #print(f"Intent handlers : {Domain.intents_handlers}")
+    print(f"Interaction intent found : {interaction.intent.label}")
+    print(f"Intent handlers : {Domain.intents_handlers}")
     
     # Check if there is a domain method that handle this intent.
     if interaction.intent.label in Domain.intents_handlers.keys():
       # Check if interaction domain found.
       if Domain.intents_handlers[interaction.intent.label] :
-        # Define interaction domain name.
-        interaction_domain_name = Domain.intents_handlers[interaction.intent.label]['domain']
-        # Retieve interaction method name.
-        interaction_method_name = Domain.intents_handlers[interaction.intent.label]['method']
+      # Define interaction domain module name.
+        domain_module_name = Domain.intents_handlers[interaction.intent.label]['module']
+        # Define interaction domain class name.
+        domain_class_name = Domain.intents_handlers[interaction.intent.label]['class']
+        # Retieve interaction domain method name.
+        domain_method_name = Domain.intents_handlers[interaction.intent.label]['method']
       else:
         # Error message.
         interaction.addError(f"No domain '{interaction.intent.label}' found for this intent. [Error #5]")
@@ -712,21 +741,18 @@ class Brain:
       interaction.addError(f"No handler for intent '{interaction.intent.label}' found. [Error #6]")
       # Return None (error)
       return None
+        
+    # Retrieve domain class.
+    domain_class = self.__get_domain_class(domain_module_name, domain_class_name)
+            
+    # Instanciate domain.
+    domain_instance = domain_class()
     
     # Retrieve domain instance for interaction.
-    interaction.domain = self.domains[interaction_domain_name]
-    
-    # DEPRECATED CODE : Since Intent Handler decorator.
-    # Check if method exist. 
-    #if interaction_method_name is not None :
-    #  if not interaction.domain.methodExist(interaction_method_name) :
-    #    # Error message.
-    #    interaction.addError(f"No method '{interaction.intent.label}' found for this intent on domain '{interaction_domain_name}'. [Error #5]")
-    #    # Return None (error)
-    #    return None
+    interaction.domain = domain_instance
       
-    # instantiation interaction skill.
-    interaction.skill = Skill(interaction_domain_name, interaction_method_name)
+    # Create the interaction skill.
+    interaction.skill = Skill(domain_module_name, domain_class_name, domain_method_name)
       
     # Return modified interaction.
     return interaction

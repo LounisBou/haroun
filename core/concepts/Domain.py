@@ -31,90 +31,14 @@ class Domain:
   
   # Static variables :
   
-  # Store next loading domain name.
-  loading_domain_name = None
-  
   # Store intents handlers for each instanciate domains
   intents_handlers = {}
   
   # Fonction : Constructeur
-  def __init__(self, name):
+  def __init__(self):
     
-    """ 
-      __init__ : Domain class constructor. 
-      ---
-      Parameters : String
-        domaine_name : Name of the domain class.
-    """   
-    
-    # Prepare for loading domain.
-    Domain.loading_domain_name = name
-    
-    # Domain name.
-    self.name = name
-    
-    # Instanciate domain class.
-    self.instance = None
-    # Domains modules.
-    self.modules = None
-    # Domain module.
-    self.module = None
-    # Domain class.
-    self.class_name = None
-    
-    # Domain methods list.
-    self.methods = {}
-    
-    # Instanciate domain.
-    self.__instanciate()
-    
-    # Get domain instance methods.
-    self.__get_methods()
-    
-    
-  
-  def __instanciate(self):
-    
-    """
-      __instanciate : Create an instance of domain class.
-    """
-    
-    # Import domains module.
-    self.modules = __import__(f"domains", fromlist=[self.name])
-    
-    # Get domain class
-    self.module = getattr(self.modules, self.name)
-    self.class_name = getattr(self.module, self.name)
-        
-    # Instanciate domain class.
-    self.instance = self.class_name()
-
-    # Set name of the last instanciate domain.
-    Domain.last_instanciate_domain_name = self.name
-        
-    # [DEBUG]
-    #print(f"Domain {Domain.loading_domain_name} loaded.")
-    
-    
-    
-  def __get_methods(self):
-    
-    """
-      __get_methods : Retrieve domain methods instance list. 
-    """
-    
-    # Get methods names and args.
-    domains_instance_methods_and_locations = inspect.getmembers(self.instance, predicate=inspect.ismethod)    
-    for method_and_location in domains_instance_methods_and_locations :
-    
-      # Get method name.
-      method_name = method_and_location[0]
-      
-      # Get domain instance method.
-      method = getattr(self.instance, method_name)
-      
-      # Save methods name and args.
-      self.methods[method_name] = method
+    """ __init__ : Domain class constructor. """ 
+    pass  
     
   @staticmethod
   def getSlot(slot_file_name):
@@ -173,33 +97,14 @@ class Domain:
         else :
           # [DEBUG]
           print(f"Slot line can't be interpreted. File slot {slot_file_name} error on : {line}")
-            
-        
+    
     # Return slot_entries
     return slot_entries
-  
-  
-  def methodExist(self, method_name):
-    
-    """
-      methodExist : Check if method_name is a valid method for domain.
-      ---
-      Parameters : 
-        method_name : String
-          Method name to check in domain instance.
-      ---
-      Return Boolean
-        Method is valid for domain.
-    """ 
-    
-    # Return
-    return method_name in self.methods
-      
     
   def methodGetArgs(self, method_name):
     
     """
-      methodExist : Get methods arguments list as tuple.
+      methodGetArgs : Get methods arguments list as tuple.
       ---
       Parameters : 
         method_name : String
@@ -210,7 +115,7 @@ class Domain:
     """ 
     
     # Get Skill method.
-    method = self.methods[method_name]
+    method = getattr(self, method_name)
     
     # Retrieve method arguments.
     args = inspect.getargspec(method).args
@@ -221,7 +126,6 @@ class Domain:
     # Return methods args.
     return args
     
-  
   
   def executeSkill(self, skill):
     
@@ -236,26 +140,30 @@ class Domain:
     """ 
     
     # Get methods.
-    method = self.methods[skill.method_name]
+    method = getattr(self, skill.method_name)
     
     # [DEBUG]
     print(f"Skills parameters = {skill.parameters}")
     
     # Execute methods with skill parameters
-    skill.return_values = self.methods[skill.method_name](**skill.parameters)
+    skill.return_values = method(**skill.parameters)
     
     # Return modified skill
     return skill
   
   @staticmethod
-  def register_handled_intent(method_name, intent_name):
+  def register_handled_intent(module_name, class_name, method_name, intent_name):
     
     """
       Register domain method that handle an intent with Skill.match_intent decorator.
       ---
       Parameters
-        method_name : Function
-          Domain method that match the intent.
+        module_name : String
+           Domain module name that match the intent.
+        class_name : String
+           Domain class name that match the intent.
+        method_name : String
+          Domain method name that match the intent.
         intent_name : String
           Name of the intent to match.
     """
@@ -267,8 +175,9 @@ class Domain:
     if intent_name not in Domain.intents_handlers.keys() :
       # Create intent handler entry in intents_handlers.
       Domain.intents_handlers[intent_name] = {
-        "domain" : Domain.loading_domain_name,
-        "method" : method_name
+        "module" : module_name,
+        "class" : class_name,
+        "method" : method_name,
       }
       # [DEBUG]
       #print(f"Register {Domain.loading_domain_name}.{method_name} as handling {intent_name}")
@@ -279,7 +188,87 @@ class Domain:
     
     
     
+  # ! Decorators :
+  
+  @staticmethod
+  def match_intent(intent_name):
     
+    """
+      Decorator that allow a domain method to match a specific intent.
+      ---
+      Parameters
+        intent_name : String
+          Name of intent to match.
+      ---
+      Return Function
+        Decorator inner function.
+    """
+    
+    def inner_function(function):
+      
+      """
+        inner_function that received the original function in parameters.
+        --- 
+        Parameters
+          function : Function
+            Domain method on which the decorator was applied.
+        ---
+        Return Function
+          Decorator function wrapper
+      """
+    
+      @wraps(function)
+      def wrapper(self_instance, *args, **kwargs):
+        
+        """
+          match_intent wrapper function. Execute decorator code.
+          ---
+          Parameters
+            self_instance : Class instance
+              Domain instance on which method have been called.
+            *args : List
+              List of arguments pass on function call.
+            *kargs : Dict
+              Dict of arguments_names : arguments pass on function call.
+          ---
+          Return : result of function call.
+        """
+        
+        # [DEBUG]
+        #print(f"Intent name : {intent_name}")
+        #print(f"Instance : {self_instance}")
+        #print(f"args :  {args}")
+        #print(f"kwargs : {kwargs}")
+        #print(f"Before Calling {function.__name__}")
+        
+        # Call the original function.
+        result = function(self_instance, *args, **kwargs)
+        
+        # [DEBUG]
+        #print(f"After Calling {function.__name__}")
+        
+        # Return result.
+        return result
+      
+      # Try to maintain method signature.
+      wrapper.__signature__ = inspect.signature(function)  # the magic is here!
+      
+      # Get all function infos for registering intent handler.
+      module_name = function.__module__.split('.')[1]
+      class_name = function.__qualname__.split('.')[0]
+      method_name = function.__qualname__.split('.')[1]
+      
+      # [DEBUG]
+      print(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
+           
+      # Registering function as intent handler.
+      Domain.register_handled_intent(module_name, class_name, method_name, intent_name)
+            
+      # Return the wrapper function.
+      return wrapper
+          
+    # Return inner_function
+    return inner_function
   
 
 

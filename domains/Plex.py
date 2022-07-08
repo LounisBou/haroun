@@ -5,8 +5,6 @@
 #
 # Import core concept domain.
 from core.concepts.Domain import Domain 
-# Import core concept skill.
-from core.concepts.Skill import Skill 
 # Import plex API.
 from plexapi.server import PlexServer
 #
@@ -19,7 +17,7 @@ PLEX_SHOW_SECTION = "Séries TV"
 PLEX_CLIENT_NAME = "Séjour"
 #
 # 
-class Plex:  
+class Plex(Domain):  
   
   def __init__(self):
   
@@ -150,7 +148,7 @@ class Plex:
   
   # ! - Methods.
   
-  @Skill.match_intent("plex.play_movie")
+  @Domain.match_intent("plex.play_movie")
   def play_movie(self, orphan):
     
     # Get orphan as movie title.
@@ -185,7 +183,7 @@ class Plex:
       # Return response.
       return response
       
-  @Skill.match_intent("plex.play_show")
+  @Domain.match_intent("plex.play_show")
   def play_show(self, orphan, season_number = None, episode_number = 1, mode = None):
     
     # Get orphan as show title.
@@ -251,7 +249,7 @@ class Plex:
       # Return response.
       return response
       
-  @Skill.match_intent("plex.play")
+  @Domain.match_intent("plex.play")
   def play(self):
     
     """" Ask client to play video """
@@ -265,7 +263,7 @@ class Plex:
     # Return response.
     return f"Je relance la video."
     
-  @Skill.match_intent("plex.pause")
+  @Domain.match_intent("plex.pause")
   def pause(self):
     
     """" Ask client to pause video """
@@ -279,7 +277,7 @@ class Plex:
     # Return response.
     return f"Ok, je met sur pause."
     
-  @Skill.match_intent("plex.stop")
+  @Domain.match_intent("plex.stop")
   def stop(self):
     
     """" Ask client to stop video """
