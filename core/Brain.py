@@ -72,9 +72,6 @@ class Brain:
     # Available domains list. 
     self.domains = {}
     
-    # Available skills list. 
-    #self.skills = None
-    
     # Available intents list. 
     self.intents = None
     
@@ -89,8 +86,9 @@ class Brain:
     
     # Wake up : initialisation of Brain class.
     self.wakeUp()
-    
-  def __get_domain_class(self, domain_module_name, domain_class_name): 
+  
+  @staticmethod
+  def __get_domain_class(domain_module_name, domain_class_name): 
     
     """ 
       Return domain class from domain name. 
@@ -225,75 +223,6 @@ class Brain:
   
   #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
-  def getDomains(self):
-    
-    """ 
-      getDomains : Acquire domains available list. 
-      Parse haroun/domains folder to define list of available domains.
-      ---
-      Return : List[String]
-        Domains available list.
-    """
-    
-    # Dict of domains instances.
-    domains = {}
-    
-    # List of domains names.
-    domains_names = []
-    
-    # Browse through domains files 
-    for(dirpath, dirnames, filenames) in os.walk(ROOT_PATH+"domains"):
-      # Remove filenames extensions
-      filenames = [os.path.splitext(filename)[0] for filename in filenames]
-      # Add domains filenames without extension to domains list.
-      domains_names.extend(filenames)
-      break
-    
-    # Instanciate domains to retrieve intent handlers.
-    for domain_name in domains_names :
-     
-      # Check if name exist and is a module.
-      if domain_name and not domain_name.startswith('__') and domain_name.endswith('.py'):     
-        
-        # Retrieve domain class.
-        domain_class = self.__get_domain_class(domain_name)
-                
-        # Instanciate domain.
-        domains[domain_name] = domain_class()
-        
-        # [DEBUG]
-        #print(f"AFTER domain {domain_name} instantiation.")
-    
-    # Return
-    return domains
-  
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
-  def getSkills(self):
-    
-    """ 
-      getSkills : Acquire skills available list. 
-      Parse haroun/skills folder to define list of available skills.
-      ---
-      Return : List[String]
-        List des nom de skills
-    """
-    
-    # Browse through skills files 
-    skills = []
-    for(dirpath, dirnames, filenames) in os.walk(ROOT_PATH+"skills"):
-      # Remove filenames extensions
-      filenames = [os.path.splitext(filename)[0] for filename in filenames]
-      # Add directory filenames without extension to skills list.
-      skills.extend(filenames)
-      break
-    
-    # Return
-    return skills
-    
-  
-  #@debug("verbose", True)
-  @lru_cache(maxsize=128, typed=True)
   def getIntents(self):
     
     """ 
@@ -346,11 +275,6 @@ class Brain:
     # Load file for rhasspy-nlu.
     intents = rhasspynlu.parse_ini(Path(allIntentsFilePath))
     
-    # [DEBUG]
-    #print('Intents : ')
-    #print(intents)
-    #print('----------------------------------------')
-    
     # Return
     return intents
   
@@ -360,8 +284,6 @@ class Brain:
     
     """ 
       executeSlotsPrograms : Execute slots programs. Slots programs are independents scripts that generate slots.
-      ---
-      Return : None
     """
     
     # Slots directory path.
@@ -418,9 +340,7 @@ class Brain:
       else:
         # Error message.
         print(f"Slot {programSlotName} already exist. Program slot file '{programSlotFileName}' can't be executed. Delete slot {programSlotName} to re-generate it.")
-        
-    # Return
-    return None
+  
   
   #@debug("verbose", True)
   @lru_cache(maxsize=128, typed=True)
@@ -491,20 +411,10 @@ class Brain:
     """ 
       nlu_training : Acquire domains knowledge. 
       Transform intents into graph training, replace slots if necessary.
-      ---
-      Return : None
     """
-    
-    # [DEBUG]
-    #print('Replacement slots : ')
-    #print(self.slots)
-    #print('----------------------------------------')
     
     # Generate intents training graph from list of known intents.
     self.intents_graph = rhasspynlu.intents_to_graph(self.intents, replacements = self.slots)
-            
-    # End.
-    return
   
   # ! - Stimulus management.
     
@@ -743,7 +653,7 @@ class Brain:
       return None
         
     # Retrieve domain class.
-    domain_class = self.__get_domain_class(domain_module_name, domain_class_name)
+    domain_class = Brain.__get_domain_class(domain_module_name, domain_class_name)
             
     # Instanciate domain.
     domain_instance = domain_class()
