@@ -10,6 +10,8 @@ from sys import path as syspath
 from os import path
 # Import Python Object Inspector library.
 import inspect
+# Import logging library
+import logging
 # Import functools wraps for decorators.
 from functools import wraps
 # Import configparser.
@@ -27,7 +29,7 @@ import domains
 #
 #
 #
-class Domain:
+class Domain(object):
   
   """ Concept of Haroun Domain. """
   
@@ -52,6 +54,12 @@ class Domain:
     
     # Config dict.
     self.config = {}
+    
+    # Load Haroun config file.
+    self.loadConfig("Haroun.ini")
+    
+    # Set logging level.
+    logging.getLogger().setLevel(self.config['haroun']['LOG_LEVEL'])
         
     # Slots entries.
     self.slots_entries = {}
@@ -91,8 +99,8 @@ class Domain:
         self.config[section_name] = configParser[section_name]
         
     else:
-      # [DEBUG]
-      print(f"Error config file {domain_config_file_path} doesn't exist.")
+      # [LOG]
+      logging.error(f"Error config file {domain_config_file_path} doesn't exist.")
   
   @staticmethod
   def __get_slot(slot_file_name):
@@ -149,8 +157,8 @@ class Domain:
           slot_entries[slot_entry_key] = slot_entry_value
           
         else :
-          # [DEBUG]
-          print(f"Slot line can't be interpreted. File slot {slot_file_name} error on : {line}")
+          # [LOG]
+          logging.error(f"Slot line can't be interpreted. File slot {slot_file_name} error on : {line}")
     
     # Return slot_entries
     return slot_entries
@@ -172,8 +180,8 @@ class Domain:
       # Use Domain static method getSlot to get slot file entries.
       slot_entries = Domain.__get_slot(slot_file_name)
       
-      # [DEBUG]
-      #print(f"Slot file {slot_file_name} entries : {slot_entries}")
+      # [LOG]
+      logging.debug(f"Slot file {slot_file_name} entries : {slot_entries}\n")
       
       # Add slot_entries to self.slots_entries dict.
       self.slots_entries.update(slot_entries)
@@ -216,8 +224,8 @@ class Domain:
     # Get methods.
     method = getattr(self, skill.method_name)
     
-    # [DEBUG]
-    print(f"Skills parameters = {skill.parameters}")
+    # [LOG]
+    logging.info(f"Skills parameters = {skill.parameters}")
     
     # Execute methods with skill parameters
     skill.return_values = method(**skill.parameters)
@@ -251,8 +259,8 @@ class Domain:
         "method" : method_name,
       }
     else:    
-      # [DEBUG]
-      print(f"Intent handler for {intent_name} already exist !")  
+      # [LOG]
+      logging.warning(f"Intent handler for {intent_name} already exist !")  
       pass
     
     
@@ -318,8 +326,8 @@ class Domain:
       method_name = function.__qualname__.split('.')[1]
       
       # [DEBUG]
-      #print(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
-           
+      print(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
+         
       # Registering function as intent handler.
       Domain.register_handled_intent(module_name, class_name, method_name, intent_name)
             

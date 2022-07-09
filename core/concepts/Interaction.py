@@ -18,7 +18,7 @@ from core.concepts.Response import Response
 #
 #
 #
-class Interaction:
+class Interaction(object):
   
   """ Concept of Interaction for Haroun. """
     

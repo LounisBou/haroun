@@ -4,14 +4,10 @@
 #
 # Libraries dependancies :
 #
-# Import system library.
-import sys
-# Import OS library.
-import os
 #
 #
 #  
-class Conscious:
+class Conscious(object):
   
   """ Concept of Haroun Conscious (Awareness simulation : Reflexivity.) """
   

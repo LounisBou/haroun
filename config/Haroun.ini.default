@@ -1,10 +1,27 @@
+# Haroun configuration section
 [haroun]
+# Language code
 LANG = fr
+# Encode format
 ENCODAGE = utf-8
+# Logging level
+# Possible values are :
+# CRITICAL = A serious error, indicating that the program itself may be unable to continue running.
+# ERROR = Due to a more serious problem, the software has not been able to perform some function.
+# WARNING = An indication that something unexpected happened, or indicative of some problem in the near future (e.g. ‘disk space low’). The software is still working as expected.
+# INFO = Confirmation that things are working as expected.
+# DEBUG = Detailed information, typically of interest only when diagnosing problems.
+LOG_LEVEL = INFO
 
+# Telegram configuration section
 [telegram]
-TG_CLIENT_NAME = 
-TG_CLIENT_API_ID = 
-TG_CLIENT_API_HASH = 
-TG_HAROUN_BOT_TOKEN = 
-TG_HAROUN_CHAT_ID = 
+# Telegram client Name
+TG_CLIENT_NAME = Haroun
+# Telegram app id code (see https://my.telegram.org/auth)
+TG_CLIENT_API_ID = OOOOOOOO
+# Telegram app api hash (see https://my.telegram.org/auth)
+TG_CLIENT_API_HASH = fXXXXXXXXXXXXfXXfXXXXXXXXXXXXXf
+# Telegram bot token (use Telegram botfather to create one)
+TG_HAROUN_BOT_TOKEN = 123456789012345678901234567890
+# Telegram chat ID (Bot should be include in this chat.)
+TG_HAROUN_CHAT_ID = -1234567890

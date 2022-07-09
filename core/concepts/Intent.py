@@ -10,7 +10,7 @@
 #
 #
 #
-class Intent: 
+class Intent(object): 
   
   """ Concept of Haroun Intent. """
   

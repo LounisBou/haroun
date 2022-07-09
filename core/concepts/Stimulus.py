@@ -11,7 +11,7 @@
 #
 #
 #
-class Stimulus:
+class Stimulus(object):
     
   """ Concept of Haroun Stimulus. """
   

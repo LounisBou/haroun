@@ -11,7 +11,7 @@ import sqlite3
 #
 #
 #
-class Memory: 
+class Memory(object): 
   
   """ Concept of Haroun Memory. """
   

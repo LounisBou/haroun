@@ -14,10 +14,10 @@ from os import path, walk
 import subprocess
 # Import rhasspynlu
 import rhasspynlu
+# Import logging library
+import logging
 # Import pathlib.Path for rhasspynlu.parse_ini
 from pathlib import Path
-# Import configparser.
-from configparser import ConfigParser
 # Import consciousness class.
 from core.consciousness.Conscious import Conscious
 from core.consciousness.Ego import Ego
@@ -48,11 +48,11 @@ syspath.append(ROOT_PATH)
 #
 #
 #
-class Brain:  
+class Brain(object):  
   
   """ Concepts and consciousness class management for Haroun. """
     
-  def __init__(self):
+  def __init__(self, config):
     
     """ 
       __init__ : Brain class constructor.
@@ -63,7 +63,10 @@ class Brain:
     self.ego = Ego()
     
     # Config vars.
-    self.config = {}
+    self.config = config
+    
+    # Set logging level.
+    logging.getLogger().setLevel(self.config['haroun']['LOG_LEVEL'])
     
     # Available domains list. 
     self.domains = {}
@@ -90,15 +93,6 @@ class Brain:
     """
       wakeUp : Initialise Brain Class.
     """
-    
-    # Load config from config files.
-    self.loadConfig()
-    
-    # Available domains list. 
-    #self.domains = self.getDomains()
-    
-    # Available skills list. 
-    #self.skills = self.getSkills()
     
     # Available intents list. 
     self.intents =  self.getIntents()
@@ -140,36 +134,6 @@ class Brain:
     # Return domain class. 
     return domain_class
 
-
-  def loadConfig(self):
-    
-    """ Get config from config/Haroun.ini. """
-    
-    # Haroun config file path.
-    haroun_config_file_path = f"{ROOT_PATH}config/Haroun.ini"
-    
-    # Check if config exist.
-    if path.exists(haroun_config_file_path):
-    
-      # See configparser 
-      configParser = ConfigParser()
-    
-      # Parse haroun.ini config file.
-      configParser.read(haroun_config_file_path)
-       
-      # Get config parser sections.
-      sections = configParser.sections()
-      
-      # Get all sections.
-      for section_name in sections:
-        self.config[section_name] = configParser[section_name]
-        
-    else:
-      # [DEBUG]
-      print(f"Fatal error : config file {haroun_config_file_path} doesn't exist.")
-      # Exit program.
-      quit()
-  
   
   def loadLanguage(self, language):
     
@@ -212,9 +176,8 @@ class Brain:
     # Browse through intents files 
     intentsFiles = []    
     for(dirPath, dirNames, fileNames) in walk(intentsPath):
-      # [DEBUG]
-      #print('Looking in intent directory : '+intentsPath+", listing files :")
-      #print(fileNames)
+      # [LOG]
+      logging.debug(f"Looking in intent directory : {intentsPath}, listing files : \n{fileNames}")
       intentsFiles.extend(fileNames)
       break
       
@@ -265,10 +228,9 @@ class Brain:
     # Browse through slots files 
     slotsProgramsFiles = []    
     for(dirPath, dirNames, fileNames) in walk(slotsProgramPath):
-      # [DEBUG]
-      #print('Looking in slotsPrograms directory : '+slotsProgramPath+", listing files :")
-      #print(fileNames)
-       # Add fileNames to slotsProgramsFiles list.
+      # [LOG]
+      logging.debug(f"Looking in slotsPrograms directory : {slotsProgramPath}, listing files :\n{fileNames}")
+      # Add fileNames to slotsProgramsFiles list.
       slotsProgramsFiles.extend(fileNames)
       break
       
@@ -308,10 +270,9 @@ class Brain:
           slotFile.write(f"{slotFileContent}")
           
       else:
-        # [DEBUG] warning message.
-        print(f"Warning : Slot {programSlotName} already exist. Program slot file '{programSlotFileName}' can't be executed. Delete slot {programSlotName} to re-generate it.")
-        print("")
-  
+        # [LOG]
+        logging.warning(f"Slot {programSlotName} already exist.")
+        logging.warning(f"Program slot file '{programSlotFileName}' can't be executed. Delete slot {programSlotName} to re-generate it.\n")
   
   def getSlots(self):
     
@@ -328,9 +289,8 @@ class Brain:
     # Browse through slots files 
     slotsFiles = []    
     for(dirPath, dirNames, fileNames) in walk(slotsPath):
-      # [DEBUG]
-      #print('Looking in slots directory : '+slotsPath+", listing files :")
-      #print(fileNames)
+      # [LOG]
+      logging.debug(f"Looking in slots directory : '{slotsPath}', listing files :\n{fileNames}")
       # Add fileNames to slotsFiles list.
       slotsFiles.extend(fileNames)
       break
@@ -473,7 +433,8 @@ class Brain:
     else:
       # [DEBUG]
       #interaction.addResponse(str(interaction.intent))
-      print(str(interaction.intent))
+      # [LOG]
+      logging.debug(f"{str(interaction.intent)}")
       # Defined Domain & Skill for this interaction.
       modified_interaction = self.analysis(modified_interaction)
       # If Interaction analysis failed. 
@@ -525,18 +486,14 @@ class Brain:
       Return : interaction 
         Interpretation of interaction success, recognition and intent attributs are now defined.
     """
-    
-    #
-
-    
+        
     # Stimulus sentence pre-treatment.
     interaction.stimulus.sentence = interaction.stimulus.sentence.lower()
     interaction.stimulus.sentence = interaction.stimulus.sentence.replace(',',"")
     
-    # [DEBUG]
-    #print('Interaction sentence : '+interaction.stimulus.sentence)
-    #print('----------------------------------------')
-    
+    # [LOG]
+    logging.debug(f"Interaction sentence : {interaction.stimulus.sentence}\n\n")
+        
     # Perform intent recognition in Interaction sentence thanks to training graph.
     try:
       recognitions = rhasspynlu.recognize(interaction.stimulus.sentence, self.intents_graph, fuzzy=True)
@@ -544,11 +501,9 @@ class Brain:
       # Return
       return None
       
-    # [DEBUG]
-    #print("Recognitions  : ")
-    #print(recognitions)
-    #print('----------------------------------------')
-    
+    # [LOG]
+    logging.debug("Recognitions  : {recognitions}\n\n")
+        
     # If rhasspynlu perform recognition without problem.
     if not recognitions :
       # Return
@@ -590,9 +545,9 @@ class Brain:
         Modified interaction with domain and skill infos.      
     """
     
-    # [DEBUG]
-    #print(f"Interaction intent found : {interaction.intent.label}")
-    #print(f"Intent handlers : {Domain.intents_handlers}")
+    # [LOG]
+    logging.debug(f"Interaction intent found : {interaction.intent.label}\n")
+    logging.debug(f"Intent handlers : {Domain.intents_handlers}\n")
     
     # Check if there is a domain method that handle this intent.
     if interaction.intent.label in Domain.intents_handlers.keys():

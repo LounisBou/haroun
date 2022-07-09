@@ -11,7 +11,7 @@
 #
 #
 #
-class Response:
+class Response(object):
     
   """ Concept of Haroun Response. """
   

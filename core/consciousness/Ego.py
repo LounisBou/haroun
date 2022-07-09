@@ -4,14 +4,10 @@
 #
 # Libraries dependancies :
 #
-# Import system library.
-#import sys
-# Import OS library.
-#import os
 #
 #
 # 
-class Ego:
+class Ego(object):
   
   """ Concept of Haroun Ego (Personality simulation). """
   

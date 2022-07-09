@@ -5,6 +5,18 @@
 import sys
 # Import asyncio
 import asyncio
+# Import logging library
+import logging
+# Import pretty errors
+import pretty_errors
+# Import sys.path as syspath
+from sys import path as syspath
+# Import os.path and os.walk
+from os import path, walk
+# Import configparser.
+from configparser import ConfigParser
+# Import datetime.date
+from datetime import date
 # Import telethon (for telegram bot message)
 from telethon import TelegramClient, events
 from telethon.tl.types import PeerChat, PeerChannel
@@ -12,6 +24,19 @@ from telethon.errors import SessionPasswordNeededError
 # Core dependencies : 
 from core.Brain import Brain
 #
+#
+# Gloabls : 
+LOG_LEVELS = {
+  'CRITICAL' : logging.CRITICAL,
+  'ERROR' : logging.ERROR,
+  'WARNING' : logging.WARNING,
+  'INFO' : logging.INFO,
+  'DEBUG' : logging.DEBUG
+}
+#
+# Current, and root paths.
+ROOT_PATH = path.dirname(path.abspath(__file__))+'/'
+syspath.append(ROOT_PATH)
 #
 class Haroun(object):
   
@@ -21,19 +46,76 @@ class Haroun(object):
     
     """ Haroun class constructor """
     
+    # Create configuration dict by loading Haroun configuration file.
+    self.config = self.loadConfig()
+    
+    # Get current date.
+    today_date = date.today()
+    
+    # Date string.
+    today_date_string = today_date.strftime("%d-%m-%Y")
+    
+    # Logging configuration.
+    logging.basicConfig(
+      #filename=f'{ROOT_PATH}log/{today_date_string}.log', 
+      stream=sys.stdout, 
+      encoding=self.config['haroun']['ENCODAGE'], 
+    )
+    
+    # Set logging level.
+    logging.getLogger().setLevel(self.config['haroun']['LOG_LEVEL'])
+    
     # [DEBUG]
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print(f"Haroun is starting...")
-    print('')
+    if(logging.root.level == logging.INFO):
+      print(f"\n\n -------------------------------------------------------------------- \n\n")
+    
+    # [LOG]
+    logging.info(f"Haroun is starting...\n\n")
     
     # Brain instanciation.
-    self.brain = Brain()
+    self.brain = Brain(self.config)
 
-
+  def loadConfig(self):
+    
+    """ 
+      Get config from config/Haroun.ini.
+      ---
+      Return : dict
+        Configuration dict.
+    """
+    
+    # Create a config dict.
+    config = {}
+    
+    # Haroun config file path.
+    haroun_config_file_path = f"{ROOT_PATH}config/Haroun.ini"
+    
+    # Check if config exist.
+    if path.exists(haroun_config_file_path):
+    
+      # See configparser 
+      configParser = ConfigParser()
+    
+      # Parse haroun.ini config file.
+      configParser.read(haroun_config_file_path)
+       
+      # Get config parser sections.
+      sections = configParser.sections()
+      
+      # Get all sections.
+      for section_name in sections:
+        config[section_name] = configParser[section_name]
+      
+    else:
+      # [LOG]
+      logging.critical(f"Fatal error : config file {haroun_config_file_path} doesn't exist.")
+      # Exit program.
+      quit()
+      
+    # Return config dict.
+    return config
+  
+  
   async def call(self, source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime): 
     
     """ 
@@ -125,9 +207,6 @@ class Haroun(object):
     except:
       print(f"Enable to get Telegram config to initiate Telegram session. Please check your config file.")
     
-    # [DEBUG]
-    #print(tg_client_name, tg_client_api_id, tg_client_api_hash, tg_haroun_bot_token, tg_chat_id)
-    
     # Launch telegram bot listening session.
     await self.startTelegramSession(
       tg_client_name, 
@@ -192,15 +271,10 @@ class Haroun(object):
         # Get current channel id.
         tg_response_chat_id = event.peer_id.channel_id
         
-        # [DEBUG]
-        print('')
-        print('----------------------------------------')
-        print('')
-        print(f"Incoming message : ")
-        print('')
-        #print(f"{event.message}")
-        print(f" #{message_id} new message from {user_id} at {message_datetime}")
-        print(f" {message_content} ")
+        # [LOG]
+        logging.info('\n\n----------------------------------------')
+        logging.info(f"Incoming message : \n #{message_id} new message from {user_id} at {message_datetime}")
+        logging.info(f"{message_content}\n\n")
         
         # Call for Haroun.
         response = await self.call(
@@ -213,8 +287,8 @@ class Haroun(object):
           message_datetime
         )
         
-        # [DEBUG]
-        print(response)
+        # [LOG]
+        logging.info(f"Response : {response} \n\n")
         
         # Get chat entity with message channel id.
         chat_entity = await client.get_entity(tg_response_chat_id)
@@ -222,16 +296,15 @@ class Haroun(object):
         # Send response back.
         await client.send_message(entity=chat_entity, message=response)
       
-      # [DEBUG]
-      print('')
-      print(f"Haroun is listening...")
-      print('')
-      
+      # [LOG]
+      logging.info('\n\n')
+      logging.info(f"Haroun is listening...\n\n")
+            
       # Async loop for client.
       await client.run_until_disconnected()
       
-      # [DEBUG]
-      print(f"Haroun telegram bot have been disconnected.")
+      # [LOG]
+      logging.error(f"Haroun telegram bot have been disconnected.\n")
       
       # Delete client bot current session.
       #await client.log_out()

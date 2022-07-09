@@ -11,7 +11,7 @@
 #
 #
 #
-class Skill:
+class Skill(object):
   
   """ Concept of Haroun Skill. """
   
