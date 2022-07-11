@@ -19,22 +19,17 @@ class Context(MyModel):
   """
   
   # Context info key.
-  key = CharField(unique=True)
+  key = CharField()
   # Context info value.
   value = CharField()
   # Context domain, define a specific domain context info is reserved for.
-  domain = CharField()
-  # Context expiration date.
-  expire = DateTimeField
-    
-  def __init__(self):
-    
-    """ Memory class constructor. """
-    
-    # Init parent class Base.
-    super().__init__()
+  domain = CharField(null = True)
+  # Context expiration date (store timestamp).
+  expire = FloatField()
     
   class Meta:
+  
+    """ Model-specific configuration class Meta. """
   
     # Table indexes.
     indexes = (
@@ -63,20 +58,59 @@ class Context(MyModel):
         Created Context Object.
     """
     
-    # Create timedelta from duration.
-    duration_delta = timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=duration, hours=0, weeks=0)
-    
     # Get expire date from duration.
-    expire = datetime.now() + duration_delta
+    expire_date = datetime.now() + timedelta(minutes=duration)
+    expire_timestamp = datetime.timestamp(expire_date)
     
-    # Create context entry.
-    context = Context.create(key=key, value=value, domain=domain, expire=expire)
+    # If exist.
+    if Context.check(key, domain) :
+      # Retrieve.
+      context = Context.get(key, domain)
+      # Update value and expire.
+      context.value = value
+      context.expire = expire_timestamp
+      # Save.
+      context.save()
+    else:
+      # Create context entry.
+      context = Context.create(
+        key=key, 
+        value=value,
+        domain=domain,
+        expire=expire_timestamp,
+      )
     
     # Return created context.
-    return context 
+    return context
+    
+  @staticmethod
+  def remove(key, domain = None):
+    
+    """ 
+      Remove specific info (key, value) from context table.
+      ---
+      Parameters 
+        key : String
+          Context key.
+        domain : String (optionnal)
+          Domain name info is reserved for, by default context info is for all domains. [Default = None]
+      ---
+      Return : Boolean
+        Context found and deleted.
+    """
+    
+    # Retrieve context object.
+    context = Context.get(key, domain)
+    
+    # If exist.
+    if context :
+      context.delete_instance()
+      return True
+    else:
+      return False
   
   @staticmethod
-  def get(key, domain = None, max_age = 60):
+  def get(key, domain = None):
     
     """ 
       Retrieve some info from context using Context.key 
@@ -86,17 +120,26 @@ class Context(MyModel):
           Context key.
         domain : String (optionnal)
           Domain name info is reserved for, by default context info is for all domains. [Default = None]
-        max_age : Int (optionnal)
-          Max age since creation in minutes. [Default = 60]
       ---
-      Return : Context
-        Corresponding Context Object.
+      Return : Context/None
+        Context Object, None if no matching result.
     """
     
-    pass
+    # Get current timestamp.
+    now_timestamp = datetime.timestamp(datetime.now())
+    
+    # Create select query
+    query = Context.select().where((Context.key == key) & (Context.domain == domain) & (Context.expire > now_timestamp))
+    
+    # Check if no result.
+    if query.exists() :
+      for context in query: 
+        return context
+    else:
+      return None
   
   @staticmethod
-  def reverse_get(value, domain = None, max_age = 60):
+  def reverse_get(value, domain = None):
     
     """ 
       Retrieve some info from context using Context.value 
@@ -106,17 +149,26 @@ class Context(MyModel):
           Context value.
         domain : String (optionnal)
           Domain name info is reserved for, by default context info is for all domains. [Default = None]
-        max_age : Int (optionnal)
-          Max age since creation in minutes. [Default = 60]
       ---
-      Return : Context
-        Corresponding Context Object.
+      Return : List
+        Contexts Object in list, None if no matching result.
     """
     
-    pass
+    # Get current timestamp.
+    now_timestamp = datetime.timestamp(datetime.now())
+    
+    # Create select query
+    query = Context.select().where((Context.value == value) & (Context.domain == domain) & (Context.expire >now_timestamp))
+    
+    # Check query have result.
+    if query.exists() :
+      # Return query context objects.
+      return [context for context in query]
+    else :
+      return None    
   
   @staticmethod
-  def check(key, domain = None, max_age = 60):
+  def check(key, domain = None):
     
     """ 
       Check if some info exist in context using Context.key 
@@ -126,41 +178,66 @@ class Context(MyModel):
           Context key.
         domain : String (optionnal)
           Domain name info is reserved for, by default context info is for all domains. [Default = None]
-        max_age : Int (optionnal)
-          Max age since creation in minutes. [Default = 60]
       ---
       Return : Boolean
-        Corresponding Context Object exist.
+        Context Object exists.
     """
     
-    pass
+    # Get current timestamp.
+    now_timestamp = datetime.timestamp(datetime.now())
+    
+    # Create query
+    query = Context.select().where((Context.key == key) & (Context.domain == domain) & (Context.expire > now_timestamp))
+    
+    # Return query exists value.
+    return query.exists()
   
   @staticmethod
-  def reverse_check(value, domain = None, max_age = 60):
+  def reverse_check(value, domain = None):
     
     """ 
       Check if some info exist in context using Context.value 
       ---
       Parameters 
-        key : String
+        value : String
           Context value.
         domain : String (optionnal)
           Domain name info is reserved for, by default context info is for all domains. [Default = None]
-        max_age : Int (optionnal)
-          Max age since creation in minutes. [Default = 60]
       ---
-      Return : Context
-        Corresponding Context Object exist.
+      Return : Boolean
+        Context Object exists.
     """
     
-    pass
+    # Get current timestamp.
+    now_timestamp = datetime.timestamp(datetime.now())
+    
+    # Create query
+    query = Context.select().where((Context.value == value) & (Context.domain == domain) & (Context.expire > now_timestamp))
+    
+    # Return query exists value.
+    return query.exists()
     
     
   @staticmethod
   def clean_context():
     
-    """ Search for expired context info and remove them from table. """
+    """ 
+      Search for expired context info and remove them from table. 
+      ---
+      return Int
+        Number of rows removed.
+    """
     
-   
+    # Get current timestamp.
+    now_timestamp = datetime.timestamp(datetime.now())
+    
+    # Create delete query.
+    query = Context.delete().where(Context.expire < now_timestamp)
+    
+    # Execute query
+    nb_rows_deleted = query.execute()
+    
+    # Return 
+    return nb_rows_deleted
     
     

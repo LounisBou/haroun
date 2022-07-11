@@ -387,6 +387,14 @@ class Brain(object):
         Stimulus concept object created with scripts call infos.
     """
     
+    # Set user id as izno.
+    memory = Memory.add(f"user_id_{user_id}", "Laura", "Telegram")
+    #memory.remove()
+    
+    # Set context to make a test.
+    context = Context.add(f"user_id_{user_id}", "Laura", "Telegram")
+    #context.remove()
+    
     # Create stimulus from script call infos.
     stimulus = Stimulus(source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime)
     

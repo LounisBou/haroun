@@ -7,6 +7,10 @@
 from sys import path as syspath
 # Import os.path and os.walk
 from os import path, walk
+# Import configparser.
+from configparser import ConfigParser
+# Import logging library
+import logging
 # Import peewee ORM.
 from peewee import *
 # Import peewee playhouse sqlite extension.
@@ -42,6 +46,34 @@ MY_DATABASE = SqliteDatabase(
 #
 class MyModel(Model): 
   
+  # MyModel config dict.
+  config = {}
+  
+  # Haroun config file path.
+  haroun_config_file_path = f"{ROOT_PATH}config/Haroun.ini"
+  
+  # Check if config exist.
+  if path.exists(haroun_config_file_path):
+  
+    # See configparser 
+    configParser = ConfigParser()
+  
+    # Parse haroun.ini config file.
+    configParser.read(haroun_config_file_path)
+     
+    # Get config parser sections.
+    sections = configParser.sections()
+    
+    # Get all sections.
+    for section_name in sections:
+      config[section_name] = configParser[section_name]
+    
+  else:
+    # [LOG]
+    logging.critical(f"Fatal error : config file {haroun_config_file_path} doesn't exist.")
+    # Exit program.
+    quit()
+  
   # Database reference.
   db = MY_DATABASE
   
@@ -53,14 +85,21 @@ class MyModel(Model):
   created = DateTimeField(default=datetime.now)
   # Modified datetime
   modified = DateTimeField
-
-  def __init__(self):
+  
+  # Set logging level.
+  logging.getLogger().setLevel(config['haroun']['LOG_LEVEL'])
     
-    """ MyModel class constructor. """
+  class Meta:
     
-    pass
+    """ Model-specific configuration class Meta. """
+  
+    # Database.
+    database = MY_DATABASE # MyModel use MY_DATABASE as database.
     
-    
+    # Table name.
+    # Peewee will automatically infer the database table name from the name of the class. 
+    # You can override the default name by specifying a table_name attribute
+    #table_name = ''
      
   def save(self, *args, **kwargs):
     
@@ -92,15 +131,4 @@ class MyModel(Model):
     # Create database backup to file.
     MyModel.db.backup_to_file(filename)
     
-  class Meta:
-    
-    """ Model-specific configuration class Meta. """
-  
-    # Database.
-    database = MY_DATABASE # MyModel use MY_DATABASE as database.
-    
-    # Table name.
-    # Peewee will automatically infer the database table name from the name of the class. 
-    # You can override the default name by specifying a table_name attribute
-    #table_name = ''
   
