@@ -1,7 +1,0 @@
-Domain :
-- Fonction de chargement des fichiers de langues.
-- Utiliser les fichiers de config et retirer les Globales des domaines.
-
-Mise à place d'une base de données SQLite.
-
-Create debug fonction with level.

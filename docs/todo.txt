@@ -7,5 +7,3 @@ Mise à place d'une base de données SQLite.
 Création d'un context en mémoire.
 
 Création de souvenir (Memory).
-
-Créer une fonction de debug avec gestion du niveau de verbose.

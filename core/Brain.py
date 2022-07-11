@@ -21,7 +21,8 @@ from pathlib import Path
 # Import consciousness class.
 from core.consciousness.Conscious import Conscious
 from core.consciousness.Ego import Ego
-#
+# Import Base utils.base (Peewee ORM connector)
+from utils.bdd import MyModel
 # Import concepts class.
 from core.concepts.Domain import Domain
 from core.concepts.Skill import Skill
@@ -30,6 +31,7 @@ from core.concepts.Interaction import Interaction
 from core.concepts.Intent import Intent
 from core.concepts.Response import Response
 from core.concepts.Memory import Memory
+from core.concepts.Context import Context
 # Import domains.
 from domains import *
 # Import utils
@@ -106,6 +108,9 @@ class Brain(object):
     # Memories 
     self.memories = Memory()
     
+    # Create database schema if not exist.
+    self.create_database()
+    
     # Training brain by creating intents graph.
     self.nlu_training()
     
@@ -134,6 +139,15 @@ class Brain(object):
     # Return domain class. 
     return domain_class
 
+  def create_database(self):
+    
+    """ Create database schema if not exist. """
+    
+    # List of models to create.
+    haroun_models = [Memory, Context]
+    
+    # Create tables, indexes and associated metadata for the given list of models.
+    MyModel.db.create_tables(haroun_models)
   
   def loadLanguage(self, language):
     

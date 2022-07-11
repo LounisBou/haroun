@@ -3,22 +3,28 @@
 #
 # Libraries dependancies :
 #
-# Import sqlite library.
-import sqlite3
+# Import peewee ORM.
+from peewee import *
+# Import Base utils.base (Peewee ORM connector)
+from utils.bdd import MyModel
 #
-# Globals :
-#
-#
-#
-#
-class Memory(object): 
+class Memory(MyModel): 
   
   """ Concept of Haroun Memory. """
   
+  # Define Model schema.
+  key = CharField(unique=True)
+  value = CharField()
+    
   def __init__(self):
     
     """ Memory class constructor. """
     
-    # Error flag.
-    self.error = 0
+    # Init parent class Base.
+    super().__init__()
+    
+    
+    
+   
+    
     
