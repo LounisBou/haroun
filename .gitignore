@@ -7,3 +7,5 @@ config/*.ini
 
 # Logs directory
 log/*.log
+.DS_Store
+.vscode/settings.json
