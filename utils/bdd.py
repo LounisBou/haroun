@@ -91,7 +91,7 @@ class MyModel(Model):
     
   class Meta:
     
-    """ Model-specific configuration class Meta. """
+    """ MyModel specific configuration class Meta. """
   
     # Database.
     database = MY_DATABASE # MyModel use MY_DATABASE as database.
@@ -132,3 +132,189 @@ class MyModel(Model):
     MyModel.db.backup_to_file(filename)
     
   
+class MemoryModel(MyModel):
+  
+    
+  """ 
+    Concept of Haroun MemoryModel. 
+    Abstract class permanent memories and temporary context.
+  """
+  
+  # MemoryModel info key.
+  key = CharField()
+  # MemoryModel info value.
+  value = CharField()
+  # MemoryModel.domain, define a specific domain MemoryModel info is reserved for.
+  domain = CharField(null = True)
+    
+  class Meta:
+    
+    """ MemoryModel specific configuration class Meta. """
+    
+    # Table indexes.
+    indexes = (
+      # Create unique index on key/domain
+      (('key', 'domain'), True),
+    )
+    
+  @staticmethod
+  def add(key, value, domain = None):
+    
+    """ 
+      Add some info (key, value) to MemoryModel table.
+      Update value if key already exist.
+      ---
+      Parameters 
+        key : String
+          MemoryModel key.
+        value : String
+          MemoryModel value.
+        domain : String (optionnal)
+          Domain name info is reserved for, by default MemoryModel info is for all domains. [Default = None]
+      ---
+      Return : Memory
+        Created Memory Object.
+    """
+    
+    # If exist.
+    if MemoryModel.check(key, domain) :
+      # Retrieve instance.
+      instance = MemoryModel.get(key, domain)
+      # Update value.
+      instance.value = value
+      # Save.
+      instance.save()
+    else:
+      # Create instance.
+      instance = MemoryModel.create(
+        key=key, 
+        value=value,
+        domain=domain,
+      )
+      
+    # Return created instance.
+    return instance
+    
+  @staticmethod
+  def remove(key, domain = None):
+    
+    """ 
+      Remove specific info (key, value) from class table.
+      ---
+      Parameters 
+        key : String
+          MemoryModel key.
+        domain : String (optionnal)
+          Domain name info is reserved for, by default memory info is for all domains. [Default = None]
+      ---
+      Return : Boolean
+        MemoryModel found and deleted.
+    """
+    
+    # Retrieve instance.
+    instance = MemoryModel.get(key, domain)
+    
+    # If exist.
+    if instance :
+      instance.delete_instance()
+      return True
+    else:
+      return False
+  
+  @staticmethod
+  def get(key, domain = None):
+    
+    """ 
+      Retrieve some info from class table using MemoryModel.key 
+      ---
+      Parameters 
+        key : String
+          MemoryModel key.
+        domain : String (optionnal)
+          Domain name info is reserved for, by default info is for all domains. [Default = None]
+      ---
+      Return : MemoryModel Class/None
+        Corresponding MemoryModel Object, None if no matching result.
+    """
+    
+    # Create query
+    query = MemoryModel.select().where((MemoryModel.key == key) & (MemoryModel.domain == domain))
+    
+    # Check if no result.
+    if query.exists() :
+      for instance in query: 
+        return instance
+    else:
+      return None
+  
+  @staticmethod
+  def reverse_get(value, domain = None):
+    
+    """ 
+      Retrieve some info from memory using Memory.value 
+      ---
+      Parameters 
+        value : String
+          MemoryModel value.
+        domain : String (optionnal)
+          Domain name info is reserved for, by default info is for all domains. [Default = None]
+      ---
+      Return : List
+        Corresponding MemoryModel Objects in list, None if no matching result.
+    """
+    
+    # Create query
+    query = MemoryModel.select().where((MemoryModel.value == value) & (MemoryModel.domain == domain))
+        
+    # Check query have result.
+    if query.exists():
+      # Get query MemoryModel instances objects.
+      instances = [intance for instance in query]
+      return instances
+    else:
+      return None    
+  
+  @staticmethod
+  def check(key, domain = None):
+    
+    """ 
+      Check if some info exist in MemoryModel table using MemoryModel.key 
+      ---
+      Parameters 
+        key : String
+          MemoryModel key.
+        domain : String (optionnal)
+          Domain name info is reserved for, by default info is for all domains. [Default = None]
+      ---
+      Return : Boolean
+        Corresponding MemoryModel Object exist.
+    """
+    
+    # Create query
+    query = MemoryModel.select().where((MemoryModel.key == key) & (MemoryModel.domain == domain))
+    
+    # Return exists value.
+    return query.exists()
+  
+  @staticmethod
+  def reverse_check(value, domain = None):
+    
+    """ 
+      Check if some info exist in memory using Memory.value 
+      ---
+      Parameters 
+        value : String
+          MemoryModel value.
+        domain : String (optionnal)
+          Domain name info is reserved for, by default info is for all domains. [Default = None]
+      ---
+      Return : Memory
+        Corresponding MemoryModel Object exist.
+    """
+    
+    # Create query
+    query = MemoryModel.select().where((MemoryModel.value == value) & (MemoryModel.domain == domain))
+    
+    # Return exists value.
+    return query.exists()
+    

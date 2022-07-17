@@ -113,7 +113,7 @@ class Memory(MyModel):
         Corresponding Memory Object, None if no matching result.
     """
     
-    # Create select query
+    # Create query
     query = Memory.select().where((Memory.key == key) & (Memory.domain == domain))
     
     # Check if no result.
@@ -139,7 +139,7 @@ class Memory(MyModel):
         Corresponding Memorys Object in list, None if no matching result.
     """
     
-    # Create select query
+    # Create query
     query = Memory.select().where((Memory.value == value) & (Memory.domain == domain))
         
     # Check query have result.
@@ -166,7 +166,7 @@ class Memory(MyModel):
         Corresponding Memory Object exist.
     """
     
-    # Create count query
+    # Create query
     query = Memory.select().where((Memory.key == key) & (Memory.domain == domain))
     
     # Return exists value.
@@ -188,7 +188,7 @@ class Memory(MyModel):
         Corresponding Memory Object exist.
     """
     
-    # Create count query
+    # Create query
     query = Memory.select().where((Memory.value == value) & (Memory.domain == domain))
     
     # Return exists value.

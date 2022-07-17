@@ -157,7 +157,7 @@ class Context(MyModel):
     # Get current timestamp.
     now_timestamp = datetime.timestamp(datetime.now())
     
-    # Create select query
+    # Create query
     query = Context.select().where((Context.value == value) & (Context.domain == domain) & (Context.expire >now_timestamp))
     
     # Check query have result.
