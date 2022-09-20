@@ -323,19 +323,27 @@ class Haroun(object):
             logging.info(f"Incoming message : \n #{message_id} new message from {user_id} at {message_datetime}")
             logging.info(f"Message : {message_content}\n\n")
 
-            # Call for Haroun.
-            response = await self.call(
-              tg_client_name, 
-              tg_chat_id, 
-              message_content,
-              user_id, 
-              message_id, 
-              None, 
-              message_datetime
-            )
-            
-            # [LOG]
-            logging.info(f"Response : {response} \n\n")
+            # Audio debug mode.
+            if self.brain.config['haroun']['audio_debug'] == 'True' :
+              
+              # Set audio message as response.
+              response = message_content
+
+            else:
+
+              # Call for Haroun.
+              response = await self.call(
+                tg_client_name, 
+                tg_chat_id, 
+                message_content,
+                user_id, 
+                message_id, 
+                None, 
+                message_datetime
+              )
+              
+              # [LOG]
+              logging.info(f"Response : {response} \n\n")
 
             # Get chat entity with message channel id.
             chat_entity = await client.get_entity(tg_response_chat_id)
