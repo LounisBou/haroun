@@ -200,11 +200,11 @@ class Haroun(object):
     
     # Retrieving Telegram config from brain config.
     try:
-      tg_client_name = self.brain.config['telegram']['TG_CLIENT_NAME']
-      tg_client_api_id = int(self.brain.config['telegram']['TG_CLIENT_API_ID'])
-      tg_client_api_hash = self.brain.config['telegram']['TG_CLIENT_API_HASH']
-      tg_haroun_bot_token = self.brain.config['telegram']['TG_HAROUN_BOT_TOKEN']
-      tg_chat_id = int(self.brain.config['telegram']['TG_HAROUN_CHAT_ID'])
+      tg_client_name = self.brain.config['telegram']['client_name']
+      tg_client_api_id = int(self.brain.config['telegram']['client_api_id'])
+      tg_client_api_hash = self.brain.config['telegram']['client_api_hash']
+      tg_haroun_bot_token = self.brain.config['telegram']['haroun_bot_token']
+      tg_chat_id = int(self.brain.config['telegram']['haroun_chat_id'])
     except:
       print(f"Enable to get Telegram config to initiate Telegram session. Please check your config file.")
     
@@ -244,6 +244,9 @@ class Haroun(object):
         
     # Create the client and connect
     client = await TelegramClient(None, tg_client_api_id, tg_client_api_hash).start(bot_token=tg_haroun_bot_token)
+
+    # Get Haroun user id.
+    haroun_user_id = tg_haroun_bot_token.split(':')[0]
     
     # Use async telegram client.
     async with client :
@@ -260,42 +263,90 @@ class Haroun(object):
       # Create new message event listener method.
       @client.on(events.NewMessage(chats=[tg_chat_id]))
       async def new_message_handler(event):
-        
+
+        # Audio flag.
+        audio = False
+
+        # [LOG]
+        logging.debug(f"New message : {event.message.__dict__}")
+
+        # If message contains media file.
+        if event.message.media_unread :
+          
+          # [LOG]
+          logging.debug(f"New message media document : {event.message.media.document.__dict__}")
+          
+          # If message contains audio file.
+          if event.message.media.document.mime_type == 'audio/ogg' :
+
+            # Test retrieving audio file from message.
+            audio_path = await client.download_media(event.message.media, f"{ROOT_PATH}tmp/tg-audio-{event.message.media.document.id}.ogg")
+
+            # [LOG]
+            logging.info(f"Audio file retrieved : {audio_path}")
+
+            # Use brain ear to transcribe audio file.
+            audio_message = self.brain.ear.transcribe(audio_path)
+
+            # [LOG]
+            logging.info(f"Audio file transcribed : {audio_message}")
+
+          else:
+            # [LOG]
+            logging.info(f"Unsupported media type : {event.message.media.document.mime_type}")
+          
         # Get message id.
         message_id = event.message.id
         # Get message datetime.
         message_datetime = event.message.date
         # Get message content.
         message_content = event.message.message
+        # If no content message but audio message.
+        if not message_content and audio_message :
+          # Get audio message as message_content.
+          message_content = audio_message
+          # Audio flag.
+          audio = True
         # Get user id that send message.
         user_id = event.message.from_id.user_id
         # Get current channel id.
         tg_response_chat_id = event.peer_id.channel_id
         
-        # [LOG]
-        logging.info('\n\n----------------------------------------')
-        logging.info(f"Incoming message : \n #{message_id} new message from {user_id} at {message_datetime}")
-        logging.info(f"{message_content}\n\n")
-        
-        # Call for Haroun.
-        response = await self.call(
-          tg_client_name, 
-          tg_chat_id, 
-          message_content,
-          user_id, 
-          message_id, 
-          None, 
-          message_datetime
-        )
-        
-        # [LOG]
-        logging.info(f"Response : {response} \n\n")
-        
-        # Get chat entity with message channel id.
-        chat_entity = await client.get_entity(tg_response_chat_id)
-        
-        # Send response back.
-        await client.send_message(entity=chat_entity, message=response)
+        # If message is not empty.
+        if message_content.strip() :
+
+          # Ignore message if it's from Haroun.
+          if str(user_id).strip() != haroun_user_id.strip() :
+
+            # [LOG]
+            logging.info('\n\n----------------------------------------')
+            logging.info(f"Incoming message : \n #{message_id} new message from {user_id} at {message_datetime}")
+            logging.info(f"Message : {message_content}\n\n")
+
+            # Call for Haroun.
+            response = await self.call(
+              tg_client_name, 
+              tg_chat_id, 
+              message_content,
+              user_id, 
+              message_id, 
+              None, 
+              message_datetime
+            )
+            
+            # [LOG]
+            logging.info(f"Response : {response} \n\n")
+
+            # Get chat entity with message channel id.
+            chat_entity = await client.get_entity(tg_response_chat_id)
+
+            # If message is from audio source.
+            if audio :
+              # Send audio response.
+              await client.send_message(entity=chat_entity, message=response)
+            else:
+              # Send text response.
+              await client.send_message(entity=chat_entity, message=response)
       
       # [LOG]
       logging.info('\n\n')

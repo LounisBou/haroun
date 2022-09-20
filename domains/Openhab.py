@@ -9,6 +9,8 @@ import random
 from core.concepts.Domain import Domain 
 # Import Openhab library.
 from openhab import OpenHAB
+# Import logging library
+import logging
 #
 #
 # Domain statics attributs : 
@@ -72,8 +74,13 @@ class Openhab(Domain):
     # Retrieve needed slots.
     self.get_slots_entries(SLOTS_FILES)
 
-    # Initiate openhab connexion and try to retrieve items.
-    self.__connect()
+    # Initiate openhab connection and try to retrieve items.
+    if self.__connect():
+      # Log success.
+      logging.info("Openhab API connection successful.")
+    else:
+      # Log error.
+      logging.error("Openhab API connection failed.")
     
   def __setVariables(self):
 
@@ -88,20 +95,20 @@ class Openhab(Domain):
   def __connect(self):
     
     """
-      __connect : Initiate openhab API connexion.
+      __connect : Initiate openhab API connection.
       ---
       Return Boolean
-        Connexion init successful.
+        Connection init successful.
     """
     
     try:
-      # Initiate openhab API connexion.
+      # Initiate openhab API connection.
       self.openhab = OpenHAB(self.openhab_api_url)
       # Retrieve aviable items.
       self.__get_items()
     except:
-      # Log error.
-      self.log.error("Openhab API connexion failed.")
+      # Return connection failed.
+      self.openhab = None
       return False
     
     # Return 
@@ -165,7 +172,7 @@ class Openhab(Domain):
     # return answer.
     return answer
     
-  
+  @Domain.check_api_connection("openhab")
   @Domain.match_intent("openhab.question")
   def question(self, item_type, room = None, value = None, question_trigger = None, orphan = None):
   	
@@ -226,6 +233,7 @@ class Openhab(Domain):
     # Return response. 
     return response
   
+  @Domain.check_api_connection("openhab")
   @Domain.match_intent("openhab.action")
   def action(self, item_type, room = None, value = None, action_trigger = None, orphan = None):
     

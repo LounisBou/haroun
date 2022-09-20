@@ -7,7 +7,7 @@
 ([les] wc | [les] toilette[s]):(TOILETTES)
 ([la] salle de bain | [la] sdb):(SDB)
 ([la] chambre | [la] chambre 1 | [la] chambre parental):(CHAMBRE_1)
-([la] chambre [de] Maya | [la] chambre 2):(CHAMBRE_2)
+([la] chambre [de] maya | [la] chambre 2):(CHAMBRE_2)
 ([la] chambre 3 | [le] bureau [de] laura):(CHAMBRE_3)
 ([le] bureau | [le] bureau [de] lounes):(BUREAU)
 ([le] couloir (premier | 1er) étage):(C_ETAGE_1)

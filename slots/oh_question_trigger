@@ -1,6 +1,5 @@
 ((quel | quelle | quels | quelles) (est | sont)):(WHAT_IS)
 (est-ce que | est ce que):(IS_IT)
 (c'est quoi):(WHAT)
-((donne | donner) [moi]):(GET)
+(donne | donner | donne moi | donne-moi):(GET)
 (combien):(HOW_MUCH)
-

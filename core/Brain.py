@@ -18,11 +18,16 @@ import rhasspynlu
 import logging
 # Import pathlib.Path for rhasspynlu.parse_ini
 from pathlib import Path
+from core.Mouth import Mouth
 # Import consciousness class.
 from core.consciousness.Conscious import Conscious
 from core.consciousness.Ego import Ego
 # Import Base utils.base (Peewee ORM connector)
 from utils.bdd import MyModel
+# Import audio transcription class (STT)
+from core.Ear import Ear
+# Import audio generation class (TTS)
+from core.Mouth import Mouth
 # Import concepts class.
 from core.concepts.Domain import Domain
 from core.concepts.Skill import Skill
@@ -60,6 +65,12 @@ class Brain(object):
       __init__ : Brain class constructor.
     """
     
+    # Audio transcription class (STT).
+    self.ear = Ear()
+
+    # Audio generation class (TTS).
+    self.mouth = Mouth()
+
     # Consciousness (Reflexivity).
     self.conscious = Conscious()
     self.ego = Ego()
@@ -68,7 +79,7 @@ class Brain(object):
     self.config = config
     
     # Set logging level.
-    logging.getLogger().setLevel(self.config['haroun']['LOG_LEVEL'])
+    logging.getLogger().setLevel(self.config['haroun']['log_level'])
     
     # Available domains list. 
     self.domains = {}
@@ -388,11 +399,11 @@ class Brain(object):
     """
     
     # Set user id as izno.
-    memory = Memory.add(f"user_id_{user_id}", "Laura", "Telegram")
+    #memory = Memory.add(f"user_id_{user_id}", "Laura", "Telegram")
     #memory.remove()
     
     # Set context to make a test.
-    context = Context.add(f"user_id_{user_id}", "Laura", "Telegram")
+    #context = Context.add(f"user_id_{user_id}", "Laura", "Telegram")
     #context.remove()
     
     # Create stimulus from script call infos.

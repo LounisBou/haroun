@@ -336,6 +336,69 @@ class Domain(object):
           
     # Return inner_function
     return inner_function
+
+
+  @staticmethod
+  def check_api_connection(api_var_name):
+    
+    """
+      Decorator that check if API connection is done.
+      ---
+      Parameters
+        api_var_name : String
+          Name of domain variable that manage API connection.
+      ---
+      Return Function
+        Decorator inner function.
+    """
+    
+    def inner_function(function):
+      
+      """
+        inner_function that received the original function in parameters.
+        --- 
+        Parameters
+          function : Function
+            Domain method on which the decorator was applied.
+        ---
+        Return Function
+          Decorator function wrapper
+      """
+    
+      @wraps(function)
+      def wrapper(self_instance, *args, **kwargs):
+        
+        """
+          match_intent wrapper function. Execute decorator code.
+          ---
+          Parameters
+            self_instance : Class instance
+              Domain instance on which method have been called.
+            *args : List
+              List of arguments pass on function call.
+            *kargs : Dict
+              Dict of arguments_names : arguments pass on function call.
+          ---
+          Return : result of function call.
+        """
+        
+        # Check API connection.
+        if getattr(self_instance, api_var_name) is None:
+          # [LOG]
+          logging.error(f"API connection not done !")
+          return "La connexion API à échoué !"
+
+        # Call the original function.
+        result = function(self_instance, *args, **kwargs)
+        
+        # Return result.
+        return result
+      
+      # Return the wrapper function.
+      return wrapper
+          
+    # Return inner_function
+    return inner_function
   
 
 

@@ -7,14 +7,8 @@
 from core.concepts.Domain import Domain 
 # Import plex API.
 from plexapi.server import PlexServer
-#
-#
-# Globals :
-PLEX_SERVER_URL = "http://192.168.1.105:32400"
-PLEX_SERVER_TOKEN = "FykyWGwsoLWrxozHL2b_"
-PLEX_MOVIE_SECTION = "Films"
-PLEX_SHOW_SECTION = "Séries TV"
-PLEX_CLIENT_NAME = "Séjour"
+# Import logging library
+import logging
 #
 # 
 class Plex(Domain):  
@@ -28,23 +22,51 @@ class Plex(Domain):
     
     # Plex server instance.
     self.plex = None
+
+    # Initialisation.
     
-    # Plex server connexion.
+    # Load config file.
+    self.loadConfig()
+
+    # Set variables.
+    self.__setVariables()
+    
+    # Plex server connection.
     self.__connect()
-    
+  
+  def __setVariables(self):
+
+    """ Define Plex API infos from config file. """
+
+    self.plex_server_url = self.config["plex"]["server_url"]
+    self.plex_server_token = self.config["plex"]["server_token"]
+    self.plex_movies_section = self.config["plex"]["movies_section"]
+    self.plex_shows_section = self.config["plex"]["shows_section"]
+    self.plex_client_name = self.config["plex"]["client_name"]
       
   def __connect(self):
     
-    """ Connect to Plex server via API. """
+    """ 
+      Connect to Plex server via API. 
+      ---
+      Return Boolean
+        Connection status.
+    """
     
-    # Connect to plex server using PLEX_SERVER_TOKEN.
-    self.plex = PlexServer(PLEX_SERVER_URL, PLEX_SERVER_TOKEN)
-    
-    # [DEBUG]
-    if self.check_client(PLEX_CLIENT_NAME) :
-      print(f"Client {PLEX_CLIENT_NAME} available.")
+    try:
+      # Connect to plex server using PLEX_SERVER_TOKEN.
+      self.plex = PlexServer(self.plex_server_url, self.plex_server_token)
+    except:
+      self.plex = None
+      return False
+
+    # [LOG]
+    if self.check_client(self.plex_client_name) :
+      logging.info(f"Client {self.plex_client_name} available.")
     else:
-      print(f"Client {PLEX_CLIENT_NAME} NOT available.")
+      logging.warning(f"Client {self.plex_client_name} NOT available.")
+
+    return True
     
   
   def __get_available_client(self):
@@ -59,8 +81,8 @@ class Plex(Domain):
     # Retrieve plex clients list.
     plex_clients = self.plex.clients()
     
-    # [DEBUG]
-    #print(plex_clients)
+    # [LOG]
+    logging.debug(f"Plex available clients : {plex_clients}")
     
     # Return plex clients.
     return plex_clients
@@ -100,11 +122,11 @@ class Plex(Domain):
     """    
     
     # Check for client availability.
-    if not self.check_client(PLEX_CLIENT_NAME) :
-      return f"Le client {PLEX_CLIENT_NAME} n'est pas disponible je ne peux rien faire, désolé."
+    if not self.check_client(self.plex_client_name) :
+      return f"Le client {self.plex_client_name} n'est pas disponible je ne peux rien faire, désolé."
     
     # Retrieve client.
-    client = self.plex.client(PLEX_CLIENT_NAME)
+    client = self.plex.client(self.plex_client_name)
     
     # return client.
     return client
@@ -120,7 +142,7 @@ class Plex(Domain):
         # Play media on client.
         client.playMedia(media)
       except:
-        return f"Le client {PLEX_CLIENT_NAME} n'est pas disponible je ne peux rien faire, désolé."
+        return f"Le client {self.plex_client_name} n'est pas disponible je ne peux rien faire, désolé."
         
       # Return 
       return None
@@ -151,6 +173,7 @@ class Plex(Domain):
   
   # ! - Methods.
   
+  @Domain.check_api_connection("plex")
   @Domain.match_intent("plex.play_movie")
   def play_movie(self, orphan):
     
@@ -168,7 +191,7 @@ class Plex(Domain):
       correct_movie_title = matching_videos_titles[0]
       
       # Get movie to play.
-      movie_to_play = self.plex.library.section(PLEX_MOVIE_SECTION).get(correct_movie_title)
+      movie_to_play = self.plex.library.section(self.plex_movies_section).get(correct_movie_title)
             
       # Say client to play movie.
       error = self.play_client(movie_to_play)
@@ -185,7 +208,8 @@ class Plex(Domain):
       response = response + f"pouvez-vous préciser lequel je dois lancer ?"
       # Return response.
       return response
-      
+  
+  @Domain.check_api_connection("plex")
   @Domain.match_intent("plex.play_show")
   def play_show(self, orphan, season_number = None, episode_number = 1, mode = None):
     
@@ -204,7 +228,7 @@ class Plex(Domain):
       correct_show_title = matching_videos_titles[0]
       
       # Get show to play.
-      show_to_play = self.plex.library.section(PLEX_SHOW_SECTION).get(correct_show_title)
+      show_to_play = self.plex.library.section(self.plex_shows_section).get(correct_show_title)
       
       # If ask for specific season
       if season_number :  
@@ -252,6 +276,7 @@ class Plex(Domain):
       # Return response.
       return response
       
+  @Domain.check_api_connection("plex")
   @Domain.match_intent("plex.play")
   def play(self):
     
@@ -266,6 +291,7 @@ class Plex(Domain):
     # Return response.
     return f"Je relance la video."
     
+  @Domain.check_api_connection("plex")
   @Domain.match_intent("plex.pause")
   def pause(self):
     
@@ -280,6 +306,7 @@ class Plex(Domain):
     # Return response.
     return f"Ok, je met sur pause."
     
+  @Domain.check_api_connection("plex")
   @Domain.match_intent("plex.stop")
   def stop(self):
     
