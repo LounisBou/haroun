@@ -13,3 +13,6 @@ log/*.log
 
 # Temporary files
 tmp/*
+
+# Temporary files
+bdd/*
