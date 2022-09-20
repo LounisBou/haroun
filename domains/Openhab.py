@@ -13,13 +13,6 @@ from openhab import OpenHAB
 #
 # Domain statics attributs : 
 #
-# Openhab API connection infos.
-OPENHAB_IP = "192.168.1.115"
-OPENHAB_PORT = "8080"
-OPENHAB_API_URL = f"http://{OPENHAB_IP}:{OPENHAB_PORT}/rest"
-OPENHAB_API_VERSION = "1"
-OPENHAB_VERSION = "3"
-
 # Languages dictionnary.
 LANGUAGES = {}
 
@@ -70,8 +63,11 @@ class Openhab(Domain):
         
     # Initialisation.
     
-    # Get config.
+    # Load config file.
     self.loadConfig()
+
+    # Set variables.
+    self.__setVariables()
     
     # Retrieve needed slots.
     self.get_slots_entries(SLOTS_FILES)
@@ -82,7 +78,15 @@ class Openhab(Domain):
     # Retrieve aviable items.
     self.__get_items()
     
-    
+  def __setVariables(self):
+
+    """ Define Openhab API connection infos from config file. """
+
+    self.openhab_ip = self.config["openhab"]["ip"]
+    self.openhab_port = self.config["openhab"]["port"]
+    self.openhab_api_url = f"http://{self.openhab_ip}:{self.openhab_port}/rest"
+    self.openhab_api_version = self.config["openhab"]["api_version"]
+    self.openhab_version = self.config["openhab"]["version"]
     
   def __connect(self):
     
@@ -94,14 +98,15 @@ class Openhab(Domain):
     """
     
     # Initiate openhab API connexion.
-    self.openhab = OpenHAB(OPENHAB_API_URL)
-    
-    # [TODO]
-    # Check for Openhab connexion.
-    connected = True
+    try:
+      self.openhab = OpenHAB(self.openhab_api_url)
+    except:
+      # Log error.
+      self.log.error("Openhab API connexion failed.")
+      return False
     
     # Return 
-    return connected
+    return True
       
     
   def __get_items(self):

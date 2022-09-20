@@ -45,7 +45,7 @@ class Domain(object):
     
     # Get domain class name.
     self.domain_class_name = type(self).__name__
-    
+
     # Configuration file
     self.config_file_name = f"{self.domain_class_name}.ini"
     
@@ -75,12 +75,12 @@ class Domain(object):
           Domain config file name if not same name as domain class name.
     """
     
-    # Check if config_file_name is overwrite.
-    if config_file_name :
-      self.config_file_name = config_file_name
+    # Check if config_file_name, else use class default.
+    if not config_file_name :
+      config_file_name = self.config_file_name
     
     # Domain config file path.
-    domain_config_file_path = f"{ROOT_PATH}config/{self.config_file_name}"
+    domain_config_file_path = f"{ROOT_PATH}config/{config_file_name}"
     
     # Check if config exist.
     if path.exists(domain_config_file_path):
