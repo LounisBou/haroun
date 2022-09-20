@@ -72,11 +72,8 @@ class Openhab(Domain):
     # Retrieve needed slots.
     self.get_slots_entries(SLOTS_FILES)
 
-    # Initiate openhab connexion.
+    # Initiate openhab connexion and try to retrieve items.
     self.__connect()
-    
-    # Retrieve aviable items.
-    self.__get_items()
     
   def __setVariables(self):
 
@@ -97,9 +94,11 @@ class Openhab(Domain):
         Connexion init successful.
     """
     
-    # Initiate openhab API connexion.
     try:
+      # Initiate openhab API connexion.
       self.openhab = OpenHAB(self.openhab_api_url)
+      # Retrieve aviable items.
+      self.__get_items()
     except:
       # Log error.
       self.log.error("Openhab API connexion failed.")
