@@ -289,10 +289,10 @@ class Domain(object):
         # Return dialog.
         return dialog
         
-    def methodGetArgs(self, method_name):
+    def get_method_args(self, method_name):
         
         """
-            methodGetArgs : Get methods arguments list as tuple.
+            Get methods arguments list as tuple.
             ---
             Parameters : 
                 method_name : String

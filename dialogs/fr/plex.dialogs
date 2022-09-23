@@ -1,11 +1,11 @@
 [plex.play_movie.found]
 ça marche je lance ça.
-allez c'est partie pour {movie_title}
+allez c'est parti pour {movie_title}
 ok, je lance {movie_title}
 {movie_title}, très bon choix. Je m'occupe de ça.
 
 [plex.play_movie.not_found]
-J'ai du mal comprendre, vous avez dit {movie_title}, malheuresement je ne l'ai pas trouvé.
+J'ai du mal comprendre, vous avez dit {movie_title}, malheureusement je ne l'ai pas trouvé.
 Impossible de remettre la main sur la cassette de {movie_title}.
 Je n'ai pas trouvé de film correspondant à {movie_title}, désolé.
 
@@ -16,7 +16,7 @@ Là il va falloir m'en dire plus, j'ai trouvé {movies_titles}, vous souhaitez v
 
 [plex.show.found]
 ça marche je lance ça.
-allez c'est partie pour {show_title}
+allez c'est parti pour {show_title}
 ok, je lance {show_title}
 {show_title}, très bonne série. Je m'occupe de ça.
 
@@ -46,6 +46,6 @@ hey, c'est la pause. "Bruit de trompette enfoncé sur la tête"
 
 [plex.stop]
 je coupe Plex.
-c'est déjà fini ?
+c'est déjà fini ?!
 ok, on arrête alors...
 the end...

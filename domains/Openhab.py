@@ -23,22 +23,6 @@ SLOTS_FILES = [
 #  "oh_question_trigger",
 #  "oh_action_trigger",
 ]
-
-# Define french language.
-LANGUAGES = {}
-LANGUAGES['fr'] = {
-  "WHAT_ROOM_ITEM_INFO" : [
-    "Ok mais dans quelle pièce souhaitez-vous connaitre {item_type_lang} ?",
-    "Très bien je veux bien vous donner {item_type_lang} mais de quelle pièce ?",
-  ],
-  "WHAT_ROOM_ITEM_ACTION" : [
-    "Ok mais dans quelle pièce souhaitez-vous modifier {item_type_lang} ?",
-    "Très bien je veux bien modifier {item_type_lang} mais de quelle pièce ?",
-  ],
-  "QUESTION_ANSWER" : [
-    "{item_type_lang} de {room_lang} est de {item_state}",
-  ]
-}
 #
 #
 # ! DOMAIN 
@@ -117,31 +101,7 @@ class Openhab(Domain):
     """
     
     self.items = self.openhab.fetch_all_items()
-    
-    
-  def __get_lang(self, lang_entry_code):
-    
-    """ 
-      __get_lang : Get language string by code. Provide random string if code entry value is list.
-      ---
-      Parameters 
-        lang_entry_code : String
-          Language entry code.
-      ---
-      Return String
-        Language string.
-    """
-    
-    # Get current language entry code value.
-    lang_entry_value = LANGUAGES[LANG_CODE][lang_entry_code]
-    
-    # If language entry value is list.
-    if type(lang_entry_value) == list :
-      # Return random value.
-      return random.choice(lang_entry_value)
-    else:
-      # Return value.
-      return lang_entry_value
+  
       
   def __improve_answer(self, answer):
     
@@ -256,7 +216,7 @@ class Openhab(Domain):
     """
     
     # Get item type lang.
-    item_type_lang = self.__get_lang(item_type)
+    item_type_lang = self.slots_entries[item_type]
     
     # Check if room not provide.
     if not room :

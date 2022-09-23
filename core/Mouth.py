@@ -40,7 +40,7 @@ class Mouth(object):
         # Define pyttsx3 voice.
         self.engine.setProperty('voice', 'french')
 
-    def generateAudio(self, text):
+    def generate_audio(self, text):
 
         """
             Use pyttsx3 TTS API to create audio speak file from text.

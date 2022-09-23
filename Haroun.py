@@ -94,17 +94,17 @@ class Haroun(object):
         if path.exists(haroun_config_file_path):
         
             # See configparser 
-            configParser = ConfigParser()
+            config_parser = ConfigParser()
         
             # Parse haroun.ini config file.
-            configParser.read(haroun_config_file_path)
+            config_parser.read(haroun_config_file_path)
              
             # Get config parser sections.
-            sections = configParser.sections()
+            sections = config_parser.sections()
             
             # Get all sections.
             for section_name in sections:
-                config[section_name] = configParser[section_name]
+                config[section_name] = config_parser[section_name]
             
         else:
             # [LOG]
@@ -361,7 +361,7 @@ class Haroun(object):
                         # If message is from audio source.
                         if audio and self.brain.config['haroun']['audio_response'] == 'True' :
                             # Create audio response.
-                            reponse_file_path = self.brain.mouth.generateAudio(response)
+                            reponse_file_path = self.brain.mouth.generate_audio(response)
                             # Send audio response.
                             await client.send_file(chat_entity, reponse_file_path, voice_note=True)
                             # Send text response.

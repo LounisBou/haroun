@@ -174,47 +174,47 @@ class Brain(object):
         """
         
         # Intents directory path.
-        intentsPath=f"{ROOT_PATH}intents/{self.config['haroun']['lang']}/"
+        intents_path=f"{ROOT_PATH}intents/{self.config['haroun']['lang']}/"
         
         # Browse through intents files 
-        intentsFiles = []    
-        for(dirPath, dirNames, fileNames) in walk(intentsPath):
+        intents_files = []    
+        for(dir_path, dir_names, file_names) in walk(intents_path):
             # [LOG]
-            logging.debug(f"Looking in intent directory : {intentsPath}, listing files : \n{fileNames}")
-            intentsFiles.extend(fileNames)
+            logging.debug(f"Looking in intent directory : {intents_path}, listing files : \n{file_names}")
+            intents_files.extend(file_names)
             break
             
         """ Write all intents in intents/.all.ini file. """
         
         # Open intents/.all.ini, a file that will contains all intents.
-        allIntentsFilePath  = intentsPath+".all.ini"
+        all_intents_file_path  = intents_path+".all.ini"
                     
         # Open intents/.all.ini in write mode
-        with open(allIntentsFilePath, 'w+') as allIntentsFileBuffer:
+        with open(all_intents_file_path, 'w+') as all_intents_file_buffer:
             
-            # Iterate through intentsFiles list
-            for fileName in intentsFiles:
+            # Iterate through intents_files list
+            for file_name in intents_files:
                 
                 # Ignore .all.ini file.
-                if fileName != ".all.ini":
+                if file_name != ".all.ini":
 
                     # Construct file path.
-                    filePath = intentsPath+fileName
+                    file_path = intents_path+file_name
                     
                     # Open each file in read mode
-                    with open(filePath) as fileBuffer:
+                    with open(file_path) as file_buffer:
         
                         # Read the data from file. 
-                        fileIntents = fileBuffer.read()
+                        file_intents = file_buffer.read()
                         
-                        # Write it in allIntentsFileBuffer and add '\n\n' to enter data from next line
-                        allIntentsFileBuffer.write("# "+fileName+" file content : \n")
+                        # Write it in all_intents_file_buffer and add '\n\n' to enter data from next line
+                        all_intents_file_buffer.write("# "+file_name+" file content : \n")
                         # Lowercase all intents.
-                        allIntentsFileBuffer.write(fileIntents.lower()+"\n\n")
+                        all_intents_file_buffer.write(file_intents.lower()+"\n\n")
                     
                             
         # Load file for rhasspy-nlu.
-        intents = rhasspynlu.parse_ini(Path(allIntentsFilePath))
+        intents = rhasspynlu.parse_ini(Path(all_intents_file_path))
         
         # Return
         return intents
@@ -227,33 +227,33 @@ class Brain(object):
         """
         
         # Slots directory path.
-        slotsPath=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
+        slots_path=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
         
         # Slots programs directory path.
-        slotsProgramPath=f"{ROOT_PATH}slotsPrograms/{self.config['haroun']['lang']}"
+        slots_program_path=f"{ROOT_PATH}slotsPrograms/{self.config['haroun']['lang']}"
         
         # Browse through slots files 
-        slotsProgramsFiles = []    
-        for(dirPath, dirNames, fileNames) in walk(slotsProgramPath):
+        slots_programs_files = []    
+        for(dir_path, dir_names, file_names) in walk(slots_program_path):
             # [LOG]
-            logging.debug(f"Looking in slotsPrograms directory : {slotsProgramPath}, listing files :\n{fileNames}")
-            # Add fileNames to slotsProgramsFiles list.
-            slotsProgramsFiles.extend(fileNames)
+            logging.debug(f"Looking in slotsPrograms directory : {slots_program_path}, listing files :\n{file_names}")
+            # Add file_names to slots_programs_files list.
+            slots_programs_files.extend(file_names)
             break
             
-        # Iterate through slotsProgramsFiles list
-        for programSlotFileName in slotsProgramsFiles:
+        # Iterate through slots_programs_files list
+        for program_slot_file_name in slots_programs_files:
             
-            # Get file name without extension as programSlotName.
-            programSlotName = path.splitext(programSlotFileName)[0]
+            # Get file name without extension as program_slot_name.
+            program_slot_name = path.splitext(program_slot_file_name)[0]
         
             # Get program path.
-            program_path = slotsProgramPath+programSlotFileName
+            program_path = slots_program_path+program_slot_file_name
             
             # Create slot file with program slot name.
-            slotFilePath = slotsPath+programSlotName
+            slot_file_path = slots_path+program_slot_name
             # If slot file doesn't already exist.
-            if not path.exists(slotFilePath) :
+            if not path.exists(slot_file_path) :
             
                 # Execute program slot file.
                 process = subprocess.Popen(
@@ -269,17 +269,17 @@ class Brain(object):
                 output, error = process.communicate()
                 
                 # Retrieve output string.
-                slotFileContent = output.decode()
+                slot_file_content = output.decode()
                                 
                 # Open file : create if not exist, truncate if exist.
-                with open(slotFilePath, 'w') as slotFile:
+                with open(slot_file_path, 'w') as slot_file:
                     # Write program slot file execution output.
-                    slotFile.write(f"{slotFileContent}")
+                    slot_file.write(f"{slot_file_content}")
                     
             else:
                 # [LOG]
-                logging.warning(f"Slot {programSlotName} already exist.")
-                logging.warning(f"Program slot file '{programSlotFileName}' can't be executed. Delete slot {programSlotName} to re-generate it.\n")
+                logging.warning(f"Slot {program_slot_name} already exist.")
+                logging.warning(f"Program slot file '{program_slot_file_name}' can't be executed. Delete slot {program_slot_name} to re-generate it.\n")
     
     def get_slots(self):
         
@@ -291,15 +291,15 @@ class Brain(object):
         """
         
         # Slots directory path.
-        slotsPath=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
+        slots_path=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
         
         # Browse through slots files 
-        slotsFiles = []    
-        for(dirPath, dirNames, fileNames) in walk(slotsPath):
+        slots_files = []    
+        for(dir_path, dir_names, file_names) in walk(slots_path):
             # [LOG]
-            logging.debug(f"Looking in slots directory : '{slotsPath}', listing files :\n{fileNames}")
-            # Add fileNames to slotsFiles list.
-            slotsFiles.extend(fileNames)
+            logging.debug(f"Looking in slots directory : '{slots_path}', listing files :\n{file_names}")
+            # Add file_names to slots_files list.
+            slots_files.extend(file_names)
             break
         
         """ Get slots from domains files and add them to slots files. """
@@ -312,23 +312,23 @@ class Brain(object):
         # Replacement slots dict.
         slots = {}
             
-        # Iterate through slotsFiles list
-        for fileName in slotsFiles:
+        # Iterate through slots_files list
+        for file_name in slots_files:
             
             # Construct file path.
-            filePath = slotsPath+fileName
+            file_path = slots_path+file_name
             
             # Retrieve slot file content.
-            with open(filePath) as fileBuffer:
+            with open(file_path) as file_buffer:
                 
                 # Read the data from file. 
-                FileContent = fileBuffer.read()
+                FileContent = file_buffer.read()
                 
                 # Retrieve all slots entries in file and separate them with pipe.
                 slots_entries = FileContent.replace("\n", " | ")
             
                 # Construct slots.
-                key = "$"+fileName
+                key = "$"+file_name
                 value = [rhasspynlu.Sentence.parse(slots_entries)]
                 
                 # Add it to replacement slots dict.
@@ -624,7 +624,7 @@ class Brain(object):
         """
         
         # Get domain methods args list to prepare skill.
-        method_args = interaction.domain.methodGetArgs(interaction.skill.method_name)
+        method_args = interaction.domain.get_method_args(interaction.skill.method_name)
         
         # Prepare skill for execution.
         preparation_flag = interaction.skill.prepare(interaction.intent, method_args)
