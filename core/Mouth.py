@@ -3,6 +3,8 @@
 #
 # Libraries dependancies :
 #
+# Import subprocess library.
+import subprocess
 # Import sys.path as syspath
 from sys import path as syspath
 # Import os.path and os.walk
@@ -55,13 +57,28 @@ class Mouth(object):
         self.engine.setProperty('rate', 150)
         
         # Define audio file path.
-        audio_file_path = ROOT_PATH+'tmp/response'+str(time())+'.mp3'
+        audio_mp3_file_path = ROOT_PATH+'tmp/response'+str(time())+'.mp3'
         
         # Save voice generated as audio file (mp3 or wav).
-        self.engine.save_to_file(text, audio_file_path)
+        self.engine.save_to_file(text, audio_mp3_file_path)
 
         # Run and wait commands.
         self.engine.runAndWait()
 
-        # Return audio file path.
-        return audio_file_path
+        # Convert audio file to ogg format.
+        audio_ogg_file_path = audio_mp3_file_path.replace('.mp3', '.ogg')
+        with subprocess.Popen(
+            ["ffmpeg", "-loglevel", "quiet", "-i", audio_mp3_file_path, "-acodec", "libvorbis", "-q:a", "4", audio_ogg_file_path],
+            stdout=subprocess.PIPE
+        ) as process:
+            for line in process.stdout:
+                logging.info(line)  
+
+        # Delete mp3 audio file.
+        subprocess.Popen(
+            ["rm", audio_mp3_file_path],
+            stdout=subprocess.PIPE
+        )
+
+        # Return audio ogg file path.
+        return audio_ogg_file_path

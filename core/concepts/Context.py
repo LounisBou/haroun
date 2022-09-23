@@ -182,6 +182,9 @@ class Context(MyModel):
       Return : Boolean
         Context Object exists.
     """
+
+    # First clean expired context.
+    Context.clean()
     
     # Get current timestamp.
     now_timestamp = datetime.timestamp(datetime.now())
@@ -219,7 +222,7 @@ class Context(MyModel):
     
     
   @staticmethod
-  def clean_context():
+  def clean():
     
     """ 
       Search for expired context info and remove them from table. 

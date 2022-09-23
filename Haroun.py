@@ -11,8 +11,8 @@ import logging
 #import pretty_errors
 # Import sys.path as syspath
 from sys import path as syspath
-# Import os.path and os.walk
-from os import path, walk
+# Import os.path and os.remove
+from os import path, remove
 # Import configparser.
 from configparser import ConfigParser
 # Import datetime.date
@@ -204,7 +204,10 @@ class Haroun(object):
       tg_client_api_id = int(self.brain.config['telegram']['client_api_id'])
       tg_client_api_hash = self.brain.config['telegram']['client_api_hash']
       tg_haroun_bot_token = self.brain.config['telegram']['haroun_bot_token']
-      tg_chat_id = int(self.brain.config['telegram']['haroun_chat_id'])
+      if self.brain.config['haroun']['debug_mode'] == "True" :
+        tg_chat_id = int(self.brain.config['telegram']['haroun_debug_chat_id'])
+      else:
+        tg_chat_id = int(self.brain.config['telegram']['haroun_chat_id'])
     except:
       print(f"Enable to get Telegram config to initiate Telegram session. Please check your config file.")
     
@@ -307,10 +310,17 @@ class Haroun(object):
           message_content = audio_message
           # Audio flag.
           audio = True
-        # Get user id that send message.
-        user_id = event.message.from_id.user_id
-        # Get current channel id.
-        tg_response_chat_id = event.peer_id.channel_id
+        # If message from chat.
+        if event.message.from_id :
+          user_id = event.message.from_id.user_id
+          # Get current channel id.
+          #tg_response_chat_id = event.peer_id.channel_id
+          tg_response_chat_id = event.peer_id.chat_id
+        else:
+          # Get user id that send message.
+          user_id = tg_chat_id
+          # Get current channel id.
+          tg_response_chat_id = tg_chat_id
         
         # If message is not empty.
         if message_content.strip() :
@@ -349,9 +359,15 @@ class Haroun(object):
             chat_entity = await client.get_entity(tg_response_chat_id)
 
             # If message is from audio source.
-            if audio :
+            if audio and self.brain.config['haroun']['audio_response'] == 'True' :
+              # Create audio response.
+              reponse_file_path = self.brain.mouth.generateAudio(response)
               # Send audio response.
-              await client.send_message(entity=chat_entity, message=response)
+              await client.send_file(chat_entity, reponse_file_path, voice_note=True)
+              # Send text response.
+              #await client.send_message(entity=chat_entity, message=response)
+              # Delete response file.
+              remove(reponse_file_path)
             else:
               # Send text response.
               await client.send_message(entity=chat_entity, message=response)

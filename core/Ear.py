@@ -38,7 +38,7 @@ class Ear(object):
         # Define Kaldi recognizer.
         self.recognizer = KaldiRecognizer(self.model, SAMPLE_RATE)
 
-    def transcribe(self, audio_file_path):
+    def transcribe(self, audio_file_path, delete_audio_file = True):
 
         """
             Use Vosk STT API to transcribe audio file into text.
@@ -46,6 +46,8 @@ class Ear(object):
             Parameters
                 audio_file_path : String
                     Audio file path.
+                delete_audio_file : Boolean
+                    Delete audio file after transcription. [Default = True]
             --- 
             Return String
                 Transcribed text.
@@ -78,6 +80,11 @@ class Ear(object):
 
             # Get final result.
             result = json.loads(self.recognizer.FinalResult())
+
+            # If delete audio file is True.
+            if delete_audio_file :
+                # Delete audio file.
+                subprocess.run(["rm", audio_file_path])
 
             # Return final result text.
             return result["text"]

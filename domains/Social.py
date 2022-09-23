@@ -3,6 +3,8 @@
 #
 # Libraries dependancies : #
 #
+# Import core concept domain.
+from core.concepts.Domain import Domain 
 # Random library import.
 import random
 #
@@ -24,14 +26,20 @@ LANGUAGES['fr'] = {
 #
 # ! DOMAIN 
 #
-class Social:
+class Social(Domain):
   
   def __init__(self):
     
-    """ 
-      __init__ : Domain constructor.      
-    """
+    """ Class constructor. """
+        
+    # Init parent class Domain.
+    super().__init__()
+
+    # Initialisation.
     
+    # Load config file.
+    #self.loadConfig()
+
     
   def __get_lang(self, lang_entry_code):
     
@@ -56,7 +64,8 @@ class Social:
     else:
       # Return value.
       return lang_entry_value
-    
+  
+  @Domain.match_intent("social.whatsup")
   def whatsup(self, whatsup, hi = None, orphan = None):
   	
     """ 
@@ -71,10 +80,18 @@ class Social:
           
     """
     
+    # List of possible responses.
+    responses = [
+      "Je vais bien, merci !",
+      "Très bien, merci !",
+      "Très bien et vous ?",
+      "Je vais bien, et vous ?",
+    ]
     
-    # Return response. 
-    return f"Call 'Social' method 'whatsup' with params : whatsup='{whatsup}', hi='{hi}', orphan='{orphan}'"
+    # Return random response.
+    return random.choice(responses)
   
+  @Domain.match_intent("social.hi")
   def hi(self, hi, orphan = None):
   	
     """ 
@@ -87,16 +104,27 @@ class Social:
           
     """
     
+    # List of possible responses.
+    responses = [
+      "Salut",
+      "Bonjour",
+      "Hey, comment ça va ?",
+      "Salut, ça va ?",
+      "Salut, comment ça va ?",
+      "Bonjour, comment allez-vous aujourd'hui ?",
+      "Bonjour, comment allez-vous ?",
+      "Bonjour que puis-je faire pour vous ?",
+      "Bonjour, j'espère que vous passer une bonne journée.",
+    ]
     
-    # Return response. 
-    return f"Call 'Social' method 'hi' with params : hi='{hi}', orphan='{orphan}'"
+    # Return random response.
+    return random.choice(responses)
   
-  	
+  @Domain.match_intent("social.bye")
   def bye(self, bye, orphan = None):
-  	
-  	
-  	""" 
-  	  bye : 
+
+    """ 
+      bye : 
       ---
       Parameters
         bye : String
@@ -104,8 +132,59 @@ class Social:
         orphan : String (optionnal)
                     
     """
-  	
-  	# Return response. 
-  	return f"Call 'Social' method 'bye' with params : bye='{bye}', orphan='{orphan}'"
-  	
-  	
+
+    # List of possible responses.
+    responses = [
+      "Au revoir",
+      "A bientôt",
+      "A plus tard",
+      "Bonne journée.",
+    ]
+
+    # Return random response.
+    return random.choice(responses)
+
+  @Domain.match_intent("social.good")
+  def good(self, good, orphan = None):
+
+    """ 
+      good : 
+      ---
+      Parameters
+        good : String
+          
+        orphan : String (optionnal)
+                    
+    """
+
+    # List of possible responses.
+    responses = [
+      "",
+      "Alors tout va bien.",
+      "Content que vous alliez bien.",
+    ]
+
+    # Return random response.
+    return random.choice(responses)
+
+  @Domain.match_intent("social.bad")
+  def bad(self, good, orphan = None):
+
+    """ 
+      bad : 
+      ---
+      Parameters
+        bad : String
+          
+        orphan : String (optionnal)
+                    
+    """
+
+    # List of possible responses.
+    responses = [
+      "Désolé pour vous, puis-je faire quelque chose ?",
+      "J'espère que ça ira mieux.",
+    ]
+
+    # Return random response.
+    return random.choice(responses)

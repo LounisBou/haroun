@@ -159,28 +159,6 @@ class Brain(object):
     
     # Create tables, indexes and associated metadata for the given list of models.
     MyModel.db.create_tables(haroun_models)
-  
-  def loadLanguage(self, language):
-    
-    """ 
-      loadLanguage : Get language file and load values in languages var.
-      ---
-      Parameters
-        language : String
-          Language to load.
-      ---
-      Return : None
-    """
-    
-    # Languages path.
-    languagesPath = ROOT_PATH+"languages"
-    
-    # Language file path.
-    languageFile = languagesPath+'/'+language+".json"
-      
-    # [TODO]
-    # Parse JSON language file.
-    pass
     
   
   def getIntents(self):
@@ -196,7 +174,7 @@ class Brain(object):
     """
     
     # Intents directory path.
-    intentsPath=ROOT_PATH+"intents/"
+    intentsPath=f"{ROOT_PATH}intents/{self.config['haroun']['lang']}/"
     
     # Browse through intents files 
     intentsFiles = []    
@@ -228,7 +206,8 @@ class Brain(object):
           
           # Write it in allIntentsFileBuffer and add '\n\n' to enter data from next line
           allIntentsFileBuffer.write("# "+fileName+" file content : \n")
-          allIntentsFileBuffer.write(fileIntents+"\n\n")
+          # Lowercase all intents.
+          allIntentsFileBuffer.write(fileIntents.lower()+"\n\n")
           
               
     # Load file for rhasspy-nlu.
@@ -245,10 +224,10 @@ class Brain(object):
     """
     
     # Slots directory path.
-    slotsPath=ROOT_PATH+"slots/"
+    slotsPath=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
     
     # Slots programs directory path.
-    slotsProgramPath=ROOT_PATH+"slotsPrograms/"
+    slotsProgramPath=f"{ROOT_PATH}slotsPrograms/{self.config['haroun']['lang']}"
     
     # Browse through slots files 
     slotsProgramsFiles = []    
@@ -309,7 +288,7 @@ class Brain(object):
     """
     
     # Slots directory path.
-    slotsPath=ROOT_PATH+"slots/"
+    slotsPath=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
     
     # Browse through slots files 
     slotsFiles = []    
@@ -397,15 +376,18 @@ class Brain(object):
       Return : Stimulus
         Stimulus concept object created with scripts call infos.
     """
-    
+
+    # [DEBUG] 
+
     # Set user id as izno.
-    #memory = Memory.add(f"user_id_{user_id}", "Laura", "Telegram")
+    memory = Memory.add(f"user_id_{user_id}", "Laura", "Telegram")
     #memory.remove()
     
     # Set context to make a test.
-    #context = Context.add(f"user_id_{user_id}", "Laura", "Telegram")
+    context = Context.add(f"user_id_{user_id}", "Laura", "Telegram")
     #context.remove()
     
+
     # Create stimulus from script call infos.
     stimulus = Stimulus(source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime)
     
@@ -463,17 +445,23 @@ class Brain(object):
     if not modified_interaction :
       # Return interaction message error.
       interaction.addError(f"Interaction interpretation failed. [Error #4].")
-    else:
       # [DEBUG]
-      #interaction.addResponse(str(interaction.intent))
+      if self.config["haroun"]["debug_mode"] == "True" : 
+        interaction.addError(f"Message : {interaction.stimulus.sentence}")
+        interaction.addError(f"Intent : {str(interaction.intent)}")
+    else:
       # [LOG]
-      logging.debug(f"{str(interaction.intent)}")
+      logging.info(f"{str(interaction.intent)}")
       # Defined Domain & Skill for this interaction.
       modified_interaction = self.analysis(modified_interaction)
       # If Interaction analysis failed. 
       if not modified_interaction :
         # Return interaction message error.
         interaction.addError(f"Interaction analysis failed. [Error #10].")
+        # [DEBUG]
+        if self.config["haroun"]["debug_mode"] == "True" : 
+          interaction.addError(f"Message : {interaction.stimulus.sentence}")
+          interaction.addError(f"Intent : {str(interaction.intent)}")
       else:
       
         # [TODO]

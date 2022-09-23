@@ -69,7 +69,8 @@ class Intent(object):
     # Text
     print_str = f"Intent : \n"
     print_str += f"  label : {str(self.label)} \n"
-    print_str += f"  stimulus text : {self.stimulus.sentence} \n"
+    if self.stimulus :
+      print_str += f"  stimulus text : {self.stimulus.sentence} \n"
     print_str += f"  interpreted text : {str(self.text)} \n"
     print_str += f"  raw_text  : {str(self.raw_text)} \n"
     #print_str += f" confidence  : {str(self.confidence)} \n"

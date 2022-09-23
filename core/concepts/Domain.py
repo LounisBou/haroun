@@ -102,8 +102,7 @@ class Domain(object):
       # [LOG]
       logging.error(f"Error config file {domain_config_file_path} doesn't exist.")
   
-  @staticmethod
-  def __get_slot(slot_file_name):
+  def __get_slot(self, slot_file_name):
     
     """ 
       Acquire a slot file and return all slot entries in dict. 
@@ -117,7 +116,7 @@ class Domain(object):
     """
     
     # Slots directory path.
-    slots_path=ROOT_PATH+"slots/"
+    slots_path=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
     
     """ Create slot entries dict from slot file. """
     
@@ -141,9 +140,14 @@ class Domain(object):
         
         # If split is ok.
         if len(entry_parts) == 2 :
-        
+          slot_entry_key = entry_parts[1]
+        else:
+          slot_entry_key = entry_parts[0]
+
+        try:
+
           # Create slot_entry_key from second part.
-          slot_entry_key = entry_parts[1].strip().replace("(", "").replace(")", "")
+          slot_entry_key = slot_entry_key.strip().replace("(", "").replace(")", "")
           slot_entry_key = slot_entry_key.strip()
           
           # Create slot_entry_value from second part.
@@ -156,7 +160,7 @@ class Domain(object):
           # Set second part as key, first part as value.
           slot_entries[slot_entry_key] = slot_entry_value
           
-        else :
+        except:
           # [LOG]
           logging.error(f"Slot line can't be interpreted. File slot {slot_file_name} error on : {line}")
     
@@ -178,7 +182,7 @@ class Domain(object):
     for slot_file_name in slots_files_names :
     
       # Use Domain static method getSlot to get slot file entries.
-      slot_entries = Domain.__get_slot(slot_file_name)
+      slot_entries = self.__get_slot(slot_file_name)
       
       # [LOG]
       logging.debug(f"Slot file {slot_file_name} entries : {slot_entries}\n")
