@@ -78,7 +78,7 @@ class Haroun(object):
     def load_config(self):
         
         """ 
-            Get config from config/Haroun.ini.
+            Get config from config/haroun.ini.
             ---
             Return : dict
                 Configuration dict.
@@ -88,7 +88,7 @@ class Haroun(object):
         config = {}
         
         # Haroun config file path.
-        haroun_config_file_path = f"{ROOT_PATH}config/Haroun.ini"
+        haroun_config_file_path = f"{ROOT_PATH}config/haroun.ini"
         
         # Check if config exist.
         if path.exists(haroun_config_file_path):

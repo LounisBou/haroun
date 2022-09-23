@@ -191,7 +191,8 @@ class Openhab(Domain):
     # Check if room not provide.
     if not room :
       # Ask for room information.
-      return self.__get_lang("WHAT_ROOM_ITEM_INFO").format(**locals(), **globals())
+      response = self.get_dialog("openhab.question.what_room")
+      return response.format(item_type = item_type_lang)
       
     # Get room lang.
     room_lang = self.slots_entries[room]
@@ -213,11 +214,19 @@ class Openhab(Domain):
         item_state = self.slots_entries[item_state]
     else: 
       # [DEBUG] Say item not found.
-      return f"Je n'ai pas pu trouver d'item {openhab_item_name}"
+      # Ask for room information.
+      response = self.get_dialog("openhab.question.item_not_found")
+      return response.format(item_name = openhab_item_name)
     
     # If item state retrieve succefully.
     if item_state :
-      response = self.__get_lang("QUESTION_ANSWER").format(**locals(), **globals())
+      response = self.get_dialog("openhab.question.answer")
+      response = response.format(
+        item_type = item_type_lang,
+        room = room_lang,
+        item_name = openhab_item_name,
+        item_state = item_state
+      )
     else:
       # [DEBUG]
       response = f"Call 'Openhab' method 'question' with params : item_type='{item_type}', room='{room}', value='{value}', question_trigger='{question_trigger}'"
@@ -252,8 +261,9 @@ class Openhab(Domain):
     # Check if room not provide.
     if not room :
       # Ask for room information.
-      return self.__get_lang("WHAT_ROOM_ITEM_ACTION").format(**locals(), **globals())
-    
+      response = self.get_dialog("openhab.action.what_room")
+      return response.format(item_type = item_type_lang)
+
     # Return response. 
     return f"Call 'Openhab' method 'action' with params : item_type='{item_type}', room='{room}', value='{value}', action_trigger='{action_trigger}'"
     

@@ -29,11 +29,6 @@ class Plex(Domain):
         # Plex server instance.
         self.plex = None
 
-        # Initialisation.
-        
-        # Load config file.
-        self.load_config()
-
         # Set variables.
         self.__set_variables()
         
@@ -191,7 +186,8 @@ class Plex(Domain):
         
         # If no movie found.
         if len(matching_videos_titles) == 0 :
-            return f"Je n'ai pas trouvé de film correspondant à {movie_title} désolé."
+            response = self.get_dialog("plex.play_movie.not_found")
+            return response.format(movie_title = movie_title)
         elif len(matching_videos_titles) == 1 :
             # Get correct movie title.
             correct_movie_title = matching_videos_titles[0]
@@ -205,15 +201,16 @@ class Plex(Domain):
                 return error
         
             # Return response.
-            return f"Je lance le film {correct_movie_title}"
+            response = self.get_dialog("plex.play_movie.found")
+            return response.format(movie_title = correct_movie_title)
         else:
             # Return list of available movie with this title match.
-            response = f" J'ai trouvé plusieurs films qui peuvent correspondre à votre demande : "
+            movies_titles = ""
             for movie_title in matching_videos_titles:
-                response = response + f"{movie_title}, "
-            response = response + f"pouvez-vous préciser lequel je dois lancer ?"
+                movies_titles = movies_titles + f"{movie_title}, "
             # Return response.
-            return response
+            response = self.get_dialog("plex.play_movie.found_multiple")
+            return response.format(movies_titles = movies_titles)
     
     @Domain.check_api_connection("plex")
     @Domain.match_intent("plex.play_show")
@@ -227,7 +224,8 @@ class Plex(Domain):
         
         # If no movie found.
         if len(matching_videos_titles) == 0 :
-            return f"Je n'ai pas trouvé de série correspondante à {show_title} désolé."
+            response = self.get_dialog("plex.show.not_found")
+            return response.format(show_title = show_title)
         elif len(matching_videos_titles) == 1 or show_title.capitalize() in matching_videos_titles :
         
             # Get correct show title.
@@ -252,7 +250,12 @@ class Plex(Domain):
                 
                 # If episode not found.
                 if not match_episode :
-                    return f"Je n'ai pas trouvé l'épisode demandé."  
+                    response = self.get_dialog("plex.show.episode_not_found")
+                    return response.format(
+                        show_title = correct_show_title, 
+                        episode_number = episode_number, 
+                        season_number = season_number
+                    )
                 
                 # Say client to play episode.        
                 error = self.play_client(match_episode)
@@ -260,7 +263,12 @@ class Plex(Domain):
                     return error
                 
                 # Return response.
-                return f"Je lance l'épisode {episode_number} de la saison {season_number} de {correct_show_title}"
+                response = self.get_dialog("plex.show.found")
+                return response.format(
+                    show_title = correct_show_title, 
+                    episode_number = episode_number, 
+                    season_number = season_number
+                )
                 
             else:
                         
@@ -270,17 +278,22 @@ class Plex(Domain):
                     return error
                 
                 # Return response.
-                return f"Je lance la série {correct_show_title}"
+                response = self.get_dialog("plex.show.found")
+                return response.format(
+                    show_title = correct_show_title, 
+                    episode_number = episode_number, 
+                    season_number = season_number
+                )
                 
         else:
         
-            # Return list of available movie with this title match.
-            response = f" J'ai trouvé plusieurs séries qui peuvent correspondre à votre demande : "
+            # List of available show with this title match.
+            shows_titles = ""
             for show_title in matching_videos_titles:
-                response = response + f"{show_title}, "
-            response = response + f"pouvez-vous préciser laquel je dois lancer ?"
+                shows_titles = shows_titles + f"{show_title}, "
             # Return response.
-            return response
+            response = self.get_dialog("plex.show.found")
+            return response.format(shows_titles = shows_titles)
             
     @Domain.check_api_connection("plex")
     @Domain.match_intent("plex.play")
@@ -295,7 +308,8 @@ class Plex(Domain):
         client.play()
         
         # Return response.
-        return f"Je relance la video."
+        response = self.get_dialog("plex.play")
+        return response
         
     @Domain.check_api_connection("plex")
     @Domain.match_intent("plex.pause")
@@ -310,7 +324,8 @@ class Plex(Domain):
         client.pause()
         
         # Return response.
-        return f"Ok, je met sur pause."
+        response = self.get_dialog("plex.pause")
+        return response
         
     @Domain.check_api_connection("plex")
     @Domain.match_intent("plex.stop")
@@ -325,4 +340,5 @@ class Plex(Domain):
         client.stop()
         
         # Return response.
-        return f"Je coupe Plex."
+        response = self.get_dialog("plex.stop")
+        return response

@@ -1,0 +1,51 @@
+[plex.play_movie.found]
+ça marche je lance ça.
+allez c'est partie pour {movie_title}
+ok, je lance {movie_title}
+{movie_title}, très bon choix. Je m'occupe de ça.
+
+[plex.play_movie.not_found]
+J'ai du mal comprendre, vous avez dit {movie_title}, malheuresement je ne l'ai pas trouvé.
+Impossible de remettre la main sur la cassette de {movie_title}.
+Je n'ai pas trouvé de film correspondant à {movie_title}, désolé.
+
+[plex.play_movie.found_multiple]
+J'ai trouvé plusieurs films qui peuvent correspondre à votre demande : {movies_titles}, pouvez-vous préciser lequel je dois lancer ?
+Alors, j'ai {movies_titles}, lequel souhaitez-vous regarder ?
+Là il va falloir m'en dire plus, j'ai trouvé {movies_titles}, vous souhaitez voir lequel ?
+
+[plex.show.found]
+ça marche je lance ça.
+allez c'est partie pour {show_title}
+ok, je lance {show_title}
+{show_title}, très bonne série. Je m'occupe de ça.
+
+[plex.show.not_found]
+j'ai du mal comprendre, vous avez dit {show_title}, malheuresement je ne l'ai pas trouvé.
+impossible de remettre la main sur la série {show_title}.
+je n'ai pas trouvé de série correspondant à {show_title}, désolé.
+
+[plex.show.found_multiple]
+j'ai trouvé plusieurs séries qui peuvent correspondre à votre demande : {shows_titles} pouvez-vous préciser lequel je dois lancer ?
+alors, j'ai {shows_titles} laquelle souhaitez-vous regarder ?
+là il va falloir m'en dire plus, j'ai trouvé {shows_titles} vous souhaitez voir lequel ?
+
+[plex.show.episode_not_found]
+je n'ai pas trouvé l'épisode demandé.
+je n'ai pas d'épisode {episode_number}, vous ne vous seriez pas trompés de série ?
+
+[plex.play]
+c'est partie.
+je relance.
+la suite, tout de suite.
+
+[plex.pause]
+ok, je met sur pause.
+c'est déjà l'heure de l'entracte ? Allez on fait une petite pause.
+hey, c'est la pause. "Bruit de trompette enfoncé sur la tête"
+
+[plex.stop]
+je coupe Plex.
+c'est déjà fini ?
+ok, on arrête alors...
+the end...

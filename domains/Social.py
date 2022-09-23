@@ -30,6 +30,9 @@ class Social(Domain):
         # Load config file.
         #self.load_config()
 
+        # Load dialogs file.
+        self.load_dialogs()
+
         
     def __get_lang(self, lang_entry_code):
         
@@ -70,16 +73,8 @@ class Social(Domain):
                     
         """
         
-        # List of possible responses.
-        responses = [
-            "Je vais bien, merci !",
-            "Très bien, merci !",
-            "Très bien et vous ?",
-            "Je vais bien, et vous ?",
-        ]
-        
-        # Return random response.
-        return random.choice(responses)
+        # Return a response dialog.
+        return self.get_dialog("social.whatsup.good")
     
     @Domain.match_intent("social.hi")
     def hi(self, hi, orphan = None):
@@ -94,21 +89,8 @@ class Social(Domain):
                     
         """
         
-        # List of possible responses.
-        responses = [
-            "Salut",
-            "Bonjour",
-            "Hey, comment ça va ?",
-            "Salut, ça va ?",
-            "Salut, comment ça va ?",
-            "Bonjour, comment allez-vous aujourd'hui ?",
-            "Bonjour, comment allez-vous ?",
-            "Bonjour que puis-je faire pour vous ?",
-            "Bonjour, j'espère que vous passer une bonne journée.",
-        ]
-        
-        # Return random response.
-        return random.choice(responses)
+        # Return a response dialog.
+        return self.get_dialog("social.hi")
     
     @Domain.match_intent("social.bye")
     def bye(self, bye, orphan = None):
@@ -123,16 +105,8 @@ class Social(Domain):
                                         
         """
 
-        # List of possible responses.
-        responses = [
-            "Au revoir",
-            "A bientôt",
-            "A plus tard",
-            "Bonne journée.",
-        ]
-
-        # Return random response.
-        return random.choice(responses)
+        # Return a response dialog.
+        return self.get_dialog("social.bye")
 
     @Domain.match_intent("social.good")
     def good(self, good, orphan = None):
@@ -147,15 +121,8 @@ class Social(Domain):
                                         
         """
 
-        # List of possible responses.
-        responses = [
-            "",
-            "Alors tout va bien.",
-            "Content que vous alliez bien.",
-        ]
-
-        # Return random response.
-        return random.choice(responses)
+        # Return a response dialog.
+        return self.get_dialog("social.good")
 
     @Domain.match_intent("social.bad")
     def bad(self, good, orphan = None):
@@ -170,11 +137,5 @@ class Social(Domain):
                                         
         """
 
-        # List of possible responses.
-        responses = [
-            "Désolé pour vous, puis-je faire quelque chose ?",
-            "J'espère que ça ira mieux.",
-        ]
-
-        # Return random response.
-        return random.choice(responses)
+        # Return a response dialog.
+        return self.get_dialog("social.bad")

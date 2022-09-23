@@ -16,6 +16,10 @@ import logging
 from functools import wraps
 # Import configparser.
 from configparser import ConfigParser
+# Import DialogParser.
+from utils.dialogParser import DialogParser
+# Import random.
+from random import choice
 # [DEBUG] Import pretty formatter.
 from prettyformatter import pprint
 #
@@ -49,10 +53,10 @@ class Domain(object):
         self.domain_class_name = type(self).__name__
 
         # Configuration file
-        self.config_file_name = f"{self.domain_class_name}.ini"
+        self.config_file_name = f"{self.domain_class_name.lower()}.ini"
         
-        # Language file name.
-        self.lang_file_name = f"{self.domain_class_name}.lang"
+        # Dialogs file name.
+        self.dialogs_file_name = f"{self.domain_class_name.lower()}.dialogs"
         
         # Config dict.
         self.config = {}
@@ -61,13 +65,21 @@ class Domain(object):
         self.dialogs = {}
         
         # Load Haroun config file.
-        self.load_config("Haroun.ini")
+        self.load_config("haroun.ini")
         
         # Set logging level.
         logging.getLogger().setLevel(self.config['haroun']['LOG_LEVEL'])
                 
         # Slots entries.
         self.slots_entries = {}
+
+        # Initialisation.
+        
+        # Load config file.
+        self.load_config()
+
+        # Load dialogs file.
+        self.load_dialogs()
         
     
     def load_config(self, config_file_name = None):
@@ -206,36 +218,48 @@ class Domain(object):
         """
 
          # Check if domain_class_name, else use class default.
-        if not domain_class_name :
-            domain_class_name = self.domain_class_name
+        if domain_class_name :
+            dialogs_file_name = self.domain_class_name.lower()+".dialogs"
+        else:
+            dialogs_file_name = self.dialogs_file_name
         
         # Dialogs directory path.
         dialogs_path=f"{ROOT_PATH}dialogs/{self.config['haroun']['lang']}/"
 
         # Domain dialogs file path.
-        domain_dialog_file_path = f"{ROOT_PATH}dialogs/{self.config['haroun']['lang']}/{domain_class_name.lower()}.dialogs"
+        domain_dialog_file_path = f"{ROOT_PATH}dialogs/{self.config['haroun']['lang']}/{dialogs_file_name}"
         
         # Check if dialogs exist.
         if path.exists(domain_dialog_file_path):
         
             # Use configparser to read dialogs file.
-            dialogsParser = ConfigParser(allow_no_value=True)
+            dialogsParser = DialogParser()
         
             # Parse domain dialogs file.
             dialogsParser.read(f"{domain_dialog_file_path}")
-            
-            # Get get sections.
-            sections = dialogsParser.sections()
+
+            # Get all sections.
+            for section_name in dialogsParser.sections():
+                dialog_section = dialogsParser[section_name]
+                self.dialogs[section_name] = []
+                # Get all dialogs.
+                for dialog in dialog_section.items():
+                    # If dialog contains ':' it may be cut in tupple.
+                    if not dialog[1] :
+                        self.dialogs[section_name].append(dialog[0])
+                    else:
+                        # Add dialog to self.dialogs[section_name] list.
+                        self.dialogs[section_name].append(' : '.join(dialog))
 
             # [LOG]
-            logging.info(f"Dialogs sections : {sections}")
+            logging.debug(f"Dialogs : {self.dialogs[section_name]}")
                 
         else:
             # [LOG]
             logging.error(f"Error config file {domain_dialog_file_path} doesn't exist.")
              
 
-    def get_dialog(self, dialog_key):
+    def get_dialog(self, dialog_key, random = True):
         
         """
             Retrieve dialog self.dialogs.
@@ -243,13 +267,27 @@ class Domain(object):
             Parameters
                 dialog_key : String
                     Dialog section key name.
+                random : Boolean
+                    If True, return a random dialog from section. [Default : True]
             ---
             Return : String
                 Dialog sentence.
         """
                 
-        # Return dialogs
-        return self.dialogs[dialog_key]
+        # Random dialogs
+        if random :
+            dialog = choice(self.dialogs[dialog_key])
+        else:
+            dialog = self.dialogs[dialog_key][0]
+
+        # Replace "" by space, manage empty dialog.
+        dialog = dialog.replace('""', ' ')
+
+        # Capitalize first letter.
+        dialog = dialog[0].upper() + dialog[1:]
+
+        # Return dialog.
+        return dialog
         
     def methodGetArgs(self, method_name):
         

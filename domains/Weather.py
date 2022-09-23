@@ -8,6 +8,8 @@ from core.concepts.Domain import Domain
 # Import meteo France API.
 from meteofrance_api import MeteoFranceClient
 from meteofrance_api.helpers import readeable_phenomenoms_dict
+# Import logging library
+import logging
 # [DEBUG] Import pretty formatter.
 from prettyformatter import pprint
 #
@@ -87,14 +89,19 @@ class Weather(Domain):
         #pprint(day_weather)
         
         # Get weather.daily dialog response.
-        #dialog = self.get_dialog("weather.daily")
+        dialog = self.get_dialog("weather.daily")
+
+        # [LOG]
+        logging.info(f"dialog : {dialog}")
 
         # Create response.
-        response = f"""
-            Voici la météo pour {city.title()} {day_name} : 
-            La journée sera {day_weather['weather12H']['desc'].lower()} 
-            avec des températures comprises entre {day_weather['T']['min']} et {day_weather['T']['max']} degrés. 
-        """
+        response = dialog.format(
+            city=city.title(), 
+            day_name=day_name, 
+            weather_desc=day_weather['weather12H']['desc'].lower(),
+            temp_min=day_weather['T']['min'],
+            temp_max=day_weather['T']['max'],
+        )
 
         # Return daily forecast.
         return response
