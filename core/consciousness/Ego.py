@@ -8,12 +8,12 @@
 #
 # 
 class Ego(object):
-  
-  """ Concept of Haroun Ego (Personality simulation). """
-  
-  def __init__(self):
     
-    """ Me class constructor. """  
+    """ Concept of Haroun Ego (Personality simulation). """
     
-    # Mood
-    self.mood = 0
+    def __init__(self):
+        
+        """ Me class constructor. """  
+        
+        # Mood
+        self.mood = 0

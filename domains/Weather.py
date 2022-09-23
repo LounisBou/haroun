@@ -8,19 +8,12 @@ from core.concepts.Domain import Domain
 # Import meteo France API.
 from meteofrance_api import MeteoFranceClient
 from meteofrance_api.helpers import readeable_phenomenoms_dict
-# Import pretty formatter.
+# [DEBUG] Import pretty formatter.
 from prettyformatter import pprint
 #
 #
-# Domain statics attributs : 
+# Domain globals : 
 #
-#
-# Languages dictionnary.
-LANGUAGES = {}
-
-# Openhab language code.
-LANG_CODE = 'fr'
-
 # Needed slots list.
 SLOTS_FILES = [
   "city",
@@ -42,7 +35,10 @@ class Weather(Domain):
         # Initialisation.
 
         # Load config file.
-        #self.loadConfig()
+        #self.load_config()
+
+        # Load dialogs file.
+        self.load_dialogs()
 
         # Retrieve needed slots.
         self.get_slots_entries(SLOTS_FILES)
@@ -90,6 +86,9 @@ class Weather(Domain):
         #print("day_weather dict : ")
         #pprint(day_weather)
         
+        # Get weather.daily dialog response.
+        #dialog = self.get_dialog("weather.daily")
+
         # Create response.
         response = f"""
             Voici la météo pour {city.title()} {day_name} : 

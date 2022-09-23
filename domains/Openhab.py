@@ -13,14 +13,8 @@ from openhab import OpenHAB
 import logging
 #
 #
-# Domain statics attributs : 
+# Domain globals : 
 #
-# Languages dictionnary.
-LANGUAGES = {}
-
-# Openhab language code.
-LANG_CODE = 'fr'
-
 # Needed slots list.
 SLOTS_FILES = [
   "oh_item_type",
@@ -31,6 +25,7 @@ SLOTS_FILES = [
 ]
 
 # Define french language.
+LANGUAGES = {}
 LANGUAGES['fr'] = {
   "WHAT_ROOM_ITEM_INFO" : [
     "Ok mais dans quelle pièce souhaitez-vous connaitre {item_type_lang} ?",
@@ -66,10 +61,10 @@ class Openhab(Domain):
     # Initialisation.
     
     # Load config file.
-    self.loadConfig()
+    self.load_config()
 
     # Set variables.
-    self.__setVariables()
+    self.__set_variables()
     
     # Retrieve needed slots.
     self.get_slots_entries(SLOTS_FILES)
@@ -82,7 +77,7 @@ class Openhab(Domain):
       # Log error.
       logging.error("Openhab API connection failed.")
     
-  def __setVariables(self):
+  def __set_variables(self):
 
     """ Define Openhab API connection infos from config file. """
 
@@ -175,7 +170,7 @@ class Openhab(Domain):
   @Domain.check_api_connection("openhab")
   @Domain.match_intent("openhab.question")
   def question(self, item_type, room = None, value = None, question_trigger = None, orphan = None):
-  	
+    
     """ 
       Answer to Openhab item state question.
       ---
@@ -261,5 +256,5 @@ class Openhab(Domain):
     
     # Return response. 
     return f"Call 'Openhab' method 'action' with params : item_type='{item_type}', room='{room}', value='{value}', action_trigger='{action_trigger}'"
-  	
-  	
+    
+    
