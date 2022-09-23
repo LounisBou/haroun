@@ -47,7 +47,7 @@ class Haroun(object):
         """ Haroun class constructor """
         
         # Create configuration dict by loading Haroun configuration file.
-        self.config = self.loadConfig()
+        self.config = self.load_config()
         
         # Get current date.
         today_date = date.today()
@@ -75,7 +75,7 @@ class Haroun(object):
         # Brain instanciation.
         self.brain = Brain(self.config)
 
-    def loadConfig(self):
+    def load_config(self):
         
         """ 
             Get config from config/Haroun.ini.
@@ -212,7 +212,7 @@ class Haroun(object):
             print(f"Enable to get Telegram config to initiate Telegram session. Please check your config file.")
         
         # Launch telegram bot listening session.
-        await self.startTelegramSession(
+        await self.start_telegram_session(
             tg_client_name, 
             tg_client_api_id, 
             tg_client_api_hash, 
@@ -221,7 +221,7 @@ class Haroun(object):
         )
         
     
-    async def startTelegramSession(self, tg_client_name, tg_client_api_id, tg_client_api_hash, tg_haroun_bot_token, tg_chat_id):
+    async def start_telegram_session(self, tg_client_name, tg_client_api_id, tg_client_api_hash, tg_haroun_bot_token, tg_chat_id):
             
         """ 
             Start Telegram client session.
