@@ -279,7 +279,7 @@ class Brain(object):
             else:
                 # [LOG]
                 logging.warning(f"Slot {program_slot_name} already exist.")
-                logging.warning(f"Program slot file '{program_slot_file_name}' can't be executed. Delete slot {program_slot_name} to re-generate it.\n")
+                logging.warning(f"Program slot file '{program_slot_file_name}' won't be executed. Delete slot {program_slot_name} to re-generate it.\n")
     
     def get_slots(self):
         
@@ -632,6 +632,9 @@ class Brain(object):
         # Excute skill on domain.
         execution_flag = interaction.domain.execute_skill(interaction.skill)
         
+        # End of domain execution.
+        interaction.domain.done()
+
         # Return modified interaction.
         return interaction
 

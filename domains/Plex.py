@@ -27,7 +27,7 @@ class Plex(Domain):
         super().__init__()
         
         # Plex server instance.
-        self.plex = None
+        self.server = None
 
         # Set variables.
         self.__set_variables()
@@ -56,9 +56,9 @@ class Plex(Domain):
         
         try:
             # Connect to plex server using PLEX_SERVER_TOKEN.
-            self.plex = PlexServer(self.plex_server_url, self.plex_server_token)
+            self.server = PlexServer(self.plex_server_url, self.plex_server_token)
         except:
-            self.plex = None
+            self.server = None
             return False
 
         # [LOG]
@@ -80,7 +80,7 @@ class Plex(Domain):
         """
         
         # Retrieve plex clients list.
-        plex_clients = self.plex.clients()
+        plex_clients = self.server.clients()
         
         # [LOG]
         logging.debug(f"Plex available clients : {plex_clients}")
@@ -127,7 +127,7 @@ class Plex(Domain):
             return f"Le client {self.plex_client_name} n'est pas disponible je ne peux rien faire, désolé."
         
         # Retrieve client.
-        client = self.plex.client(self.plex_client_name)
+        client = self.server.client(self.plex_client_name)
         
         # return client.
         return client
@@ -164,22 +164,127 @@ class Plex(Domain):
         matching_videos_titles = []
         
         # Make plex search
-        for video in self.plex.search(search_string, media_type):
+        for video in self.server.search(search_string, media_type):
             # Retrieve movie title.
             matching_videos_titles.append(video.title)
             
         # Return matching movie title list
         return matching_videos_titles
             
+    @staticmethod
+    def clean_media_title(media_title, slot_value=True):
+
+        """
+            Clean media title.
+            ---
+            Parameters
+                media_title : String
+                    Media title to clean.
+                slot_value : Boolean
+                    If True, clean media title for slot value.
+            ---
+            Return str
+                Return media title cleaned.
+        """
+
+        # Lower case media title.
+        media_title = f" {media_title.lower()} "
+
+        # String to replace by specified string.
+        strings_to_replace = {
+            "#": " ",
+            "&": "et",
+            "!" : " ",
+            "/": " ",
+            ":": " ",
+            "·": " ",
+            "-": " ",
+            "…": " ",
+            "...": " ",
+            ".": "",
+            "ë": "e",
+            ",": " ",
+            "\xa0" : " ",
+            " i " : " 1 ",
+            " ii " : " 2 ",
+            " iii " : " 3 ",
+            " iv " : " 4 ",
+            " v " : " 5 ",
+            " vi " : " 6 ",
+            " vii " : " 7 ",
+            " viii " : " 8 ",
+            " ix " : " 9 ",
+        }
+
+        # Facultative strings.
+        facultative_strings = {
+            # Definite article
+            " le " : " [le] ",
+            " la " : " [la] ",
+            " les " : " [les] ",
+            " un " : " [un] ",
+            " une " : " [une] ",
+            " des " : " [des] ",
+            " du " : " [du] ",
+            " de " : " [de] ",
+            " au " : " [au] ",
+            " aux " : " [aux] ",
+            " a " : " [a] ",
+            " à " : " [à] ",
+            " en " : " [en] ",
+            " et " : " [et] ",
+            " ou " : " [ou] ",
+            " sur " : " [sur] ",
+            " dans " : " [dans] ",
+            " par " : " [par] ",
+            " pour " : " [pour] ",
+            " avec " : " [avec] ",
+            " the " : " [the] ",
+            # Definite article with apostrophe
+            "'s" : "['s]",
+            "d'" : "[d']",
+            "n'" : "[n']",
+            "l'" : "[l']",
+            # Optional words
+            " épisode " : " [épisode] ",
+        }
+
+        # Clean media title.
+        [media_title := media_title.replace(string, replacement) for string, replacement in strings_to_replace.items() if string in media_title]
+        # If slot_value is True, clean media title for slot value.
+        if slot_value:
+            # Add facultative strings.
+            [media_title := media_title.replace(string, replacement) for string, replacement in facultative_strings.items() if string in media_title]
+
+        # Remove double spaces.
+        media_title = " ".join(media_title.split())
+
+        # Return cleaned media title.
+        return media_title
+
+    @staticmethod
+    def clean_medias_titles(medias_titles):
+
+        """
+            Clean medias titles.
+            ---
+            Return List
+                Return medias titles cleaned.
+        """
+
+        # Return cleaned medias titles.
+        return [Plex.clean_media_title(media_title) for media_title in medias_titles]
+
     
     # ! - Methods.
     
-    @Domain.check_api_connection("plex")
+    @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play_movie")
-    def play_movie(self, orphan):
+    def play_movie(self, movie_title = None, orphan = None):
         
-        # Get orphan as movie title.
-        movie_title = orphan
+        # Define orphan use.
+        if not movie_title and orphan :
+            movie_title = orphan
         
         # Search for movie in Plex.
         matching_videos_titles = self.search(movie_title, 'movie')
@@ -193,7 +298,7 @@ class Plex(Domain):
             correct_movie_title = matching_videos_titles[0]
             
             # Get movie to play.
-            movie_to_play = self.plex.library.section(self.plex_movies_section).get(correct_movie_title)
+            movie_to_play = self.server.library.section(self.plex_movies_section).get(correct_movie_title)
                         
             # Say client to play movie.
             error = self.play_client(movie_to_play)
@@ -212,13 +317,10 @@ class Plex(Domain):
             response = self.get_dialog("plex.play_movie.found_multiple")
             return response.format(movies_titles = movies_titles)
     
-    @Domain.check_api_connection("plex")
+    @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play_show")
-    def play_show(self, orphan, season_number = None, episode_number = 1, mode = None):
-        
-        # Get orphan as show title.
-        show_title = orphan
-        
+    def play_show(self, show_title = None, season_number = None, episode_number = 1, mode = None, orphan = None):        
+
         # Search for show in Plex.
         matching_videos_titles = self.search(show_title, 'show')
         
@@ -232,7 +334,7 @@ class Plex(Domain):
             correct_show_title = matching_videos_titles[0]
             
             # Get show to play.
-            show_to_play = self.plex.library.section(self.plex_shows_section).get(correct_show_title)
+            show_to_play = self.server.library.section(self.plex_shows_section).get(correct_show_title)
             
             # If ask for specific season
             if season_number :  
@@ -295,7 +397,7 @@ class Plex(Domain):
             response = self.get_dialog("plex.show.found")
             return response.format(shows_titles = shows_titles)
             
-    @Domain.check_api_connection("plex")
+    @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play")
     def play(self):
         
@@ -311,7 +413,7 @@ class Plex(Domain):
         response = self.get_dialog("plex.play")
         return response
         
-    @Domain.check_api_connection("plex")
+    @Domain.check_api_connection("server")
     @Domain.match_intent("plex.pause")
     def pause(self):
         
@@ -327,7 +429,7 @@ class Plex(Domain):
         response = self.get_dialog("plex.pause")
         return response
         
-    @Domain.check_api_connection("plex")
+    @Domain.check_api_connection("server")
     @Domain.match_intent("plex.stop")
     def stop(self):
         

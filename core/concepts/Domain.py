@@ -5,6 +5,7 @@
 # Libraries dependancies :
 #
 # Import system library.
+from locale import currency
 from sys import path as syspath
 # Import os.path
 from os import path
@@ -16,10 +17,17 @@ import logging
 from functools import wraps
 # Import configparser.
 from configparser import ConfigParser
+from tkinter.messagebox import NO
 # Import DialogParser.
 from utils.dialogParser import DialogParser
+# Import Context class.
+from core.concepts.Context import Context
+# Import Memory class.
+from core.concepts.Memory import Memory
 # Import random.
 from random import choice
+# Import json.
+import json
 # [DEBUG] Import pretty formatter.
 from prettyformatter import pprint
 #
@@ -43,11 +51,14 @@ class Domain(object):
     
     # Store intents handlers for each instanciate domains
     intents_handlers = {}
+
+    # Current intent lifespan
+    current_intent_lifespan = 0
     
     # Fonction : Constructeur
     def __init__(self):
         
-        """ __init__ : Domain class constructor. """ 
+        """ Domain class constructor. """ 
         
         # Get domain class name.
         self.domain_class_name = type(self).__name__
@@ -80,7 +91,22 @@ class Domain(object):
 
         # Load dialogs file.
         self.load_dialogs()
+
+    
+    def done(self):
+
+        """ End of skill execution. """
         
+        # [LOG]
+        logging.info(f"Skill execution for domain {self.domain_class_name} done.")
+
+        # Remove 1 to current intent lifespan.
+        if Domain.current_intent_lifespan > 0 :
+            Domain.current_intent_lifespan -= 1
+        
+        # If current intent lifespan is 0, remove current intent.
+        if(Domain.current_intent_lifespan == 0):
+            Domain.remove_current_intent()
     
     def load_config(self, config_file_name = None):
         
@@ -366,12 +392,103 @@ class Domain(object):
             logging.warning(f"Intent handler for {intent_name} already exist !")  
             pass
         
+    # ! Context methods.
+
+    @classmethod
+    def set_current_intent(cls, intent_name, args={}, lifespan = 1):
+
+        """
+            Set current intent in context.
+            ---
+            Parameters
+                intent_name : String
+                    Intent name to set.
+                lifespan : Integer
+                    Intent lifespan. [Default : 1]
+        """
+
+        # Update current intent lifespan.
+        cls.current_intent_lifespan = lifespan
+
+        # Set current intent in context.
+        Context.add("current_intent", intent_name)
+
+        # Add current intent args to context.
+        Context.add("current_intent_args", json.dumps(args))
+
+    @classmethod
+    def get_current_intent(cls):
+
+        """
+            Get current intent from context.
+            ---
+            Return : dict
+                Current intent description, none if no current intent.
+        """
+
+        current_intent = Context.get("current_intent")
+
+        if current_intent:
+            return {
+                "intent_name": current_intent,
+                "args": json.loads(Context.get("current_intent_args")),
+            }
+        else:
+            return None
+
+
+    @classmethod
+    def remove_current_intent(cls):
+
+        """
+            Remove current intent from context.
+        """
+
+        # Remove current intent from context.
+        Context.remove("current_intent")
+
+    
+    def set_context(self, key, value, duration = None):
         
+        """
+            Set context value.
+            ---
+            Parameters
+                key : String
+                    Context key.
+                value : String
+                    Context value.
+                duration : Integer
+                    Context duration in seconds. [Default : None]
+        """
         
+        # Set context value.
+        Context.add(key, value, self.domain_class_name.lower(), duration)
+
+    def get_context(self, key):
+
+        """
+            Get context value.
+            ---
+            Parameters
+                key : String
+                    Context key.
+            ---
+            Return : String
+                Context value or None if not found.
+        """
+
+        # Get context value.
+        context = Context.get(key, self.domain_class_name.lower())
+        if context:
+            return context.value
+        else:
+            return None
+
     # ! Decorators :
     
     @staticmethod
-    def match_intent(intent_name):
+    def match_intent(intent_name, auto_affect_orphans = True):
         
         """
             Decorator that allow a domain method to match a specific intent.
@@ -414,6 +531,18 @@ class Domain(object):
                     Return : result of function call.
                 """
                 
+                # Get function arguments list.
+                args_list = inspect.getargspec(function).args
+                
+                # Define orphan use.
+                if auto_affect_orphans and "orphan" in args_list and "orphan" in kwargs.keys() :
+                    for arg_name in args_list:
+                        if arg_name is not "self" and arg_name not in kwargs.keys() :
+                            orphan = kwargs["orphan"]
+                            logging.info(f"Argument {arg_name} not defined, set to orphan value : {orphan}")
+                            kwargs[arg_name] = orphan
+                            break
+                
                 # Call the original function.
                 result = function(self_instance, *args, **kwargs)
                 
@@ -428,8 +557,8 @@ class Domain(object):
             class_name = function.__qualname__.split('.')[0]
             method_name = function.__qualname__.split('.')[1]
             
-            # [DEBUG]
-            print(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
+            # [LOG]
+            logging.debug(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
                  
             # Registering function as intent handler.
             Domain.register_handled_intent(module_name, class_name, method_name, intent_name)
@@ -440,7 +569,7 @@ class Domain(object):
         # Return inner_function
         return inner_function
 
-
+    
     @staticmethod
     def check_api_connection(api_var_name):
         
