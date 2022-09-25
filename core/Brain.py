@@ -520,36 +520,53 @@ class Brain(object):
                 
         # Perform intent recognition in Interaction sentence thanks to training graph.
         try:
-            recognitions = rhasspynlu.recognize(interaction.stimulus.sentence, self.intents_graph, fuzzy=True)
+            recognition = rhasspynlu.recognize(interaction.stimulus.sentence, self.intents_graph, fuzzy=True)
         except ZeroDivisionError :
             # Return
             return None
-            
+
         # [LOG]
-        logging.debug("Recognitions  : {recognitions}\n\n")
-                
-        # If rhasspynlu perform recognition without problem.
-        if not recognitions :
-            # Return
-            return None
+        logging.debug(f"Raw recognition : {recognition}\n\n")
             
-        # Format recognitions as dict.
-        recognitions_dict = recognitions[0].asdict()
-        # Format recognition dict as json string.
-        recognition_string = json.dumps(recognitions_dict)
-        
-        # Format recognition as Object.
-        interaction.recognition = json.loads(recognition_string)
-        
-        # Retrieve recognition duration
-        interaction.recognition_duration = interaction.recognition['recognize_seconds'] 
-        
-        # Retrieve stimulus duration
-        interaction.stimulus.duration = interaction.recognition['wav_seconds']
-        
-        # Define intent.
-        interaction.intent.checkRecognition(interaction.stimulus, interaction.recognition)
-        
+        # If didn't find any intent for the stimulus sentence.
+        if not recognition :
+            # [LOG]
+            logging.info("No intent found for this sentence.")
+            # Check if there is a context intent.
+            if context_intent := Domain.get_context_intent() :
+                # [LOG]
+                logging.info(f"Context intent found : {context_intent}")
+                # Create recognition dict with current intent.
+                interaction.recognition = {
+                    "text" : interaction.stimulus.sentence,
+                    "raw_text" : "", # Keep empty to retrieve orphan from text.
+                    "intent": {"name": context_intent['name'], "confidence": 0.99},
+                    "entities": [{"entity": arg_name, "value": arg_value} for arg_name, arg_value in context_intent['args'].items()],
+                    "tokens": interaction.stimulus.sentence.split(" "),
+                    "raw_tokens": interaction.stimulus.sentence.split(" "),
+                }
+            else:
+                # [LOG]
+                logging.info(f"No current intent found. End of interaction.\n\n")
+                # Return
+                return None
+
+        # If intent found, parse recognition infos.
+        else:
+            
+            # Format recognition as Object.
+            interaction.recognition = recognition[0].asdict()
+
+            # [LOG]
+            logging.debug(f"Interaction recognition : {interaction.recognition}\n\n")
+            logging.debug(f"Interaction recognition entities : {interaction.recognition['entities']}")
+
+        # If recognition success.
+        if interaction.recognition :  
+            
+            # Define intent.
+            interaction.intent.checkRecognition(interaction.stimulus, interaction.recognition)
+
         # Return
         return interaction   
 
@@ -631,9 +648,6 @@ class Brain(object):
         
         # Excute skill on domain.
         execution_flag = interaction.domain.execute_skill(interaction.skill)
-        
-        # End of domain execution.
-        interaction.domain.done()
 
         # Return modified interaction.
         return interaction

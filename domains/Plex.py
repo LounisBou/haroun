@@ -134,19 +134,39 @@ class Plex(Domain):
         
     def play_client(self, media):
             
-            """ Launch media on client. """
+        """ Launch media on client. """
+        
+        # Play retry counter.
+        play_retry = 0
+
+        # Play max retry.
+        try:
+            play_max_retry = int(self.config["plex"]["play_max_retry"])
+        except:
+            play_max_retry = 2
+
+        # Retrieve client.
+        client = self.get_client()
+
+        # Reload client connection.
+        client.connect()
+        
+        try:
             
-            # Retrieve client.
-            client = self.get_client()
-            
-            try:
-                # Play media on client.
-                client.playMedia(media)
-            except:
-                return f"Le client {self.plex_client_name} n'est pas disponible je ne peux rien faire, désolé."
+            # Play media on client.
+            played = client.playMedia(media)
+            # Retry if media not played.
+            while play_retry <= play_max_retry and not client.isPlayingMedia() :
+                # Retry play media on client.
+                played = client.playMedia(media)
+                # Increment play retry counter.
+                play_retry += 1
                 
-            # Return 
-            return None
+        except:
+            return f"Le client {self.plex_client_name} n'est pas disponible je ne peux rien faire, désolé."
+            
+        # Return 
+        return played
         
     def search(self, search_string, media_type = None):
         
@@ -281,19 +301,22 @@ class Plex(Domain):
     @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play_movie")
     def play_movie(self, movie_title = None, orphan = None):
-        
-        # Define orphan use.
-        if not movie_title and orphan :
-            movie_title = orphan
-        
+
         # Search for movie in Plex.
         matching_videos_titles = self.search(movie_title, 'movie')
         
         # If no movie found.
         if len(matching_videos_titles) == 0 :
+            
+            # Get dialog response.
             response = self.get_dialog("plex.play_movie.not_found")
+
+            # Return response.
             return response.format(movie_title = movie_title)
+
+        # If just one movie found.
         elif len(matching_videos_titles) == 1 :
+
             # Get correct movie title.
             correct_movie_title = matching_videos_titles[0]
             
@@ -302,21 +325,39 @@ class Plex(Domain):
                         
             # Say client to play movie.
             error = self.play_client(movie_to_play)
+
+            # [LOG]
+            logging.info(f"Playing movie {correct_movie_title} on client {self.plex_client_name}.")
+            logging.info(f"movie_to_play : {movie_to_play}")
+            logging.info(f"Error : {error}")
+
+            # Check if error.
             if error :
-                return error
-        
+                # Set error message as response.
+                response = error
+            else:
+                # Get dialog response.
+                response = self.get_dialog("plex.play_movie.found")
+            
             # Return response.
-            response = self.get_dialog("plex.play_movie.found")
             return response.format(movie_title = correct_movie_title)
+
+        # If more than one movie found.
         else:
+
+            # Create context.
+            self.set_context_intent("plex.play_movie", {})
+
             # Return list of available movie with this title match.
             movies_titles = ""
             for movie_title in matching_videos_titles:
                 movies_titles = movies_titles + f"{movie_title}, "
-            # Return response.
+            # Get dialog response.
             response = self.get_dialog("plex.play_movie.found_multiple")
+            # Return response.
             return response.format(movies_titles = movies_titles)
-    
+
+
     @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play_show")
     def play_show(self, show_title = None, season_number = None, episode_number = 1, mode = None, orphan = None):        
@@ -324,12 +365,12 @@ class Plex(Domain):
         # Search for show in Plex.
         matching_videos_titles = self.search(show_title, 'show')
         
-        # If no movie found.
+        # If no show found.
         if len(matching_videos_titles) == 0 :
             response = self.get_dialog("plex.show.not_found")
             return response.format(show_title = show_title)
         elif len(matching_videos_titles) == 1 or show_title.capitalize() in matching_videos_titles :
-        
+            
             # Get correct show title.
             correct_show_title = matching_videos_titles[0]
             
@@ -396,7 +437,8 @@ class Plex(Domain):
             # Return response.
             response = self.get_dialog("plex.show.found")
             return response.format(shows_titles = shows_titles)
-            
+
+
     @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play")
     def play(self):
@@ -412,7 +454,8 @@ class Plex(Domain):
         # Return response.
         response = self.get_dialog("plex.play")
         return response
-        
+
+
     @Domain.check_api_connection("server")
     @Domain.match_intent("plex.pause")
     def pause(self):
@@ -428,7 +471,8 @@ class Plex(Domain):
         # Return response.
         response = self.get_dialog("plex.pause")
         return response
-        
+
+
     @Domain.check_api_connection("server")
     @Domain.match_intent("plex.stop")
     def stop(self):

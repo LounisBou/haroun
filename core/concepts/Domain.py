@@ -39,7 +39,6 @@ CURRENT_PATH = path.dirname(path.abspath(__file__))+'/'
 PARENT_PATH = path.dirname(path.abspath(CURRENT_PATH))+'/'
 ROOT_PATH = path.dirname(path.abspath(PARENT_PATH))+'/'
 syspath.append(ROOT_PATH)
-import domains
 #
 #
 #
@@ -51,9 +50,6 @@ class Domain(object):
     
     # Store intents handlers for each instanciate domains
     intents_handlers = {}
-
-    # Current intent lifespan
-    current_intent_lifespan = 0
     
     # Fonction : Constructeur
     def __init__(self):
@@ -92,21 +88,9 @@ class Domain(object):
         # Load dialogs file.
         self.load_dialogs()
 
-    
-    def done(self):
+        # Use context intent lifespan if exist.
+        self.check_intent_lifespan()
 
-        """ End of skill execution. """
-        
-        # [LOG]
-        logging.info(f"Skill execution for domain {self.domain_class_name} done.")
-
-        # Remove 1 to current intent lifespan.
-        if Domain.current_intent_lifespan > 0 :
-            Domain.current_intent_lifespan -= 1
-        
-        # If current intent lifespan is 0, remove current intent.
-        if(Domain.current_intent_lifespan == 0):
-            Domain.remove_current_intent()
     
     def load_config(self, config_file_name = None):
         
@@ -395,10 +379,39 @@ class Domain(object):
     # ! Context methods.
 
     @classmethod
-    def set_current_intent(cls, intent_name, args={}, lifespan = 1):
+    def check_intent_lifespan(cls):
+
+        """ Decrease intent lifespan if exist. """
+        
+        # Check if intent exist in context.
+        if context_intent := cls.get_context_intent() :
+
+            # [LOG]
+            logging.info(f"Context intent : {context_intent}")
+
+            # Remove 1 to intent lifespan.
+            if context_intent['lifespan'] > 0 :
+                # [LOG]
+                logging.info(f"Context intent lifespan will decrease by 1.")
+                context_intent['lifespan'] = cls.__reduce_context_intent_lifespan()
+
+            # If intent lifespan is 0, remove content intent.
+            if context_intent['lifespan'] == 0 :
+                # [LOG]
+                logging.info(f"Intent lifespan is 0, remove context intent.")
+                cls.remove_context_intent()
+
+        else:
+
+            # [LOG]
+            logging.info(f"No context intent.")
+
+
+    @classmethod
+    def set_context_intent(cls, intent_name, args={}, lifespan = 1):
 
         """
-            Set current intent in context.
+            Set intent in context.
             ---
             Parameters
                 intent_name : String
@@ -407,45 +420,102 @@ class Domain(object):
                     Intent lifespan. [Default : 1]
         """
 
-        # Update current intent lifespan.
-        cls.current_intent_lifespan = lifespan
+        # Set intent in context.
+        Context.add("intent", intent_name)
 
-        # Set current intent in context.
-        Context.add("current_intent", intent_name)
+        # Add intent args to context.
+        Context.add("intent_args", json.dumps(args))
 
-        # Add current intent args to context.
-        Context.add("current_intent_args", json.dumps(args))
+        # Add intent lifespan to context.
+        Context.add("intent_lifespan", lifespan)
 
     @classmethod
-    def get_current_intent(cls):
+    def get_context_intent(cls):
 
         """
-            Get current intent from context.
+            Get intent from context.
             ---
             Return : dict
-                Current intent description, none if no current intent.
+                Intent description, none if no context intent.
         """
-
-        current_intent = Context.get("current_intent")
-
-        if current_intent:
+        
+        # Check if intent exist in Context.
+        if context_intent := Context.get("intent") :
             return {
-                "intent_name": current_intent,
-                "args": json.loads(Context.get("current_intent_args")),
+                "name": context_intent.value,
+                "args": cls.__get_context_intent_args(),
+                "lifespan": cls.__get_context_intent_lifespan()
             }
         else:
             return None
 
+    @classmethod
+    def __get_context_intent_args(cls):
+
+        """
+            Get intent args in Context.
+            ---
+            Return : Dict
+                Intent args.
+        """
+
+        # Check if intent exist in Context.
+        if intent_args := Context.get("intent_args") :
+            return json.loads(intent_args.value)
+        else:
+            return 0
 
     @classmethod
-    def remove_current_intent(cls):
+    def __get_context_intent_lifespan(cls):
 
         """
-            Remove current intent from context.
+            Get intent lifespan in Context.
+            ---
+            Return : Integer
+                Intent lifespan.
         """
 
-        # Remove current intent from context.
-        Context.remove("current_intent")
+        # Check if intent exist in Context.
+        if intent_lifespan := Context.get("intent_lifespan") :
+            return int(intent_lifespan.value)
+        else:
+            return 0
+
+    @classmethod
+    def __reduce_context_intent_lifespan(cls):
+
+        """
+            Reduce intent lifespan by 1.
+            ---
+            Return : Integer
+                Nex intent lifespan.
+        """
+
+        # Get context intent lifespan.
+        context_intent_lifespan = cls.__get_context_intent_lifespan()
+
+        # New intent lifespan.
+        new_intent_lifespan = context_intent_lifespan - 1
+
+        # Reduce context intent lifespan by 1.
+        Context.add("intent_lifespan", new_intent_lifespan)
+
+        # Return new intent lifespan.
+        return new_intent_lifespan
+
+    @classmethod
+    def remove_context_intent(cls):
+
+        """
+            Remove intent from context.
+        """
+
+        # Remove intent from context.
+        Context.remove("intent")
+        # Remove intent args from context.
+        Context.remove("intent_args")
+        # Remove intent lifespan from context.
+        Context.remove("intent_lifespan")
 
     
     def set_context(self, key, value, duration = None):

@@ -55,10 +55,8 @@ class Interaction(object):
         # Sentence words list.
         self.words = self.stimulus.sentence.split(' ')
         
-        # Recognition : JSON Recognition Object from NLU recognize.
+        # Recognition : Recognition Dict from NLU recognize.
         self.recognition = None
-        # Recognition duration
-        self.recognition_duration = None
         
         # Intent : Intent that match the Interaction (defined by Recognition)
         self.intent = Intent()

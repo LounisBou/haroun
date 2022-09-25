@@ -9,6 +9,9 @@ from peewee import *
 from utils.bdd import MyModel
 # Importe datetime.datatime and datetime.timedelta
 from datetime import datetime, timedelta
+# Import logging library
+import logging
+#
 #
 class Context(MyModel): 
     
@@ -80,6 +83,9 @@ class Context(MyModel):
                 expire=expire_timestamp,
             )
         
+        # [LOG]
+        logging.debug(f"Context.add : key = {key}, value = {value}, domain = {domain}, duration = {duration}")
+
         # Return created context.
         return context
         
@@ -102,6 +108,9 @@ class Context(MyModel):
         # Retrieve context object.
         context = Context.get(key, domain)
         
+        # [LOG]
+        logging.debug(f"Context.remove : key = {key}, domain = {domain}")
+
         # If exist.
         if context :
             context.delete_instance()
