@@ -67,7 +67,7 @@ class Intent(object):
         """ Intent print method. """
         
         # Text
-        print_str = f"Intent : \n"
+        print_str = f"\n"
         print_str += f"  label : {str(self.label)} \n"
         if self.stimulus :
             print_str += f"  stimulus text : {self.stimulus.sentence} \n"
@@ -148,12 +148,13 @@ class Intent(object):
                 
         # Trim orphan entity.
         self.orphan_entity = self.orphan_entity.strip()
-        # Add orphan entity to entities.
-        self.entities.append({'entity':'orphan','value':self.orphan_entity})
-            
-        
-        
-        return True
+        # Add orphan entity to entities if not empty.
+        if self.orphan_entity :
+            self.entities.append({
+                'entity' : 'orphan',
+                'value' : self.orphan_entity,
+            })
+                
         
         
         

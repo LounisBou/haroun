@@ -148,11 +148,9 @@ class Plex(Domain):
         # Retrieve client.
         client = self.get_client()
 
-        # Reload client connection.
-        client.connect()
-        
         try:
-            
+            # Reload client connection.
+            client.connect()
             # Play media on client.
             played = client.playMedia(media)
             # Retry if media not played.
@@ -161,7 +159,6 @@ class Plex(Domain):
                 played = client.playMedia(media)
                 # Increment play retry counter.
                 play_retry += 1
-                
         except:
             return f"Le client {self.plex_client_name} n'est pas disponible je ne peux rien faire, désolé."
             
@@ -301,9 +298,19 @@ class Plex(Domain):
     @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play_movie")
     def play_movie(self, movie_title = None, orphan = None):
-
-        # Search for movie in Plex.
-        matching_videos_titles = self.search(movie_title, 'movie')
+        
+        # Check if movie title is provided.
+        if movie_title:
+            # Search for movie in Plex.
+            matching_videos_titles = self.search(movie_title, 'movie')
+        # If no movie title provided.
+        else:
+            # Create context.
+            self.set_context_intent("plex.play_movie", {})
+            # Get dialog response.
+            response = self.get_dialog("plex.play_movie.movie_title")
+            # Return response.
+            return response
         
         # If no movie found.
         if len(matching_videos_titles) == 0 :

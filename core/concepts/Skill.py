@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#
-# Libraries dependancies :
-#
-#
-#
-# Globals :
-#
-#
-#
-#
 class Skill(object):
     
     """ Concept of Haroun Skill. """
@@ -40,9 +30,6 @@ class Skill(object):
         
         # Skill exectution error flag.
         self.error = -1
-    
-    
- 
     
     
     """ Skill management methods : """

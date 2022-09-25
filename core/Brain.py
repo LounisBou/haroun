@@ -439,7 +439,7 @@ class Brain(object):
                     Interaction concept object generate from trigger Stimulus.
             ---
             Return : Interaction
-                Modified interaction with domain and skill infos, None if error.
+                Modified interaction with domain and skills infos, None if error.
         """
         
         # Interaction interpretation. 
@@ -455,7 +455,7 @@ class Brain(object):
         else:
             # [LOG]
             logging.info(f"{str(interaction.intent)}")
-            # Defined Domain & Skill for this interaction.
+            # Defined Domain & Skills for this interaction.
             modified_interaction = self.analysis(modified_interaction)
             # If Interaction analysis failed. 
             if not modified_interaction :
@@ -473,19 +473,19 @@ class Brain(object):
                 # by interaction to generate alternative response during skill execution.
                 modified_interaction.mind = self.get_states_of_mind()
                 
-                # Execute the Skill via the Domain.
-                modified_interaction = self.execute_skill(modified_interaction)
+                # Execute Skills via correponding Domains.
+                modified_interaction = self.execute_skills(modified_interaction)
                 # If Interaction execution failed. 
                 if not modified_interaction :
                     # Return interaction message error.
-                    interaction.add_error(f"Interaction skill execution failed. [Error #20].")
+                    interaction.add_error(f"Interaction skills execution failed. [Error #20].")
                 else:   
                     # Generate interaction response.
                     modified_interaction = self.response(modified_interaction)
                     # If response creation failed. 
                     if not modified_interaction :
                         # Return interaction message error.
-                        interaction.add_error(f"Interaction skill execution failed. [Error #20].")
+                        interaction.add_error(f"Interaction skills execution failed. [Error #20].")
                     else:
                         # If all step successfully pass, override interaction with modified interaction.
                         interaction = modified_interaction
@@ -573,9 +573,9 @@ class Brain(object):
     def analysis(self, interaction):
         
         """ 
-            Analyse interaction to define skill from intent. 
+            Analyse interaction to define skills from intent. 
             
-            Interaction analysis, check NLU recognition dict of the interaction to define skill to apply.
+            Interaction analysis, check NLU recognition dict of the interaction to define skills to apply.
             Correct intent entities if necessary and define slots from them.
             ---
             Parameters
@@ -583,7 +583,7 @@ class Brain(object):
                     Interaction concept object generate from trigger Stimulus.
             ---
             Return : Interaction, None if error.
-                Modified interaction with domain and skill infos.      
+                Modified interaction with domain and skills infos.      
         """
         
         # [LOG]
@@ -592,45 +592,79 @@ class Brain(object):
         
         # Check if there is a domain method that handle this intent.
         if interaction.intent.label in Domain.intents_handlers.keys():
-            # Check if interaction domain found.
-            if Domain.intents_handlers[interaction.intent.label] :
-                # Define interaction domain module name.
-                domain_module_name = Domain.intents_handlers[interaction.intent.label]['module']
-                # Define interaction domain class name.
-                domain_class_name = Domain.intents_handlers[interaction.intent.label]['class']
-                # Retieve interaction domain method name.
-                domain_method_name = Domain.intents_handlers[interaction.intent.label]['method']
-            else:
-                # Error message.
-                interaction.add_error(f"No domain '{interaction.intent.label}' found for this intent. [Error #5]")
-                # Return None (error)
-                return None
+
+            # Create a skill for all handlers of this intent.
+            for intent_handler in Domain.intents_handlers[interaction.intent.label]:
+                
+                # [LOG]
+                logging.debug(f"Intent handler found : {intent_handler}\n")
+
+                # Create the interaction skill.
+                interaction.skills.append(
+                    Skill(
+                        intent_handler['module'], 
+                        intent_handler['class'], 
+                        intent_handler['method']
+                    )
+                )
+                
+         # Check if there is a context intent.
+        elif context_intent := Domain.get_context_intent() :
+
+            # [LOG]
+            logging.info(f"No handler for intent : {interaction.intent.label}")
+            logging.info(f"Context intent found : {context_intent}")
+            logging.info(f"Switching to context intent.")
+
+            # Change interaction intent with intent context info.
+            interaction.intent.label = context_intent['name']
+            interaction.intent.confidence = 0.99
+
+            # Get a copy entities from interaction.
+            entities = interaction.intent.entities.copy()
+
+            # For original entities in interaction.
+            for entity in entities:
+                # Generate orphan infos.
+                interaction.intent.entities.extend([
+                    {
+                        "entity": "orphan_type", 
+                        "value": entity['entity']
+                    },
+                    {
+                        "entity": "orphan_raw", 
+                        "value": entity['raw_value']
+                    },
+                    {
+                        "entity": "orphan", 
+                        "value": entity['value']
+                    }
+                ])
+
+            # Retrieve context intent args, set them as entities.
+            interaction.intent.entities.extend(
+                [{"entity": arg_name, "value": arg_value} for arg_name, arg_value in context_intent['args'].items()]
+            )
+
+            # Relaunch analysis with modified interaction.
+            return self.analysis(interaction)
+
         else:
-            # Error message.
+            # Error message. 
             interaction.add_error(f"No handler for intent '{interaction.intent.label}' found. [Error #6]")
             # Return None (error)
             return None
-                
-        # Retrieve domain class.
-        domain_class = Brain.__get_domain_class(domain_module_name, domain_class_name)
-                        
-        # Instanciate domain.
-        domain_instance = domain_class()
-        
-        # Retrieve domain instance for interaction.
-        interaction.domain = domain_instance
-            
-        # Create the interaction skill.
-        interaction.skill = Skill(domain_module_name, domain_class_name, domain_method_name)
-            
+              
         # Return modified interaction.
         return interaction
                 
-    def execute_skill(self, interaction):
+    def execute_skills(self, interaction):
         
         """ 
-            execute_skill : Execute Skill via Domain function.  
-            Instanciate the correct domain class for the skill. Prepare domain method call with correct info from intent. Then execute the method and retrieve execute return infos.
+            Execute Skills via Domains methods.  
+            Instanciate the correct domain class for each skill. 
+            Prepare domain method call with correct info from intent. 
+            Then execute the method and retrieve execute return infos.
             ---
             Parameters
                 interaction : Interaction
@@ -640,14 +674,22 @@ class Brain(object):
                 Modified interaction with domain and skill infos, None if error/      
         """
         
-        # Get domain methods args list to prepare skill.
-        method_args = interaction.domain.get_method_args(interaction.skill.method_name)
-        
-        # Prepare skill for execution.
-        preparation_flag = interaction.skill.prepare(interaction.intent, method_args)
-        
-        # Excute skill on domain.
-        execution_flag = interaction.domain.execute_skill(interaction.skill)
+        for skill in interaction.skills:
+
+            # Retrieve domain class.
+            domain_class = Brain.__get_domain_class(skill.module_name, skill.class_name)
+                            
+            # Instanciate domain.
+            domain_instance = domain_class()
+
+            # Get domain methods args list to prepare skill.
+            method_args = domain_instance.get_method_args(skill.method_name)
+            
+            # Prepare skill for execution.
+            preparation_flag = skill.prepare(interaction.intent, method_args)
+            
+            # Excute skill on domain.
+            execution_flag = domain_instance.execute_skill(skill)
 
         # Return modified interaction.
         return interaction
@@ -666,8 +708,11 @@ class Brain(object):
                 Modified interaction with domain and skill infos, None if error.
         """
         
-        # Retrieve skill execution return values.
-        interaction.add_response(interaction.skill.return_values)
+        # Retrieve response sentence of each skill.
+        for skill in interaction.skills:
+
+            # Retrieve skill execution return values.
+            interaction.add_response(skill.return_values)
         
         # Return modified interaction
         return interaction

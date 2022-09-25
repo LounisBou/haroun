@@ -350,7 +350,7 @@ class Domain(object):
     def register_handled_intent(module_name, class_name, method_name, intent_name):
         
         """
-            Register domain method that handle an intent with Skill.match_intent decorator.
+            Register domain method that handle an intent with Domain.match_intent decorator.
             ---
             Parameters
                 module_name : String
@@ -365,16 +365,18 @@ class Domain(object):
                 
         # If intent_name entry don't exist. 
         if intent_name not in Domain.intents_handlers.keys() :
-            # Create intent handler entry in intents_handlers.
-            Domain.intents_handlers[intent_name] = {
-                "module" : module_name,
-                "class" : class_name,
-                "method" : method_name,
-            }
+            # Declare new list of skill method for intent_name.
+            Domain.intents_handlers[intent_name] = []
         else:    
             # [LOG]
-            logging.warning(f"Intent handler for {intent_name} already exist !")  
-            pass
+            logging.warning(f"Intent handler for {intent_name} already exist. Handler is added to the list.")  
+
+        # Add intent handler entry in intents_handlers.
+        Domain.intents_handlers[intent_name].append({
+            "module" : module_name,
+            "class" : class_name,
+            "method" : method_name,
+        })
         
     # ! Context methods.
 

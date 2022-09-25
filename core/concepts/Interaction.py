@@ -65,8 +65,9 @@ class Interaction(object):
         
         # Domain matching intent.
         self.domain = None
-        # Skill for interaction execution.
-        self.skill = None
+
+        # Skills list for interaction execution.
+        self.skills = []
         
         # Interaction state of mind.
         self.mind = None

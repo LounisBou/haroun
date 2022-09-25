@@ -4,15 +4,18 @@ allez c'est parti pour {movie_title}
 ok, je lance {movie_title}
 {movie_title}, très bon choix. Je m'occupe de ça.
 
+[plex.play_movie.movie_title]
+quel film souhaitez-vous regarder ?
+
 [plex.play_movie.not_found]
 J'ai du mal comprendre, vous avez dit {movie_title}, malheureusement je ne l'ai pas trouvé.
 Impossible de remettre la main sur la cassette de {movie_title}.
 Je n'ai pas trouvé de film correspondant à {movie_title}, désolé.
 
 [plex.play_movie.found_multiple]
-J'ai trouvé plusieurs films qui peuvent correspondre à votre demande : {movies_titles}, pouvez-vous préciser lequel je dois lancer ?
-Alors, j'ai {movies_titles}, lequel souhaitez-vous regarder ?
-Là il va falloir m'en dire plus, j'ai trouvé {movies_titles}, vous souhaitez voir lequel ?
+J'ai trouvé plusieurs films qui peuvent correspondre à votre demande : {movies_titles} pouvez-vous préciser lequel je dois lancer ?
+Alors, j'ai {movies_titles} lequel souhaitez-vous regarder ?
+Là il va falloir m'en dire plus, j'ai trouvé {movies_titles} vous souhaitez voir lequel ?
 
 [plex.show.found]
 ça marche je lance ça.
