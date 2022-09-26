@@ -43,15 +43,12 @@ class Openhab(Domain):
     self.items = None
         
     # Initialisation.
-    
-    # Load config file.
-    self.load_config()
 
     # Set variables.
     self.__set_variables()
     
     # Retrieve needed slots.
-    self.get_slots_entries(SLOTS_FILES)
+    self.slot.load_slot_files(SLOTS_FILES)
 
     # Initiate openhab connection and try to retrieve items.
     if self.__connect():
@@ -146,16 +143,16 @@ class Openhab(Domain):
     """
     
     # Get item type lang.
-    item_type_lang = self.slots_entries[item_type]
+    item_type_lang = self.slot.get(item_type)
     
     # Check if room not provide.
     if not room :
       # Ask for room information.
-      response = self.get_dialog("openhab.question.what_room")
+      response = self.dialog.get_dialog("openhab.question.what_room")
       return response.format(item_type = item_type_lang)
       
     # Get room lang.
-    room_lang = self.slots_entries[room]
+    room_lang = self.slot.get(room)
     
     # Define openhab item name to check.
     openhab_item_name = f"{room}_{item_type}"
@@ -170,17 +167,17 @@ class Openhab(Domain):
       # Get item state.
       item_state = item.state
       # If item state is string, check for lang translation.
-      if item_state in self.slots_entries.keys():
-        item_state = self.slots_entries[item_state]
+      if item_state in self.slot.data.keys():
+        item_state = self.slot.get(item_state)
     else: 
       # [DEBUG] Say item not found.
       # Ask for room information.
-      response = self.get_dialog("openhab.question.item_not_found")
+      response = self.dialog.get_dialog("openhab.question.item_not_found")
       return response.format(item_name = openhab_item_name)
     
     # If item state retrieve succefully.
     if item_state :
-      response = self.get_dialog("openhab.question.answer")
+      response = self.dialog.get_dialog("openhab.question.answer")
       response = response.format(
         item_type = item_type_lang,
         room = room_lang,
@@ -216,12 +213,12 @@ class Openhab(Domain):
     """
     
     # Get item type lang.
-    item_type_lang = self.slots_entries[item_type]
+    item_type_lang = self.slot.get(item_type)
     
     # Check if room not provide.
     if not room :
       # Ask for room information.
-      response = self.get_dialog("openhab.action.what_room")
+      response = self.dialog.get_dialog("openhab.action.what_room")
       return response.format(item_type = item_type_lang)
 
     # Return response. 

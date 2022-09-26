@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#
 # ! Imports :
 #
 # Import os path.
@@ -22,17 +21,17 @@ syspath.append(ROOT_PATH)
 from domains.Plex import Plex
 # 
 #
-def getPlexMovies():
+def getPlexShow():
         
     """ 
-        Connect to Plex server via Plex Domain and get all movies titles then print them.
+        Connect to Plex server via Plex Domain and get all shows titles then print them.
     """
     
     # Get Plex domain instance.
     plex = Plex()
 
     # Get all medias titles.
-    medias_titles = plex.get_all_medias("Films")
+    medias_titles = plex.get_all_medias("Séries TV")
 
     # Print movies titles.
     for media_title in medias_titles:
@@ -40,4 +39,4 @@ def getPlexMovies():
 
 
 # Main.
-getPlexMovies()
+getPlexShow()

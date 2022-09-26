@@ -5,7 +5,6 @@
 # Libraries dependancies :
 #
 # Import system library.
-from locale import currency
 from sys import path as syspath
 # Import os.path
 from os import path
@@ -17,9 +16,12 @@ import logging
 from functools import wraps
 # Import configparser.
 from configparser import ConfigParser
-from tkinter.messagebox import NO
-# Import DialogParser.
-from utils.dialogParser import DialogParser
+# Import Dialog utils.
+from utils.config import Config
+# Import Dialog utils.
+from utils.dialog import Dialog
+# Import Slot utils.
+from utils.slot import Slot
 # Import Context class.
 from core.concepts.Context import Context
 # Import Memory class.
@@ -58,21 +60,16 @@ class Domain(object):
         
         # Get domain class name.
         self.domain_class_name = type(self).__name__
+        
+        # Load config haroun and domain config.
+        self.config = Config("haroun")
+        self.config.load_config_file(self.domain_class_name)
 
-        # Configuration file
-        self.config_file_name = f"{self.domain_class_name.lower()}.ini"
-        
-        # Dialogs file name.
-        self.dialogs_file_name = f"{self.domain_class_name.lower()}.dialogs"
-        
-        # Config dict.
-        self.config = {}
+        # Load dialogs for domain.
+        self.dialog = Dialog(self.config['haroun']['lang'], self.domain_class_name)
 
-        # Dialogs dict.
-        self.dialogs = {}
-        
-        # Load Haroun config file.
-        self.load_config("haroun.ini")
+        # Instanciate slots utility class.
+        self.slot = Slot(self.config['haroun']['lang'])
         
         # Set logging level.
         logging.getLogger().setLevel(self.config['haroun']['LOG_LEVEL'])
@@ -81,224 +78,11 @@ class Domain(object):
         self.slots_entries = {}
 
         # Initialisation.
-        
-        # Load config file.
-        self.load_config()
-
-        # Load dialogs file.
-        self.load_dialogs()
 
         # Use context intent lifespan if exist.
         self.check_intent_lifespan()
-
     
-    def load_config(self, config_file_name = None):
-        
-        """ 
-            Get config from config/{config_file_name} 
-            ---
-            Parameters
-                config_file_name : String (optionnal)
-                    Domain config file name if not same name as domain class name.
-        """
-        
-        # Check if config_file_name, else use class default.
-        if not config_file_name :
-            config_file_name = self.config_file_name
-        
-        # Domain config file path.
-        domain_config_file_path = f"{ROOT_PATH}config/{config_file_name}"
-        
-        # Check if config exist.
-        if path.exists(domain_config_file_path):
-        
-            # See configparser 
-            configParser = ConfigParser()
-        
-            # Parse domain config file.
-            configParser.read(f"{domain_config_file_path}")
-                        
-            # Get config parser sections.
-            sections = configParser.sections()
-            
-            # Get all sections.
-            for section_name in sections:
-                self.config[section_name] = configParser[section_name]
-                
-        else:
-            # [LOG]
-            logging.error(f"Error config file {domain_config_file_path} doesn't exist.")
     
-    def __get_slot(self, slot_file_name):
-        
-        """ 
-            Acquire a slot file and return all slot entries in dict. 
-            ---
-            Parameters 
-                slot_file_name : String 
-                    Slot file name
-            ---
-            Return : Dict
-                Dict of Slots in file.
-        """
-        
-        # Slots directory path.
-        slots_path=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
-        
-        """ Create slot entries dict from slot file. """
-        
-        # Slot entries dict.
-        slot_entries = {}
-
-        # Construct file path.
-        slot_file_path = slots_path+slot_file_name
-            
-        # Retrieve slot file content.
-        with open(slot_file_path) as fileBuffer:
-            
-            # Read file lines. 
-            fileLines = fileBuffer.readlines()
-            
-            # For each lines.
-            for line in fileLines :
-                
-                # Split line on ':'
-                entry_parts = line.split(':')
-                
-                # If split is ok.
-                if len(entry_parts) == 2 :
-                    slot_entry_key = entry_parts[1]
-                else:
-                    slot_entry_key = entry_parts[0]
-
-                try:
-
-                    # Create slot_entry_key from second part.
-                    slot_entry_key = slot_entry_key.strip().replace("(", "").replace(")", "")
-                    slot_entry_key = slot_entry_key.strip()
-                    
-                    # Create slot_entry_value from second part.
-                    slot_entry_value = entry_parts[0].strip().replace("(", "").replace(")", "")
-                    slot_entry_value = slot_entry_value.split('|')
-                    slot_entry_value = slot_entry_value[0]
-                    slot_entry_value = slot_entry_value.replace("[", "").replace("]", "")
-                    slot_entry_value = slot_entry_value.strip()
-                    
-                    # Set second part as key, first part as value.
-                    slot_entries[slot_entry_key] = slot_entry_value
-                    
-                except:
-                    # [LOG]
-                    logging.error(f"Slot line can't be interpreted. File slot {slot_file_name} error on : {line}")
-        
-        # Return slot_entries
-        return slot_entries
-        
-    def get_slots_entries(self, slots_files_names):
-        
-        """
-            Retrieve slots entries from specified slots files names.
-            Add entries to self.slots_entries.
-            ---
-            Parameters
-                slots_files_names : List
-                    List of slots files names to import.
-        """
-        
-        # Retrieve slots entries for each specified files.
-        for slot_file_name in slots_files_names :
-        
-            # Use Domain static method getSlot to get slot file entries.
-            slot_entries = self.__get_slot(slot_file_name)
-            
-            # [LOG]
-            logging.debug(f"Slot file {slot_file_name} entries : {slot_entries}\n")
-            
-            # Add slot_entries to self.slots_entries dict.
-            self.slots_entries.update(slot_entries)
-
-    def load_dialogs(self, domain_class_name = None):
-        
-        """
-            Retrieve dialog from domain dialogs file, add dialogs to dialogs dict.
-            ---
-            Parameters
-                domain_class_name : String
-                    Domain dialogs file name, if you want to override it. [Default : None]
-        """
-
-         # Check if domain_class_name, else use class default.
-        if domain_class_name :
-            dialogs_file_name = self.domain_class_name.lower()+".dialogs"
-        else:
-            dialogs_file_name = self.dialogs_file_name
-        
-        # Dialogs directory path.
-        dialogs_path=f"{ROOT_PATH}dialogs/{self.config['haroun']['lang']}/"
-
-        # Domain dialogs file path.
-        domain_dialog_file_path = f"{ROOT_PATH}dialogs/{self.config['haroun']['lang']}/{dialogs_file_name}"
-        
-        # Check if dialogs exist.
-        if path.exists(domain_dialog_file_path):
-        
-            # Use configparser to read dialogs file.
-            dialogsParser = DialogParser()
-        
-            # Parse domain dialogs file.
-            dialogsParser.read(f"{domain_dialog_file_path}")
-
-            # Get all sections.
-            for section_name in dialogsParser.sections():
-                dialog_section = dialogsParser[section_name]
-                self.dialogs[section_name] = []
-                # Get all dialogs.
-                for dialog in dialog_section.items():
-                    # If dialog contains ':' it may be cut in tupple.
-                    if not dialog[1] :
-                        self.dialogs[section_name].append(dialog[0])
-                    else:
-                        # Add dialog to self.dialogs[section_name] list.
-                        self.dialogs[section_name].append(' : '.join(dialog))
-
-            # [LOG]
-            logging.debug(f"Dialogs : {self.dialogs[section_name]}")
-                
-        else:
-            # [LOG]
-            logging.error(f"Error config file {domain_dialog_file_path} doesn't exist.")
-             
-
-    def get_dialog(self, dialog_key, random = True):
-        
-        """
-            Retrieve dialog self.dialogs.
-            ---
-            Parameters
-                dialog_key : String
-                    Dialog section key name.
-                random : Boolean
-                    If True, return a random dialog from section. [Default : True]
-            ---
-            Return : String
-                Dialog sentence.
-        """
-                
-        # Random dialogs
-        if random :
-            dialog = choice(self.dialogs[dialog_key])
-        else:
-            dialog = self.dialogs[dialog_key][0]
-
-        # Replace "" by space, manage empty dialog.
-        dialog = dialog.replace('""', ' ')
-
-        # Capitalize first letter.
-        dialog = dialog[0].upper() + dialog[1:]
-
-        # Return dialog.
-        return dialog
-        
     def get_method_args(self, method_name):
         
         """

@@ -13,8 +13,8 @@ import logging
 from sys import path as syspath
 # Import os.path and os.remove
 from os import path, remove
-# Import configparser.
-from configparser import ConfigParser
+# Import Dialog utils.
+from utils.config import Config
 # Import datetime.date
 from datetime import date
 # Import telethon (for telegram bot message)
@@ -47,7 +47,7 @@ class Haroun(object):
         """ Haroun class constructor """
         
         # Create configuration dict by loading Haroun configuration file.
-        self.config = self.load_config()
+        self.config = Config("haroun")
         
         # Get current date.
         today_date = date.today()
@@ -75,47 +75,6 @@ class Haroun(object):
         # Brain instanciation.
         self.brain = Brain(self.config)
 
-    def load_config(self):
-        
-        """ 
-            Get config from config/haroun.ini.
-            ---
-            Return : dict
-                Configuration dict.
-        """
-        
-        # Create a config dict.
-        config = {}
-        
-        # Haroun config file path.
-        haroun_config_file_path = f"{ROOT_PATH}config/haroun.ini"
-        
-        # Check if config exist.
-        if path.exists(haroun_config_file_path):
-        
-            # See configparser 
-            config_parser = ConfigParser()
-        
-            # Parse haroun.ini config file.
-            config_parser.read(haroun_config_file_path)
-             
-            # Get config parser sections.
-            sections = config_parser.sections()
-            
-            # Get all sections.
-            for section_name in sections:
-                config[section_name] = config_parser[section_name]
-            
-        else:
-            # [LOG]
-            logging.critical(f"Fatal error : config file {haroun_config_file_path} doesn't exist.")
-            # Exit program.
-            quit()
-            
-        # Return config dict.
-        return config
-    
-    
 
     async def call(self, source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime): 
         

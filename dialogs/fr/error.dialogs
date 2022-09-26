@@ -1,0 +1,17 @@
+[intent_not_found]
+je n'ai pas compris.
+pourriez-vous répéter ?
+pourriez-vous être plus précis ?
+
+[intent_not_handled]
+je ne sais pas quoi faire.
+que dois-je faire ?
+vous ne m'avez pas appris à faire ça.
+
+[skill_execution_failed]
+je n'ai pas réussi à faire ça.
+malheureusement, j'ai échoué à la tache.
+
+[response_creation_failed]
+je ne sais pas quoi dire.
+je ne sais pas quoi répondre.

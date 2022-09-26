@@ -25,14 +25,7 @@ class Social(Domain):
                 
         # Init parent class Domain.
         super().__init__()
-
-        # Initialisation.
         
-        # Load config file.
-        #self.load_config()
-
-        # Load dialogs file.
-        self.load_dialogs()
 
     
     @Domain.match_intent("social.whatsup")
@@ -51,7 +44,7 @@ class Social(Domain):
         """
         
         # Return a response dialog.
-        return self.get_dialog("social.whatsup.good")
+        return self.dialog.get_dialog("social.whatsup.good")
     
     @Domain.match_intent("social.hi")
     def hi(self, hi, orphan = None):
@@ -69,7 +62,7 @@ class Social(Domain):
         # Add context.
         
         # Return a response dialog.
-        return self.get_dialog("social.hi")
+        return self.dialog.get_dialog("social.hi")
     
     @Domain.match_intent("social.bye")
     def bye(self, bye, orphan = None):
@@ -85,7 +78,7 @@ class Social(Domain):
         """
 
         # Return a response dialog.
-        return self.get_dialog("social.bye")
+        return self.dialog.get_dialog("social.bye")
 
     @Domain.match_intent("social.good")
     def good(self, good, orphan = None):
@@ -101,7 +94,7 @@ class Social(Domain):
         """
 
         # Return a response dialog.
-        return self.get_dialog("social.good")
+        return self.dialog.get_dialog("social.good")
 
     @Domain.match_intent("social.bad")
     def bad(self, good, orphan = None):
@@ -117,4 +110,4 @@ class Social(Domain):
         """
 
         # Return a response dialog.
-        return self.get_dialog("social.bad")
+        return self.dialog.get_dialog("social.bad")

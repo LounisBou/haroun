@@ -8,8 +8,8 @@
 #
 # Import sys.path as syspath
 from sys import path as syspath
-# Import os.path and os.walk
-from os import path, walk
+# Import os.path, os.walk, os.remove
+from os import path, walk, remove
 # Import subprocess
 import subprocess
 # Import rhasspynlu
@@ -43,6 +43,8 @@ from domains import *
 from utils.debug import *
 # Import json library.
 import json
+# Import dialog utils.
+from utils.dialog import Dialog
 #
 #
 #
@@ -98,6 +100,10 @@ class Brain(object):
         
         # Wake up : initialisation of Brain class.
         self.wakeUp()
+
+        # Load error dialogs.
+        self.dialogs = Dialog(self.config['haroun']['lang'], "error")
+        
     
     # ! - Initialisation.
     
@@ -230,13 +236,13 @@ class Brain(object):
         slots_path=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
         
         # Slots programs directory path.
-        slots_program_path=f"{ROOT_PATH}slotsPrograms/{self.config['haroun']['lang']}"
+        slots_program_path=f"{ROOT_PATH}slotsPrograms/{self.config['haroun']['lang']}/"
         
         # Browse through slots files 
         slots_programs_files = []    
         for(dir_path, dir_names, file_names) in walk(slots_program_path):
             # [LOG]
-            logging.debug(f"Looking in slotsPrograms directory : {slots_program_path}, listing files :\n{file_names}")
+            logging.info(f"Looking in slotsPrograms directory : {slots_program_path}, listing files :\n{file_names}")
             # Add file_names to slots_programs_files list.
             slots_programs_files.extend(file_names)
             break
@@ -252,35 +258,45 @@ class Brain(object):
             
             # Create slot file with program slot name.
             slot_file_path = slots_path+program_slot_name
-            # If slot file doesn't already exist.
-            if not path.exists(slot_file_path) :
-            
-                # Execute program slot file.
-                process = subprocess.Popen(
-                    [program_path],
-                    shell=True,
-                    stdin=None,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    close_fds=True
-                )
-                
-                # Get program slot file execution outputs.
-                output, error = process.communicate()
-                
-                # Retrieve output string.
-                slot_file_content = output.decode()
-                                
-                # Open file : create if not exist, truncate if exist.
-                with open(slot_file_path, 'w') as slot_file:
-                    # Write program slot file execution output.
-                    slot_file.write(f"{slot_file_content}")
-                    
+
+            # If slot file already exist and config slot_force_regenerate is true.
+            if path.exists(slot_file_path) and self.config['haroun']['slot_force_regenerate'] == 'True' :
+                # [LOG]
+                logging.info(f"Slot file {slot_file_path} already exist and config slot_force_regenerate is true, so we delete it.")
+                # Remove slot file.
+                remove(slot_file_path)
             else:
                 # [LOG]
                 logging.warning(f"Slot {program_slot_name} already exist.")
                 logging.warning(f"Program slot file '{program_slot_file_name}' won't be executed. Delete slot {program_slot_name} to re-generate it.\n")
-    
+                # Skip to next program slot file.
+                continue
+            
+            # Execute program slot file.
+            process = subprocess.Popen(
+                [program_path],
+                shell=True,
+                stdin=None,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                close_fds=True
+            )
+            
+            # Get program slot file execution outputs.
+            output, error = process.communicate()
+            
+            # Retrieve output string.
+            slot_file_content = output.decode()
+                            
+            # Open file : create if not exist, truncate if exist.
+            with open(slot_file_path, 'w') as slot_file:
+                # Write program slot file execution output.
+                slot_file.write(f"{slot_file_content}")
+
+            # [LOG]
+            logging.info(f"Slot file {slot_file_path} created.")
+                    
+            
     def get_slots(self):
         
         """ 
@@ -447,11 +463,11 @@ class Brain(object):
         # if interpretation failed.
         if not modified_interaction :
             # Return interaction message error.
-            interaction.add_error(f"Interaction interpretation failed. [Error #4].")
-            # [DEBUG]
-            if self.config["haroun"]["debug_mode"] == "True" : 
-                interaction.add_error(f"Message : {interaction.stimulus.sentence}")
-                interaction.add_error(f"Intent : {str(interaction.intent)}")
+            interaction.add_response(self.dialogs.get_dialog("intent_not_found"))
+            # [LOG]
+            logging.error(f"Interaction interpretation failed. [Error #4].")
+            logging.info(f"Message : {interaction.stimulus.sentence}")
+            logging.info(f"Intent : {str(interaction.intent)}")
         else:
             # [LOG]
             logging.info(f"{str(interaction.intent)}")
@@ -460,11 +476,11 @@ class Brain(object):
             # If Interaction analysis failed. 
             if not modified_interaction :
                 # Return interaction message error.
-                interaction.add_error(f"Interaction analysis failed. [Error #10].")
-                # [DEBUG]
-                if self.config["haroun"]["debug_mode"] == "True" : 
-                    interaction.add_error(f"Message : {interaction.stimulus.sentence}")
-                    interaction.add_error(f"Intent : {str(interaction.intent)}")
+                interaction.add_response(self.dialogs.get_dialog("intent_not_handled"))
+                # [LOG]
+                logging.error(f"Interaction analysis failed. [Error #6].")
+                logging.info(f"Message : {interaction.stimulus.sentence}")
+                logging.info(f"Intent : {str(interaction.intent)}")
             else:
             
                 # [TODO]
@@ -478,14 +494,18 @@ class Brain(object):
                 # If Interaction execution failed. 
                 if not modified_interaction :
                     # Return interaction message error.
-                    interaction.add_error(f"Interaction skills execution failed. [Error #20].")
+                    interaction.add_response(self.dialogs.get_dialog("skill_execution_failed"))
+                    # [LOG]
+                    logging.error(f"Interaction skills execution failed. [Error #20].")
                 else:   
                     # Generate interaction response.
                     modified_interaction = self.response(modified_interaction)
                     # If response creation failed. 
                     if not modified_interaction :
                         # Return interaction message error.
-                        interaction.add_error(f"Interaction skills execution failed. [Error #20].")
+                        interaction.add_response(self.dialogs.get_dialog("response_creation_failed"))
+                        # [LOG]
+                        logging.error(f"Interaction skills execution failed. [Error #30].")
                     else:
                         # If all step successfully pass, override interaction with modified interaction.
                         interaction = modified_interaction
@@ -651,7 +671,7 @@ class Brain(object):
 
         else:
             # Error message. 
-            interaction.add_error(f"No handler for intent '{interaction.intent.label}' found. [Error #6]")
+            logging.info(f"No handler for intent '{interaction.intent.label}' found.")
             # Return None (error)
             return None
               

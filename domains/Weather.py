@@ -36,14 +36,8 @@ class Weather(Domain):
 
         # Initialisation.
 
-        # Load config file.
-        #self.load_config()
-
-        # Load dialogs file.
-        self.load_dialogs()
-
         # Retrieve needed slots.
-        self.get_slots_entries(SLOTS_FILES)
+        self.slot.load_slot_files(SLOTS_FILES)
 
         # Init client
         self.client = MeteoFranceClient()
@@ -56,7 +50,7 @@ class Weather(Domain):
         # If city is not defined.
         if city == None or city == "":
             # Set default city.
-            city = "Lille"
+            city = self.config["weather"]["default_city"]
 
         # If day_diff is not defined.
         if day_diff == None or day_diff == "" or day_diff == "0":
@@ -76,23 +70,12 @@ class Weather(Domain):
 
         # Get the daily forecast
         day_weather = weather.daily_forecast[day_diff_int]
-        
-        # [DEBUG]
-        #print(f"slots_entries : ")
-        #pprint(self.slots_entries)
 
         # Get slots values.
-        day_name = self.slots_entries[day_diff]
-
-        # [DEBUG]
-        #print("day_weather dict : ")
-        #pprint(day_weather)
+        day_name = self.slot.get(day_diff)
         
         # Get weather.daily dialog response.
-        dialog = self.get_dialog("weather.daily")
-
-        # [LOG]
-        logging.info(f"dialog : {dialog}")
+        dialog = self.dialog.get_dialog("weather.daily")
 
         # Create response.
         response = dialog.format(

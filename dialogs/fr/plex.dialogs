@@ -23,6 +23,9 @@ allez c'est parti pour {show_title}
 ok, je lance {show_title}
 {show_title}, très bonne série. Je m'occupe de ça.
 
+[plex.play_show.show_title]
+quelle série souhaitez-vous regarder ?
+
 [plex.show.not_found]
 j'ai du mal comprendre, vous avez dit {show_title}, malheuresement je ne l'ai pas trouvé.
 impossible de remettre la main sur la série {show_title}.

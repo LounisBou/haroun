@@ -187,7 +187,30 @@ class Plex(Domain):
             
         # Return matching movie title list
         return matching_videos_titles
-            
+    
+    def get_all_medias(self, library_section):
+        
+        """ 
+            Connect to Plex server via API. 
+            ---
+            Parameters
+                library_section : String
+                    Plex library section to retrieve.
+            ---
+            Return List
+                List of plex medias title in library section.
+        """
+        
+        # Check connection.
+        if self.server :
+            # Search for all section medias in Plex.
+            medias = self.server.library.section(library_section).all()
+            # Get medias titles.
+            medias_titles = [Plex.clean_media_title(media.title, True) for media in medias]
+
+        # Return medias titles.
+        return medias_titles
+
     @staticmethod
     def clean_media_title(media_title, slot_value=True):
 
@@ -308,7 +331,7 @@ class Plex(Domain):
             # Create context.
             self.set_context_intent("plex.play_movie", {})
             # Get dialog response.
-            response = self.get_dialog("plex.play_movie.movie_title")
+            response = self.dialog.get_dialog("plex.play_movie.movie_title")
             # Return response.
             return response
         
@@ -316,7 +339,7 @@ class Plex(Domain):
         if len(matching_videos_titles) == 0 :
             
             # Get dialog response.
-            response = self.get_dialog("plex.play_movie.not_found")
+            response = self.dialog.get_dialog("plex.play_movie.not_found")
 
             # Return response.
             return response.format(movie_title = movie_title)
@@ -344,7 +367,7 @@ class Plex(Domain):
                 response = error
             else:
                 # Get dialog response.
-                response = self.get_dialog("plex.play_movie.found")
+                response = self.dialog.get_dialog("plex.play_movie.found")
             
             # Return response.
             return response.format(movie_title = correct_movie_title)
@@ -360,7 +383,7 @@ class Plex(Domain):
             for movie_title in matching_videos_titles:
                 movies_titles = movies_titles + f"{movie_title}, "
             # Get dialog response.
-            response = self.get_dialog("plex.play_movie.found_multiple")
+            response = self.dialog.get_dialog("plex.play_movie.found_multiple")
             # Return response.
             return response.format(movies_titles = movies_titles)
 
@@ -369,13 +392,24 @@ class Plex(Domain):
     @Domain.match_intent("plex.play_show")
     def play_show(self, show_title = None, season_number = None, episode_number = 1, mode = None, orphan = None):        
 
-        # Search for show in Plex.
-        matching_videos_titles = self.search(show_title, 'show')
-        
+        # Check if show title is provided.
+        if show_title:
+            # Search for show in Plex.
+            matching_videos_titles = self.search(show_title, 'show')
+        else:
+            # Create context.
+            self.set_context_intent("plex.play_show", {})
+            # Get dialog response.
+            response = self.dialog.get_dialog("plex.play_show.show_title")
+            # Return response.
+            return response
+
         # If no show found.
         if len(matching_videos_titles) == 0 :
-            response = self.get_dialog("plex.show.not_found")
+            response = self.dialog.get_dialog("plex.show.not_found")
             return response.format(show_title = show_title)
+
+        # If just one show found.
         elif len(matching_videos_titles) == 1 or show_title.capitalize() in matching_videos_titles :
             
             # Get correct show title.
@@ -400,7 +434,7 @@ class Plex(Domain):
                 
                 # If episode not found.
                 if not match_episode :
-                    response = self.get_dialog("plex.show.episode_not_found")
+                    response = self.dialog.get_dialog("plex.show.episode_not_found")
                     return response.format(
                         show_title = correct_show_title, 
                         episode_number = episode_number, 
@@ -413,7 +447,7 @@ class Plex(Domain):
                     return error
                 
                 # Return response.
-                response = self.get_dialog("plex.show.found")
+                response = self.dialog.get_dialog("plex.show.found")
                 return response.format(
                     show_title = correct_show_title, 
                     episode_number = episode_number, 
@@ -428,21 +462,25 @@ class Plex(Domain):
                     return error
                 
                 # Return response.
-                response = self.get_dialog("plex.show.found")
+                response = self.dialog.get_dialog("plex.show.found")
                 return response.format(
                     show_title = correct_show_title, 
                     episode_number = episode_number, 
                     season_number = season_number
                 )
-                
+
+        # If more than one show found.     
         else:
+            
+            # Create context.
+            self.set_context_intent("plex.play_show", {})
         
             # List of available show with this title match.
             shows_titles = ""
             for show_title in matching_videos_titles:
                 shows_titles = shows_titles + f"{show_title}, "
             # Return response.
-            response = self.get_dialog("plex.show.found")
+            response = self.dialog.get_dialog("plex.show.found_multiple")
             return response.format(shows_titles = shows_titles)
 
 
@@ -459,7 +497,7 @@ class Plex(Domain):
         client.play()
         
         # Return response.
-        response = self.get_dialog("plex.play")
+        response = self.dialog.get_dialog("plex.play")
         return response
 
 
@@ -476,7 +514,7 @@ class Plex(Domain):
         client.pause()
         
         # Return response.
-        response = self.get_dialog("plex.pause")
+        response = self.dialog.get_dialog("plex.pause")
         return response
 
 
@@ -493,5 +531,5 @@ class Plex(Domain):
         client.stop()
         
         # Return response.
-        response = self.get_dialog("plex.stop")
+        response = self.dialog.get_dialog("plex.stop")
         return response
