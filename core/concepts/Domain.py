@@ -14,8 +14,6 @@ import inspect
 import logging
 # Import functools wraps for decorators.
 from functools import wraps
-# Import configparser.
-from configparser import ConfigParser
 # Import Dialog utils.
 from utils.config import Config
 # Import Dialog utils.
@@ -24,10 +22,6 @@ from utils.dialog import Dialog
 from utils.slot import Slot
 # Import Context class.
 from core.concepts.Context import Context
-# Import Memory class.
-from core.concepts.Memory import Memory
-# Import random.
-from random import choice
 # Import json.
 import json
 # [DEBUG] Import pretty formatter.
