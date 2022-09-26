@@ -8,17 +8,12 @@
 #
 # Import sys.path as syspath
 from sys import path as syspath
-# Import os.path, os.walk, os.remove
-from os import path, walk, remove
-# Import subprocess
-import subprocess
+# Import os.path
+from os import path
 # Import rhasspynlu
 import rhasspynlu
 # Import logging library
 import logging
-# Import pathlib.Path for rhasspynlu.parse_ini
-from pathlib import Path
-from core.Mouth import Mouth
 # Import consciousness class.
 from core.consciousness.Conscious import Conscious
 from core.consciousness.Ego import Ego
@@ -33,16 +28,18 @@ from core.concepts.Domain import Domain
 from core.concepts.Skill import Skill
 from core.concepts.Stimulus import Stimulus
 from core.concepts.Interaction import Interaction
-from core.concepts.Intent import Intent
-from core.concepts.Response import Response
 from core.concepts.Memory import Memory
 from core.concepts.Context import Context
 # Import domains.
 from domains import *
-# Import utils
+# Import utils intent class.
+from utils.intent import Intent as IntentUtils
+# Import utils slot class.
+from utils.slot import Slot
+# Import utils slotProgram class.
+from utils.slotprogram import SlotProgram
+# Import utils debug function.
 from utils.debug import *
-# Import json library.
-import json
 # Import dialog utils.
 from utils.dialog import Dialog
 #
@@ -66,6 +63,9 @@ class Brain(object):
         """ 
             __init__ : Brain class constructor.
         """
+
+        # Define language from config.
+        self.lang = config['haroun']['lang']
         
         # Audio transcription class (STT).
         self.ear = Ear()
@@ -102,7 +102,7 @@ class Brain(object):
         self.wakeUp()
 
         # Load error dialogs.
-        self.dialogs = Dialog(self.config['haroun']['lang'], "error")
+        self.dialogs = Dialog(self.lang, "error")
         
     
     # ! - Initialisation.
@@ -114,13 +114,16 @@ class Brain(object):
         """
         
         # Available intents list. 
-        self.intents =  self.get_intents()
+        self.intents =  IntentUtils.get_rhasspy_intent_list(self.lang)
         
+        # Check if slot file must be generated.
+        slot_force_regenerate = self.config['haroun']['slot_force_regenerate'] == 'True' 
+
         # Execute slots programs.
-        self.execute_slots_programs()
+        SlotProgram.execute_all(self.lang, slot_force_regenerate)
         
         # Available slots for replacements in intents.
-        self.slots = self.get_slots()
+        self.slots = Slot.get_rhasspy_slots_dict(self.lang)
     
         # Memories 
         self.memories = Memory()
@@ -131,7 +134,8 @@ class Brain(object):
         # Training brain by creating intents graph.
         self.nlu_training()
         
-        # ! - Utility methods.
+    
+    # ! - Utility methods.
     
     @staticmethod
     def __get_domain_class(domain_module_name, domain_class_name): 
@@ -166,193 +170,6 @@ class Brain(object):
         # Create tables, indexes and associated metadata for the given list of models.
         MyModel.db.create_tables(haroun_models)
         
-    
-    def get_intents(self):
-        
-        """ 
-            Acquire intents file list and create a all.ini intents file. 
-            Parse haroun/intents folder to list of intents file.
-            Normally one file per available domains.
-            Generate one intents file and parse it with rhasspy-nlu.
-            ---
-            Return : intents 
-                Rhasspy NLU intents list.
-        """
-        
-        # Intents directory path.
-        intents_path=f"{ROOT_PATH}intents/{self.config['haroun']['lang']}/"
-        
-        # Browse through intents files 
-        intents_files = []    
-        for(dir_path, dir_names, file_names) in walk(intents_path):
-            # [LOG]
-            logging.debug(f"Looking in intent directory : {intents_path}, listing files : \n{file_names}")
-            intents_files.extend(file_names)
-            break
-            
-        """ Write all intents in intents/.all.ini file. """
-        
-        # Open intents/.all.ini, a file that will contains all intents.
-        all_intents_file_path  = intents_path+".all.ini"
-                    
-        # Open intents/.all.ini in write mode
-        with open(all_intents_file_path, 'w+') as all_intents_file_buffer:
-            
-            # Iterate through intents_files list
-            for file_name in intents_files:
-                
-                # Ignore .all.ini file.
-                if file_name != ".all.ini":
-
-                    # Construct file path.
-                    file_path = intents_path+file_name
-                    
-                    # Open each file in read mode
-                    with open(file_path) as file_buffer:
-        
-                        # Read the data from file. 
-                        file_intents = file_buffer.read()
-                        
-                        # Write it in all_intents_file_buffer and add '\n\n' to enter data from next line
-                        all_intents_file_buffer.write("# "+file_name+" file content : \n")
-                        # Lowercase all intents.
-                        all_intents_file_buffer.write(file_intents.lower()+"\n\n")
-                    
-                            
-        # Load file for rhasspy-nlu.
-        intents = rhasspynlu.parse_ini(Path(all_intents_file_path))
-        
-        # Return
-        return intents
-    
-    
-    def execute_slots_programs(self):
-        
-        """ 
-            Execute slots programs. Slots programs are independents scripts that generate slots.
-        """
-        
-        # Slots directory path.
-        slots_path=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
-        
-        # Slots programs directory path.
-        slots_program_path=f"{ROOT_PATH}slotsPrograms/{self.config['haroun']['lang']}/"
-        
-        # Browse through slots files 
-        slots_programs_files = []    
-        for(dir_path, dir_names, file_names) in walk(slots_program_path):
-            # [LOG]
-            logging.info(f"Looking in slotsPrograms directory : {slots_program_path}, listing files :\n{file_names}")
-            # Add file_names to slots_programs_files list.
-            slots_programs_files.extend(file_names)
-            break
-            
-        # Iterate through slots_programs_files list
-        for program_slot_file_name in slots_programs_files:
-            
-            # Get file name without extension as program_slot_name.
-            program_slot_name = path.splitext(program_slot_file_name)[0]
-        
-            # Get program path.
-            program_path = slots_program_path+program_slot_file_name
-            
-            # Create slot file with program slot name.
-            slot_file_path = slots_path+program_slot_name
-
-            # If slot file already exist and config slot_force_regenerate is true.
-            if path.exists(slot_file_path) and self.config['haroun']['slot_force_regenerate'] == 'True' :
-                # [LOG]
-                logging.info(f"Slot file {slot_file_path} already exist and config slot_force_regenerate is true, so we delete it.")
-                # Remove slot file.
-                remove(slot_file_path)
-            else:
-                # [LOG]
-                logging.warning(f"Slot {program_slot_name} already exist.")
-                logging.warning(f"Program slot file '{program_slot_file_name}' won't be executed. Delete slot {program_slot_name} to re-generate it.\n")
-                # Skip to next program slot file.
-                continue
-            
-            # Execute program slot file.
-            process = subprocess.Popen(
-                [program_path],
-                shell=True,
-                stdin=None,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                close_fds=True
-            )
-            
-            # Get program slot file execution outputs.
-            output, error = process.communicate()
-            
-            # Retrieve output string.
-            slot_file_content = output.decode()
-                            
-            # Open file : create if not exist, truncate if exist.
-            with open(slot_file_path, 'w') as slot_file:
-                # Write program slot file execution output.
-                slot_file.write(f"{slot_file_content}")
-
-            # [LOG]
-            logging.info(f"Slot file {slot_file_path} created.")
-                    
-            
-    def get_slots(self):
-        
-        """ 
-            Acquire all slots files and create a Rhasspy NLU slots dict. 
-            ---
-            Return : Rhasspy NLU slots
-                Rhasspy NLU slots dict.
-        """
-        
-        # Slots directory path.
-        slots_path=f"{ROOT_PATH}slots/{self.config['haroun']['lang']}/"
-        
-        # Browse through slots files 
-        slots_files = []    
-        for(dir_path, dir_names, file_names) in walk(slots_path):
-            # [LOG]
-            logging.debug(f"Looking in slots directory : '{slots_path}', listing files :\n{file_names}")
-            # Add file_names to slots_files list.
-            slots_files.extend(file_names)
-            break
-        
-        """ Get slots from domains files and add them to slots files. """
-        
-        # [TO DO]
-        #self.domains
-        
-        """ Create slots dict from slots files. """
-        
-        # Replacement slots dict.
-        slots = {}
-            
-        # Iterate through slots_files list
-        for file_name in slots_files:
-            
-            # Construct file path.
-            file_path = slots_path+file_name
-            
-            # Retrieve slot file content.
-            with open(file_path) as file_buffer:
-                
-                # Read the data from file. 
-                FileContent = file_buffer.read()
-                
-                # Retrieve all slots entries in file and separate them with pipe.
-                slots_entries = FileContent.replace("\n", " | ")
-            
-                # Construct slots.
-                key = "$"+file_name
-                value = [rhasspynlu.Sentence.parse(slots_entries)]
-                
-                # Add it to replacement slots dict.
-                slots[key] = value
-        
-        # Return
-        return slots
-            
     
     # ! - A.I. Training.
     

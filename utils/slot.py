@@ -4,10 +4,12 @@
 #
 # Libraries dependancies :
 #
-# Import os.path
-from os import path
+# Import os.path, os.walk
+from os import path, walk
 # Import system library.
 from sys import path as syspath
+# Import rhasspynlu
+import rhasspynlu
 # Import logging library
 import logging
 #
@@ -120,7 +122,69 @@ class Slot():
             # [LOG]
             logging.error(f"Slot file {slot_file_path} not found.")
 
-    
+    @staticmethod
+    def get_rhasspy_slots_dict(lang):
+        
+        """ 
+            Acquire all slots files and create a Rhasspy NLU slots dict. 
+            ---
+            Parameters
+                lang : String
+                    Language to use for slot.
+            ---
+            Return : Rhasspy NLU slots
+                Rhasspy NLU slots dict.
+        """
+        
+        # Slots directory path.
+        slot_dir_path=f"{ROOT_PATH}slots/{lang}/"
+        
+        # Browse through slots files 
+        slots_files = []    
+        for(dir_path, dir_names, file_names) in walk(slot_dir_path):
+            # [LOG]
+            logging.debug(f"Looking in slots directory : '{slot_dir_path}', listing files :\n{file_names}")
+            # Add file_names to slots_files list.
+            slots_files.extend(file_names)
+            break
+        
+        """ Get slots from domains files and add them to slots files. """
+        
+        # [TO DO]
+        #self.domains
+        
+        """ Create slots dict from slots files. """
+        
+        # Replacement slots dict.
+        slots = {}
+            
+        # Iterate through slots_files list
+        for slot_file_name in slots_files:
+            
+            # Construct file path.
+            slot_file_path = slot_dir_path+slot_file_name
+            
+            # Retrieve slot file content.
+            with open(slot_file_path) as file_buffer:
+                
+                # Read the data from file. 
+                FileContent = file_buffer.read()
+                
+                # Retrieve all slots entries in file and separate them with pipe.
+                slots_entries = FileContent.replace("\n", " | ")
+            
+                # Construct slots.
+                key = "$"+slot_file_name
+                value = [rhasspynlu.Sentence.parse(slots_entries)]
+                
+                # Add it to replacement slots dict.
+                slots[key] = value
+        
+        # Return
+        return slots
+      
+
+
     def get(self, key):
         
         """ 
