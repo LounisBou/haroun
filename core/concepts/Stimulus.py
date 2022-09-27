@@ -73,6 +73,7 @@ class Stimulus(object):
         
         # Clean sentence.
         self.__clean_sentence()
+        
     
     def __clean_sentence(self):
         
@@ -82,6 +83,10 @@ class Stimulus(object):
             Improve sentence such for NLU parsing.      
         """	
         
+        # Stimulus sentence pre-treatment.
+        self.sentence = self.sentence.lower()
+        self.sentence = self.sentence.replace(',',"")
+
         # Spacers : add space before defined character.
         spacers = ('°', '%', '$', '€', '£')
         
@@ -90,7 +95,6 @@ class Stimulus(object):
             # Replace splac
             self.sentence = self.sentence.replace(spacer, f" {spacer}")    
         
-         
         
     def is_valid(self):
         

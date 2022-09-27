@@ -58,5 +58,5 @@ class Config(ConfigParser):
                 
         else:
             # [LOG]
-            logging.error(f"Error config file {domain_config_file_path} doesn't exist.")
+            logging.warning(f"Config file {domain_config_file_path} doesn't exist. Continue without it.")
     

@@ -3,6 +3,8 @@
 #
 # Libraries dependancies :
 #
+# Import logging
+import logging
 #
 #
 # Globals :
@@ -14,7 +16,7 @@ class Intent(object):
     
     """ Concept of Haroun Intent. """
     
-    def __init__(self):
+    def __init__(self, stimulus):
         
         """ Intent class constructor. """
         
@@ -22,7 +24,7 @@ class Intent(object):
         self.error = 0
         
         # Stimulus
-        self.stimulus = None
+        self.stimulus = stimulus
         # Recognition
         self.recognition = None
         
@@ -36,12 +38,15 @@ class Intent(object):
         self.confidence = None
         # Entities
         self.entities = None
-        # Orphan entity
-        self.orphan_entity = None
+        # Orphan entity value
+        self.orphan_text = None
         # Tokens
         self.tokens = None
         # Raw tokens
         self.raw_tokens = None
+
+        # Arguments dict.
+        self.kwargs = {}
         
         # Ponctuation counter :
         self.ponctuation_marks = {
@@ -97,26 +102,18 @@ class Intent(object):
     
     # ! - Initialisation.
     
-    def checkRecognition(self, stimulus, recognition):
+    def checkRecognition(self, recognition):
         
         """ 
             Check recognition to define intent info. 
             
             Try to define the intent attributs (label, entities, tokens...) from recognition Object.
-            
-            Parameters
-            ----------
-            stimulus : Stimulus source of the Interaction recognition .
-            recognition : Recognition Object generated from Interaction interpretation.
-            
-            Returns
-            _______
-            void
-        
+            ---
+            Parameters :
+                recognition : Recognition
+                    Recognition Object generated from Interaction interpretation.
         """
         
-        # Stimulus
-        self.stimulus = stimulus
         # Recognition
         self.recognition = recognition
         
@@ -130,30 +127,103 @@ class Intent(object):
         self.confidence = recognition['intent']['confidence']
         # Entities
         self.entities = recognition['entities']
-        # Orphans
-        self.orphan_entity = self.stimulus.sentence.lower().replace(self.raw_text,"")
         # Tokens
         self.tokens = recognition['tokens']
         # Raw tokens
         self.raw_tokens = recognition['raw_tokens']
+
+
+    def get_args(self, skill_params):
+
+        """ 
+            Get arguments from entities and orphan.
+            ---
+            Parameters :
+                skill_params : list
+                    List of skill parameters.
+            ---
+            Return : dict
+                Dict of arguments.    
+        """
+
+        # If there is entities.
+        if self.entities :
+            # Check entities to create kwargs.
+            for entity in self.entities :
+                # If entity is not already in kwargs.
+                if entity['entity'] not in self.kwargs.keys() :
+                    # Add entity to kwargs.
+                    self.kwargs[entity['entity']] = entity['value']
         
-        # Check orphan entity for punctuation marks :
-        for key, value in self.ponctuation_marks.items():
-            # If present.
-            if key in self.orphan_entity :
-                # Remove ponctuation mark.
-                self.orphan_entity = self.orphan_entity.replace(key, "")
-                # Increase counter
-                self.ponctuation_marks[key] = value + 1
-                
+        # Add orphan to kwargs.
+        self.__get_orphan(skill_params)
+
+        # Return kwargs.
+        return self.kwargs
+
+    def __get_orphan(self, skill_params):
+        
+        """ 
+            Get orphan entity value. 
+            Entity is orphan if it is not in skill parameters.
+            If no orphan entity, orphan_text is declare as orphan.
+            ---
+            Parameters :
+                skill_params : list
+                    List of skill parameters.
+        """
+
+        # Create orphan argument.
+        self.kwargs['orphan'] = None
+
+        # For each intent argument.
+        for arg_key, arg_value in self.kwargs.items() :
+            # If argument is not in skill parameters.
+            if arg_key not in skill_params :
+                # Define orphan entity value.
+                self.kwargs['orphan'] = arg_value
+                # Remove argument value.
+                self.kwargs[arg_key] = None
+
+        # Orphan entity value
+        self.orphan_text = self.stimulus.sentence.lower()
+
+        # If raw text is not empty.
+        if self.raw_text :
+            # Remove raw text from orphan.
+            self.orphan_text = self.orphan_text.replace(self.raw_text, "")
+
         # Trim orphan entity.
-        self.orphan_entity = self.orphan_entity.strip()
-        # Add orphan entity to entities if not empty.
-        if self.orphan_entity :
-            self.entities.append({
-                'entity' : 'orphan',
-                'value' : self.orphan_entity,
-            })
+        self.orphan_text = self.__clean_entity_value(self.orphan_text)
+
+        # If orphan_text is not empty and orphan argument not already defined..
+        if self.orphan_text and not self.kwargs['orphan'] :
+            # Add orphan to kwargs.
+            self.kwargs['orphan'] = self.orphan_text
+
+        # If orphan is empty or None.
+        if not self.kwargs['orphan'] :
+            # Remove orphan from kwargs.
+            del self.kwargs['orphan']
+
+    def __clean_entity_value(self, entity_value):
+        
+        """ Clean entity value. """
+        
+        # Remove ponctuation marks.
+        for ponctuation_mark in self.ponctuation_marks.keys():
+            # If present.
+            if ponctuation_mark in entity_value :
+                # Remove ponctuation mark.
+                entity_value = entity_value.replace(ponctuation_mark, "")
+                # Increase counter
+                self.ponctuation_marks[ponctuation_mark] += 1
+        
+        # Trim orphan entity.
+        entity_value = entity_value.strip()
+        
+        # Return cleaned entity value.
+        return entity_value
                 
         
         

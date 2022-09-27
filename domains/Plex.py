@@ -4,8 +4,11 @@
 # Libraries dependancies : #
 #
 # Import core concept domain.
+from re import X
 from core.concepts.Domain import Domain 
-# Import plex API.
+# Import plex API account
+from plexapi.myplex import MyPlexAccount
+# Import plex API server.
 from plexapi.server import PlexServer
 # Import logging library
 import logging
@@ -29,6 +32,9 @@ class Plex(Domain):
         # Plex server instance.
         self.server = None
 
+         # Plex account instance.
+        self.account = None
+
         # Set variables.
         self.__set_variables()
         
@@ -51,15 +57,24 @@ class Plex(Domain):
             Connect to Plex server via API. 
             ---
             Return Boolean
-                Connection status.
+                Connection plex server connection status.
         """
         
         try:
             # Connect to plex server using PLEX_SERVER_TOKEN.
             self.server = PlexServer(self.plex_server_url, self.plex_server_token)
         except:
+            # [LOG]
+            logging.error("Plex server connection failed.")
             self.server = None
-            return False
+
+        try:
+            # Check if plex server is available.
+            self.account = MyPlexAccount(username="iznogoudatall", password="E314cure3823")
+        except:
+            # [LOG]
+            logging.error("Plex account login failed.")
+            self.account = None
 
         # [LOG]
         if self.check_client(self.plex_client_name) :
@@ -67,7 +82,8 @@ class Plex(Domain):
         else:
             logging.warning(f"Client {self.plex_client_name} NOT available.")
 
-        return True
+        # Return boolean plex server connection status.
+        return self.server is not None
         
     
     def __get_available_client(self):
@@ -319,6 +335,104 @@ class Plex(Domain):
     # ! - Methods.
     
     @Domain.check_api_connection("server")
+    @Domain.match_intent("plex.play_media")
+    def play_media(self, media_type = None, media_title = None, season_number = None, episode_number = None, orphan = None):
+
+        """
+            Play media on Plex client.
+            ---
+            Parameters
+                media_type : String
+                    Media type to play.
+                media_title : String
+                    Media title to play.
+                orphan : String
+                    Orphan slot value.
+            ---
+            Return String
+                Response.
+        """
+
+        # Check if media type is not None.
+        if media_type is None:
+
+            # Create context.
+            self.set_context_intent("plex.play_media", {})
+            # Return response.
+            return f"Que souhaitez-vous regarder ?"
+        # Check if media type is MOVIE.
+        elif media_type == "MOVIE":
+            # Check if media title is not None.
+            if media_title is None:
+                # Create context.
+                self.set_context_intent("plex.play_media", {"media_type":media_type})
+                # Return response.
+                return f"Quel film souhaitez-vous regarder ?"
+            else:
+                # Return response.
+                return self.play_movie(media_title)
+        # Check if media type is SHOW.
+        elif media_type == "SHOW":
+            # Check if media title is not None.
+            if media_title is None:
+                # Create context.
+                self.set_context_intent("plex.play_media", {"media_type":media_type})
+                # Return response.
+                return f"Quelle série souhaitez-vous regarder ?"
+            else:
+                # Return response.
+                return self.play_show(media_title)
+        # Check if media type is EPISODE.
+        elif media_type == "EPISODE":
+            # Check if media title is not None.
+            if media_title is None:
+                # Create context.
+                self.set_context_intent(
+                    "plex.play_media", 
+                    {"media_type":media_type, "media_title":media_title}
+                )
+                # Return response.
+                return f"Quel série souhaitez-vous regarder ?"
+            else:
+                
+                
+
+                # Check if season number is not None.
+                if season_number is None:
+                    # Create context.
+                    self.set_context_intent(
+                        "plex.play_media", 
+                        {
+                            "media_type":media_type,
+                            "media_title":media_title, 
+                            "season_number":season_number}
+                        )
+                    # Return response.
+                    return f"Quelle saison souhaitez-vous regarder ?"
+                elif episode_number is None:
+                    # Create context.
+                    self.set_context_intent(
+                        "plex.play_media", 
+                        {
+                            "media_type":media_type,
+                            "media_title":media_title,
+                            "season_number":season_number,
+                            "episode_number":episode_number
+                        }
+                    )
+                    # Return response.
+                    return f"Quel épisode souhaitez-vous regarder ?"
+                else:
+                    # Return response.
+                    return self.play_show(media_title, season_number, episode_number)
+        else:
+                
+            # Return response.
+            return f"Je ne sais pas ce que c'est, désolé."
+
+        
+
+    @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play_movie")
     def play_movie(self, movie_title = None, orphan = None):
         
@@ -391,7 +505,7 @@ class Plex(Domain):
     @Domain.check_api_connection("server")
     @Domain.match_intent("plex.play_show")
     def play_show(self, show_title = None, season_number = None, episode_number = 1, mode = None, orphan = None):        
-
+        
         # Check if show title is provided.
         if show_title:
             # Search for show in Plex.

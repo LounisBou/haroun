@@ -167,7 +167,7 @@ class Domain(object):
         if context_intent := cls.get_context_intent() :
 
             # [LOG]
-            logging.info(f"Context intent : {context_intent}")
+            logging.debug(f"Context intent : {context_intent}")
 
             # Remove 1 to intent lifespan.
             if context_intent['lifespan'] > 0 :
@@ -380,18 +380,6 @@ class Domain(object):
                     ---
                     Return : result of function call.
                 """
-                
-                # Get function arguments list.
-                args_list = inspect.getargspec(function).args
-                
-                # Define orphan use.
-                if auto_affect_orphans and "orphan" in args_list and "orphan" in kwargs.keys() :
-                    for arg_name in args_list:
-                        if arg_name is not "self" and arg_name not in kwargs.keys() :
-                            orphan = kwargs["orphan"]
-                            logging.info(f"Argument {arg_name} not defined, set to orphan value : {orphan}")
-                            kwargs[arg_name] = orphan
-                            break
                 
                 # Call the original function.
                 result = function(self_instance, *args, **kwargs)

@@ -1,3 +1,3 @@
-(film | films):(MOVIE)
-(série | série):(SHOW)
-(episode | épisode):(EPISODE)
+([un | le] (film | films)):(MOVIE)
+([une | la] (série | serie)):(SHOW)
+([un] ([l']episode | [l']épisode)):(EPISODE)

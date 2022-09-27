@@ -283,7 +283,7 @@ class Brain(object):
             interaction.add_response(self.dialogs.get_dialog("intent_not_found"))
             # [LOG]
             logging.error(f"Interaction interpretation failed. [Error #4].")
-            logging.info(f"Message : {interaction.stimulus.sentence}")
+            logging.info(f"Message : {interaction.intent.stimulus.sentence}")
             logging.info(f"Intent : {str(interaction.intent)}")
         else:
             # [LOG]
@@ -296,7 +296,7 @@ class Brain(object):
                 interaction.add_response(self.dialogs.get_dialog("intent_not_handled"))
                 # [LOG]
                 logging.error(f"Interaction analysis failed. [Error #6].")
-                logging.info(f"Message : {interaction.stimulus.sentence}")
+                logging.info(f"Message : {interaction.intent.stimulus.sentence}")
                 logging.info(f"Intent : {str(interaction.intent)}")
             else:
             
@@ -315,17 +315,8 @@ class Brain(object):
                     # [LOG]
                     logging.error(f"Interaction skills execution failed. [Error #20].")
                 else:   
-                    # Generate interaction response.
-                    modified_interaction = self.response(modified_interaction)
-                    # If response creation failed. 
-                    if not modified_interaction :
-                        # Return interaction message error.
-                        interaction.add_response(self.dialogs.get_dialog("response_creation_failed"))
-                        # [LOG]
-                        logging.error(f"Interaction skills execution failed. [Error #30].")
-                    else:
-                        # If all step successfully pass, override interaction with modified interaction.
-                        interaction = modified_interaction
+                    # If all step successfully pass, override interaction with modified interaction.
+                    interaction = modified_interaction
         
         # Return modified interaction.
         return interaction 
@@ -347,17 +338,17 @@ class Brain(object):
             Return : interaction 
                 Interpretation of interaction success, recognition and intent attributs are now defined.
         """
-                
-        # Stimulus sentence pre-treatment.
-        interaction.stimulus.sentence = interaction.stimulus.sentence.lower()
-        interaction.stimulus.sentence = interaction.stimulus.sentence.replace(',',"")
         
         # [LOG]
-        logging.debug(f"Interaction sentence : {interaction.stimulus.sentence}\n\n")
+        logging.debug(f"Interaction sentence : {interaction.intent.stimulus.sentence}\n\n")
                 
-        # Perform intent recognition in Interaction sentence thanks to training graph.
+        # Perform intent recognition in Interaction intent sentence thanks to training graph.
         try:
-            recognition = rhasspynlu.recognize(interaction.stimulus.sentence, self.intents_graph, fuzzy=True)
+            recognition = rhasspynlu.recognize(
+                interaction.intent.stimulus.sentence, 
+                self.intents_graph, 
+                fuzzy=True
+            )
         except ZeroDivisionError :
             # Return
             return None
@@ -370,19 +361,7 @@ class Brain(object):
             # [LOG]
             logging.info("No intent found for this sentence.")
             # Check if there is a context intent.
-            if context_intent := Domain.get_context_intent() :
-                # [LOG]
-                logging.info(f"Context intent found : {context_intent}")
-                # Create recognition dict with current intent.
-                interaction.recognition = {
-                    "text" : interaction.stimulus.sentence,
-                    "raw_text" : "", # Keep empty to retrieve orphan from text.
-                    "intent": {"name": context_intent['name'], "confidence": 0.99},
-                    "entities": [{"entity": arg_name, "value": arg_value} for arg_name, arg_value in context_intent['args'].items()],
-                    "tokens": interaction.stimulus.sentence.split(" "),
-                    "raw_tokens": interaction.stimulus.sentence.split(" "),
-                }
-            else:
+            if not Domain.get_context_intent() :
                 # [LOG]
                 logging.info(f"No current intent found. End of interaction.\n\n")
                 # Return
@@ -392,17 +371,14 @@ class Brain(object):
         else:
             
             # Format recognition as Object.
-            interaction.recognition = recognition[0].asdict()
+            recognition = recognition[0].asdict()
 
             # [LOG]
-            logging.debug(f"Interaction recognition : {interaction.recognition}\n\n")
-            logging.debug(f"Interaction recognition entities : {interaction.recognition['entities']}")
-
-        # If recognition success.
-        if interaction.recognition :  
+            logging.debug(f"Intent recognition : {recognition}\n\n")
+            logging.debug(f"Intent recognition entities : {recognition['entities']}")
             
             # Define intent.
-            interaction.intent.checkRecognition(interaction.stimulus, interaction.recognition)
+            interaction.intent.checkRecognition(recognition)
 
         # Return
         return interaction   
@@ -444,6 +420,9 @@ class Brain(object):
                         intent_handler['method']
                     )
                 )
+
+                # Prepare skill, get domain, method, args, etc...
+                interaction.skills[-1].prepare()
                 
          # Check if there is a context intent.
         elif context_intent := Domain.get_context_intent() :
@@ -451,38 +430,19 @@ class Brain(object):
             # [LOG]
             logging.info(f"No handler for intent : {interaction.intent.label}")
             logging.info(f"Context intent found : {context_intent}")
-            logging.info(f"Switching to context intent.")
+            
 
             # Change interaction intent with intent context info.
             interaction.intent.label = context_intent['name']
             interaction.intent.confidence = 0.99
 
-            # Get a copy entities from interaction.
-            entities = interaction.intent.entities.copy()
+            # Add context intent args as interaction intent args.
+            interaction.intent.kwargs.update(context_intent['args'])
 
-            # For original entities in interaction.
-            for entity in entities:
-                # Generate orphan infos.
-                interaction.intent.entities.extend([
-                    {
-                        "entity": "orphan_type", 
-                        "value": entity['entity']
-                    },
-                    {
-                        "entity": "orphan_raw", 
-                        "value": entity['raw_value']
-                    },
-                    {
-                        "entity": "orphan", 
-                        "value": entity['value']
-                    }
-                ])
-
-            # Retrieve context intent args, set them as entities.
-            interaction.intent.entities.extend(
-                [{"entity": arg_name, "value": arg_value} for arg_name, arg_value in context_intent['args'].items()]
-            )
-
+            # [LOG]
+            logging.info(f"Switching to context intent with arguments : {interaction.intent.kwargs}")
+            logging.info(f"Stimulus sentence : {interaction.intent.stimulus.sentence}")
+            
             # Relaunch analysis with modified interaction.
             return self.analysis(interaction)
 
@@ -501,7 +461,8 @@ class Brain(object):
             Execute Skills via Domains methods.  
             Instanciate the correct domain class for each skill. 
             Prepare domain method call with correct info from intent. 
-            Then execute the method and retrieve execute return infos.
+            Then execute the method and retrieve skill response.
+            Add res
             ---
             Parameters
                 interaction : Interaction
@@ -513,45 +474,20 @@ class Brain(object):
         
         for skill in interaction.skills:
 
-            # Retrieve domain class.
-            domain_class = Brain.__get_domain_class(skill.module_name, skill.class_name)
-                            
-            # Instanciate domain.
-            domain_instance = domain_class()
+            # Execute skill.
+            response = skill.execute(interaction.intent)
 
-            # Get domain methods args list to prepare skill.
-            method_args = domain_instance.get_method_args(skill.method_name)
-            
-            # Prepare skill for execution.
-            preparation_flag = skill.prepare(interaction.intent, method_args)
-            
-            # Excute skill on domain.
-            execution_flag = domain_instance.execute_skill(skill)
+            # If response is not None.
+            if response:
+                # Add response to interaction.
+                interaction.add_response(response)
+            else:
+                # [LOG]
+                logging.error(f"No response from skill : {skill}")
+                # Return None (error)
+                return None
 
         # Return modified interaction.
-        return interaction
-
-    def response(self, interaction):
-        
-        """ 
-            response : Create interaction response.  
-            Parse interaction data, to generate an response with datas and sentence.
-            ---
-            Parameters
-                interaction : Interaction
-                    Interaction for which to generate response.
-            ---
-            Return : Interaction
-                Modified interaction with domain and skill infos, None if error.
-        """
-        
-        # Retrieve response sentence of each skill.
-        for skill in interaction.skills:
-
-            # Retrieve skill execution return values.
-            interaction.add_response(skill.return_values)
-        
-        # Return modified interaction
         return interaction
 
     # ! Consciousness (Reflexivity)

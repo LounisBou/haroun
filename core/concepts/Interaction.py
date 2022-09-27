@@ -45,26 +45,14 @@ class Interaction(object):
         
         # Error flag.
         self.error = False
-        # Done flag.
-        self.done = False
         
         # Interaction duration
         self.duration = None
-        # Interaction stimulus.
-        self.stimulus = stimulus   
-        # Sentence words list.
-        self.words = self.stimulus.sentence.split(' ')
-        
-        # Recognition : Recognition Dict from NLU recognize.
-        self.recognition = None
         
         # Intent : Intent that match the Interaction (defined by Recognition)
-        self.intent = Intent()
+        self.intent = Intent(stimulus)
         # Response : Interaction Response.
         self.response = Response()
-        
-        # Domain matching intent.
-        self.domain = None
 
         # Skills list for interaction execution.
         self.skills = []
@@ -113,28 +101,4 @@ class Interaction(object):
         # Flag error.
         self.error = True
 
-    
-    def contains_word(self, word):
-
-        # On parcours la liste de mots.
-        for i in range(0,len(self.words)):
-            # Récupération du mot courant.
-            current = self.mots[i]
-            # Test de correspondance du mot (minuscule)
-            if(current.lower() == mot.lower()):
-                return i
-        return -1
-    
-    # Detect : retourne la position du mot trouvé, -1 sinon.
-    def detect(self, mots):
-        # On parcours la liste de mots à controller.
-        for i in range(0,len(mots)):
-            # Récupération du mot courant.
-            current = mots[i]
-            # On analyse la présence d'un mot dans la question.
-            contentPosition = self.contient(current)
-            # Si question possède le mot
-            if(contentPosition != -1):
-                return contentPosition
-        return -1
 
