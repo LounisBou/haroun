@@ -67,19 +67,9 @@ class Plex(Domain):
             logging.error("Plex server connection failed.")
             self.server = None
 
-        try:
-            # Check if plex server is available.
-            self.account = MyPlexAccount(username="iznogoudatall", password="E314cure3823")
-        except:
-            # [LOG]
-            logging.error("Plex account login failed.")
-            self.account = None
-
         # [LOG]
-        if self.check_client(self.plex_client_name) :
-            logging.info(f"Client {self.plex_client_name} available.")
-        else:
-            logging.warning(f"Client {self.plex_client_name} NOT available.")
+        if not self.check_client(self.plex_client_name) :
+            logging.warning(f"Client {self.plex_client_name} not available.\n")
 
         # Return boolean plex server connection status.
         return self.server is not None

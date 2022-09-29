@@ -163,11 +163,7 @@ class Domain(object):
                 # [LOG]
                 logging.info(f"Intent lifespan is 0, remove context intent.")
                 cls.remove_context_intent()
-
-        else:
-
-            # [LOG]
-            logging.info(f"No context intent.")
+        
 
 
     @classmethod

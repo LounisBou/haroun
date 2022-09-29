@@ -53,6 +53,8 @@ class Intent(object):
         # Recognition
         self.recognition = None
         
+        # Sentence
+        self.sentence = None
         # Raw text
         self.raw_text = None
         # Interpreted text
@@ -272,13 +274,13 @@ class Intent(object):
                 Sentence recognition success, if True recognition and intent attributs are now defined.
         """
         
-        # [LOG]
-        logging.debug(f"Interaction sentence : {sentence}\n\n")
+        # Set sentence as intent sentence.
+        self.sentence = sentence
                 
         # Perform intent recognition in Interaction intent sentence thanks to training graph.
         try:
             recognition = rhasspynlu.recognize(
-                sentence, 
+                self.sentence, 
                 Intent.graph, 
                 fuzzy=Intent.fuzzy_mode
             )
@@ -401,7 +403,12 @@ class Intent(object):
                 self.kwargs[arg_key] = None
 
         # Orphan entity value
-        self.orphan_text = self.raw_text.lower()
+        self.orphan_text = self.sentence.lower()
+
+        # If raw text is not empty.
+        if self.raw_text :
+            # Remove raw text from orphan.
+            self.orphan_text = self.orphan_text.replace(self.raw_text, "")
 
         # Trim orphan entity.
         self.orphan_text = self.__clean_entity_value(self.orphan_text)

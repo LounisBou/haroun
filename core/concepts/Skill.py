@@ -60,9 +60,6 @@ class Skill(object):
         # Get domain module.
         self.module = globals()[self.module_name]
 
-        # [LOG]
-        logging.info(f"Domain module : {self.module}")
-
         # Get domain class.
         self.cls = getattr(self.module, self.class_name)
         
