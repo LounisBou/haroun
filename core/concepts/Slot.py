@@ -27,10 +27,27 @@ class Slot(object):
 
     """ Concept of Haroun Slot. """
 
+    # NLU slots replacement dict.
+    replacements = {}
+
     # Loaded slots.
     data = {}
 
     """ Loadings methods. """
+
+    @classmethod
+    def load_haroun_slots(cls, lang):
+
+        """ 
+            Load haroun slots.
+            ---
+            Parameters
+                lang : String
+                    Language to use for slots.
+        """
+
+        # Load haroun slots.
+        cls.load_slot_files(f"{ROOT_PATH}slots/{lang}/")
 
     @classmethod
     def load_domain_slots(cls, domain_name, lang):
@@ -136,10 +153,16 @@ class Slot(object):
             Parameters
                 key : String
                     Key to get value from.
+            ---
+            Return : String
+                Slot value, or None if not found.
         """
         
         # Return slot value.
-        return cls.data[key]
+        if key in cls.data:
+            return cls.data[key]
+        else :
+            return None
 
     @classmethod
     def get_reverse(cls, value):
@@ -150,6 +173,9 @@ class Slot(object):
             Parameters
                 value : String
                     Value to get key from.
+            ---
+            Return : String
+                Slot key, or None if not found.
         """
         
         # For each slot data.
@@ -160,6 +186,8 @@ class Slot(object):
                 
                 # Return key.
                 return key
+
+        return None
 
 
     """ Get slots files. """
@@ -208,9 +236,10 @@ class Slot(object):
 
         # For each slot file in slot directory.
         for dir_path, dir_names, file_names in walk(slots_dir_path):
-            for file_name in file_names:
-                # Add slot file.
-                slots_files_path.append(path.join(dir_path, file_name))
+            # Create file paths and remove hidden files.
+            file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.')]
+            # Append file paths to slots files list.
+            slots_files_path.extend(file_paths)
 
         # Return slots files path list.
         return slots_files_path
@@ -218,20 +247,18 @@ class Slot(object):
 
     """ NLU method. """
 
-    @staticmethod
-    def create_slots_dict(domains, lang):
+    @classmethod
+    def create_slots_replacement_dict(cls, domains, lang):
         
         """ 
             Acquire all slots files and create a Rhasspy NLU slots dict. 
+            Create Rhasspy NLU slots replacements dict.
             ---
             Parameters
                 domains : List
                     List of domains slots to load.
                 lang : String
                     Language to use for slot.
-            ---
-            Return : Rhasspy NLU slots
-                Rhasspy NLU slots dict.
         """
 
         # List of slots files path to load.
@@ -249,9 +276,6 @@ class Slot(object):
             slots_files.extend(Slot.get_domain_slots_files(domain, lang))
         
         """ Create slots dict from slots files. """
-        
-        # Replacement slots dict.
-        slots = {}
             
         # Iterate through slots_files list
         for slot_file_path in slots_files:
@@ -273,10 +297,8 @@ class Slot(object):
                 value = [rhasspynlu.Sentence.parse(slots_entries)]
                 
                 # Add it to replacement slots dict.
-                slots[key] = value
+                cls.replacements[key] = value
         
-        # Return
-        return slots
 
 
     """ SlotProgram utils methods for slot program execution and slot file creation. """
@@ -299,7 +321,7 @@ class Slot(object):
         """
 
         # Define domain slot programs dir path.
-        domain_slot_program_dir_path = f"{ROOT_PATH}domains/{domain.lower()}/{lang}/slot_program/"
+        domain_slot_program_dir_path = f"{ROOT_PATH}domains/{domain.lower()}/{lang}/slots_programs/"
 
         # Return slot programs files path list.
         return Slot.get_slot_program_files(domain_slot_program_dir_path)
@@ -324,9 +346,10 @@ class Slot(object):
 
         # Get files from dir path.
         for dir_path, dir_names, file_names in walk(slot_program_dir_path):
-            for file_name in file_names:
-                # Add slot file.
-                slot_program_files.append(path.join(dir_path, file_name))
+            # Create file paths and remove hidden files.
+            file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.')]
+            # Append file paths to slot programs files list.
+            slot_program_files.extend(file_paths)
 
         # Return slot programs files path list.
         return slot_program_files
@@ -351,11 +374,20 @@ class Slot(object):
         # Haroun slot program directory path.
         haroun_slot_program_path=f"{ROOT_PATH}slotsPrograms/{lang}/"
 
-        # Execute Haroun slot program.
-        Slot.execute_slot_program(haroun_slot_program_path, force_regenerate_slot)
+        # Haroun slot directory path.
+        haroun_slot_path=f"{ROOT_PATH}slots/{lang}/"
+
+        # Get Haroun slot programs files.
+        haroun_slot_program_files = Slot.get_slot_program_files(haroun_slot_program_path)
+
+        # For each slot program file.
+        for haroun_slot_program_file in haroun_slot_program_files:
+            # Execute Haroun slot program.
+            Slot.execute_slot_program(haroun_slot_program_file, haroun_slot_path, force_regenerate_slot)
 
         # For each domain.
         for domain in domains:
+            
             # Get domain slot program files.
             Slot.execute_domain_slot_program(domain, lang, force_regenerate_slot)
 
@@ -376,33 +408,45 @@ class Slot(object):
         # Get domain slot programs files.
         slot_program_files = Slot.get_domain_slot_program_files(domain_name, lang)
 
+        # Slot files directory path.
+        slot_files_dir_path = f"{ROOT_PATH}domains/{domain_name.lower()}/{lang}/slots/"
+
         # For each domain.
-        for slot_program_file in slot_program_files:
+        for slot_program_file_path in slot_program_files:
             # Execute domain slots programs.
-            Slot.execute_slot_program(slot_program_file, lang, force_regenerate_slot)
+            Slot.execute_slot_program(slot_program_file_path, slot_files_dir_path, force_regenerate_slot)
 
     @staticmethod
-    def execute_slot_program(lang, slot_program_path, slot_name, force_regenerate_slot = False):
+    def execute_slot_program(slot_program_file_path, slot_files_dir_path, force_regenerate_slot = False):
 
         """ 
             Execute slot program.
             ---
             Parameters
-                lang : String
-                    Language to use for slot and slot progrma.
-                slot_program_path : String
+                slot_program_file_path : String
                     Slot program file to execute.
-                slot_name : String
-                    Slot name to use for slot file creation.
+                slot_files_dir_path : String
+                    Slot files directory path.
                 force_regenerate_slot : Boolean (optional)
                     Force slot regeneration. [Default: False]
         """
 
-        # Slots directory path.
-        slots_path=f"{ROOT_PATH}slots/{lang}/"
-        
+        print(f"Execute slot program: {slot_program_file_path}")
+
+        # Get slot program file name.
+        slot_program_file_name = path.basename(slot_program_file_path)
+
+        # Get slot program directory path.
+        slot_program_dir_path = path.dirname(slot_program_file_path)
+
+        # Get slot program file name without extension.
+        slot_program_file_name_without_extension = path.splitext(slot_program_file_name)[0]
+
+        # Define slot name as slot program file name without extension.
+        slot_name = slot_program_file_name_without_extension.lower()
+
         # Create slot file with program slot name.
-        slot_file_path = f"{slots_path}{slot_name}"
+        slot_file_path = f"{slot_files_dir_path}{slot_name}"
 
         # If slot file already exist and config slot_force_regenerate is true.
         if path.exists(slot_file_path) and force_regenerate_slot :
@@ -410,16 +454,16 @@ class Slot(object):
             logging.info(f"Slot file {slot_file_path} already exist and config slot_force_regenerate is true, so we delete it.")
             # Remove slot file.
             remove(slot_file_path)
-        else:
+        elif path.exists(slot_file_path) :
             # [LOG]
             logging.warning(f"Slot {slot_name} already exist.")
-            logging.warning(f"Slot program  file '{slot_program_path}' won't be executed. Delete slot {slot_name} to re-generate it.\n")
+            logging.warning(f"Slot program  file '{slot_program_file_path}' won't be executed. Delete slot {slot_name} to re-generate it.\n")
             # End function.
             return
         
         # Execute program slot file.
         process = subprocess.Popen(
-            [slot_program_path],
+            [slot_program_file_path],
             shell=True,
             stdin=None,
             stdout=subprocess.PIPE,
@@ -431,10 +475,11 @@ class Slot(object):
         output, error = process.communicate()
 
         # If program slot file execution failed.
-        if error:
+        if process.returncode != 0:
             # [LOG]
-            logging.error(f"Slot program {slot_name} execution failed.")
-            logging.error(f"Error : {error.decode('utf-8')}")
+            logging.error(f"Slot program {slot_program_file_path} execution failed.")
+            logging.error(f"Error : {error.decode('utf-8')} \n")
+            logging.error(f"----------------------------------------\n")
             # End function.
             return
         

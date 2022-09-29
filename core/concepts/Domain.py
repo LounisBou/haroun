@@ -6,21 +6,21 @@
 #
 # Import system library.
 from sys import path as syspath
-# Import os.path
-from os import path
+# Import os.path, os.scandir
+from os import path, scandir
 # Import Python Object Inspector library.
 import inspect
 # Import logging library
 import logging
 # Import functools wraps for decorators.
 from functools import wraps
-# Import Dialog utils.
+# Import Config utils.
 from utils.config import Config
-# Import Dialog utils.
-from utils.dialog import Dialog
+# Import concept Dialog.
+from core.concepts.Dialog import Dialog
 # Import Slot utils.
-from utils.slot import Slot
-# Import Context class.
+from core.concepts.Slot import Slot
+# Import concept Context .
 from core.concepts.Context import Context
 # Import json.
 import json
@@ -59,24 +59,67 @@ class Domain(object):
         self.config = Config("haroun")
         self.config.load_config_file(self.domain_class_name)
 
-        # Load dialogs for domain.
-        self.dialog = Dialog(self.config['haroun']['lang'], self.domain_class_name)
+        # Load domain slots.
+        Slot.load_domain_slots(self.domain_class_name, self.config['haroun']['lang'])
 
-        # Instanciate slots utility class.
-        self.slot = Slot(self.config['haroun']['lang'])
+        # Load domain dialogs.
+        Dialog.load_domain_dialog_files(self.domain_class_name, self.config['haroun']['lang'])
         
         # Set logging level.
         logging.getLogger().setLevel(self.config['haroun']['LOG_LEVEL'])
-                
-        # Slots entries.
-        self.slots_entries = {}
 
         # Initialisation.
 
         # Use context intent lifespan if exist.
         self.check_context_intent()
 
-    # ! Dialogs methods.
+    
+    """ Domain methods. """
+
+    @staticmethod
+    def get_available_domain_list():
+        
+        """ Scan domains directory to find available domain list. """
+        
+        # Domain directory path.
+        domain_dir_path = f"{ROOT_PATH}domains/"
+
+        # List of available domains.
+        domain_list = []
+
+        # Browse through domains intents files   
+        for entry in scandir(domain_dir_path):
+            if entry.is_dir() and not entry.name.startswith('__'):
+                # Check if directory is a valid domain.
+                domain_dir_path = path.join(domain_dir_path, entry)
+                domain_file_path = path.join(domain_dir_path, f"{entry.name.title()}.py")
+                if path.isfile(domain_file_path):
+                    domain_list.append(entry.name)
+                else:
+                    logging.warning(f"Domain '{domain_file_path}' not found.")
+    
+        # Get domain list.
+        return domain_list
+    
+    """ Slots methods. """
+
+    def getSlot(self, slot_name):
+
+        """
+            Get slot value.
+            ---
+            Parameters
+                slot_name : String
+                    Slot name.
+            ---
+            Return : String
+                Slot value or None if not found.
+        """
+
+        # Get slot value.
+        return Slot.get(slot_name)
+
+    """ Dialogs methods. """
 
     def say(self, dialog_name, **kwargs):
 
@@ -94,9 +137,9 @@ class Domain(object):
         """
 
         # Say dialog.
-        return self.dialog.say(dialog_name, **kwargs)
+        return Dialog.say(dialog_name, **kwargs)
 
-    # ! Context methods.
+    """ Context methods. """
 
     @classmethod
     def check_context_intent(cls):

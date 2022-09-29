@@ -4,7 +4,7 @@
 #
 # Libraries dependancies :
 #
-from functools import wraps
+from functools import wraps, update_wrapper
 from time import perf_counter
 from termcolor import colored
 #
@@ -43,16 +43,16 @@ class debug:
             
             Returns
             _______
-            warper : warper method.
+            wrapper : wrapper method.
         """
         
         
         # Retrieve the function docstring thanks to the functools wraps decorator.
         @wraps(function)
-        def warper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             
             """ 
-                Debug decorator warper 
+                Debug decorator wrapper 
             
                 Returns
                 _______
@@ -110,6 +110,6 @@ class debug:
             """ Return function call result. """
             return result
                     
-        # Return warper method.
-        return warper
+        # Return wrapper method.
+        return update_wrapper(wrapper, function)
     

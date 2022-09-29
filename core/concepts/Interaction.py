@@ -48,9 +48,13 @@ class Interaction(object):
         
         # Interaction duration
         self.duration = None
+
+        # Interaction stimulus.
+        self.stimulus = stimulus
         
         # Intent : Intent that match the Interaction (defined by Recognition)
-        self.intent = Intent(stimulus)
+        self.intent = Intent()
+        
         # Response : Interaction Response.
         self.response = Response()
 

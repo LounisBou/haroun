@@ -6,10 +6,14 @@
 #
 # Import logging library
 import logging
+# Import importlib
+import importlib
 # Import Python Object Inspector library.
 import inspect
 # Import domains.
-from domains import *
+import domains 
+for domain in domains.__all__:
+    globals()[domain] = importlib.import_module(f"domains.{domain}.{domain.title()}")
 #
 #
 class Skill(object):
@@ -55,6 +59,10 @@ class Skill(object):
         
         # Get domain module.
         self.module = globals()[self.module_name]
+
+        # [LOG]
+        logging.info(f"Domain module : {self.module}")
+
         # Get domain class.
         self.cls = getattr(self.module, self.class_name)
         

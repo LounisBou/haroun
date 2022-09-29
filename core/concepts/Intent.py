@@ -42,23 +42,21 @@ class Intent(object):
     # Intent recognize fuzzy mode.
     fuzzy_mode = True
 
-    
-    def __init__(self, stimulus):
+
+    def __init__(self):
         
         """ Intent class constructor. """
         
         # Error flag.
         self.error = 0
         
-        # Stimulus
-        self.stimulus = stimulus
         # Recognition
         self.recognition = None
         
-        # Text
-        self.text = None
         # Raw text
         self.raw_text = None
+        # Interpreted text
+        self.text = None      
         # Label.
         self.label = None
         # Confidence.
@@ -98,10 +96,8 @@ class Intent(object):
         # Text
         print_str = f"\n"
         print_str += f"  label : {str(self.label)} \n"
-        if self.stimulus :
-            print_str += f"  stimulus text : {self.stimulus.sentence} \n"
-        print_str += f"  interpreted text : {str(self.text)} \n"
         print_str += f"  raw_text  : {str(self.raw_text)} \n"
+        print_str += f"  interpreted text : {str(self.text)} \n"
         #print_str += f" confidence  : {str(self.confidence)} \n"
         print_str += f"  entities  : \n"
         if self.entities : 
@@ -127,7 +123,7 @@ class Intent(object):
     """ NLU methods. """
 
     @staticmethod
-    def __get_intents_files_list_from(path):
+    def __get_intent_files_from(intent_dir_path):
 
         """
             Return list of intents files in path.
@@ -141,23 +137,25 @@ class Intent(object):
         """
 
         # Check if path exists.
-        if path.exists(path):
+        if path.exists(intent_dir_path):
 
-            # Create list of files for domains intents.
-            intents_files_list = []  
+            # Create list of files path for domains intents.
+            intent_files = []  
 
             # Browse through domains intents files   
-            for dir_path, dir_names, file_names in walk(path):
+            for dir_path, dir_names, file_names in walk(intent_dir_path):
+                # Remove hidden files.
+                file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.')]
                 # [LOG]
-                logging.debug(f"Looking in intent directory : {path}")
+                logging.debug(f"Looking in intent directory : {intent_dir_path}")
                 logging.debug(f"Listing intents files : \n{file_names}")
                 # Add domains intents dir files to list.
-                intents_files_list.extend(file_names)
+                intent_files.extend(file_paths)
                 # End of loop.
                 break
 
             # Return list of intents files.
-            return intents_files_list
+            return intent_files
             
         else:
             # [LOG]
@@ -183,7 +181,7 @@ class Intent(object):
         domain_intents_path=f"{ROOT_PATH}domains/{domain_name.lower()}/{lang}/intents/"
 
         # Add list of files to intents files path list.
-        cls.intents_files_path.extend(Intent.__get_intents_files_list_from(domain_intents_path))
+        cls.intents_files_path.extend(Intent.__get_intent_files_from(domain_intents_path))
 
     @classmethod
     def load_intents(cls, domains, lang):
@@ -207,7 +205,7 @@ class Intent(object):
         haroun_intents_path = f"{ROOT_PATH}intents/{lang}/"
 
         # Get haroun intents files list.
-        cls.intents_files_path.extend(Intent.__get_intents_files_list_from(haroun_intents_path))  
+        cls.intents_files_path.extend(Intent.__get_intent_files_from(haroun_intents_path))  
         # Get domains intents files list.
         for domain_name in domains :
             # Scan domain intents files and add them to intents files path list.
@@ -220,15 +218,12 @@ class Intent(object):
                     
         # Open intents/.all.ini in write mode
         with open(all_intents_file_path, 'w+') as all_intents_file_buffer:
-            
+
             # Iterate through intents_files list
-            for file_name in cls.intents_files_path:
+            for file_path in cls.intents_files_path:
                 
                 # Ignore .all.ini file.
-                if file_name != ".all.ini":
-
-                    # Construct file path.
-                    file_path = haroun_intents_path+file_name
+                if file_path != all_intents_file_path:
                     
                     # Open each file in read mode
                     with open(file_path) as file_buffer:
@@ -237,7 +232,7 @@ class Intent(object):
                         file_intents = file_buffer.read()
                         
                         # Write it in all_intents_file_buffer and add '\n\n' to enter data from next line
-                        all_intents_file_buffer.write("# "+file_name+" file content : \n")
+                        all_intents_file_buffer.write("# "+file_path+" file content : \n")
                         # Lowercase all intents.
                         all_intents_file_buffer.write(file_intents.lower()+"\n\n")
                     
@@ -245,57 +240,61 @@ class Intent(object):
         # Load file for rhasspy-nlu.
         cls.intents = rhasspynlu.parse_ini(Path(all_intents_file_path))
 
-        
+    @classmethod   
     @debug("verbose", True)
-    #@lru_cache(maxsize=128, typed=True)
-    def create_intents_graph(cls):
+    #@lru_cache(maxsize=128, typed=True)  
+    def create_graph(cls, slot_replacements):
         
         """ 
-            nlu_training : Acquire domains knowledge. 
+            Acquire domains knowledge. 
             Transform intents into graph training, replace slots if necessary.
+            ---
+            Parameters :
+                slot_replacements : list
+                    List of slot replacements.
         """
         
         # Generate intents training graph from list of known intents.
-        cls.graph = rhasspynlu.intents_to_graph(cls.intents, replacements = self.slots)
+        cls.graph = rhasspynlu.intents_to_graph(cls.intents, replacements = slot_replacements)
     
     
     @debug("verbose", True) 
-    def recognize(self):
+    def recognize(self, sentence):
         
         """ 
-            interpreter : Interpreter method, apply NLU analysis on Interaction sentence.
-            Interpretation of intent sentence via rhasspy-nlu.
-            Try to retrieve a recognition dict.
+            Apply NLU analysis on sentence, try to retrieve a recognition dict.
             ---
             Parameters
-                interaction : Interaction
-                    Interaction concept object generate from trigger Stimulus.
+                sentence : String
+                    Sentence to analyse.
             ---
-            Return : interaction 
-                Interpretation of interaction success, recognition and intent attributs are now defined.
+            Return : boolean 
+                Sentence recognition success, if True recognition and intent attributs are now defined.
         """
         
         # [LOG]
-        logging.debug(f"Interaction sentence : {self.stimulus.sentence}\n\n")
+        logging.debug(f"Interaction sentence : {sentence}\n\n")
                 
         # Perform intent recognition in Interaction intent sentence thanks to training graph.
         try:
             recognition = rhasspynlu.recognize(
-                self.stimulus.sentence, 
+                sentence, 
                 Intent.graph, 
                 fuzzy=Intent.fuzzy_mode
             )
         except ZeroDivisionError :
             # Return
-            return None
+            return False
 
         # [LOG]
         logging.debug(f"Raw recognition : {recognition}\n\n")
             
-        # If didn't find any intent for the stimulus sentence.
+        # Sentence recognition failed.
         if not recognition :
             # [LOG]
-            logging.info("No intent found for this sentence.")
+            logging.info("Sentence recognition failed. No intent found for this sentence.")
+            # Return
+            return False
 
         # If intent found, parse recognition infos.
         else:
@@ -306,6 +305,12 @@ class Intent(object):
             # [LOG]
             logging.debug(f"Intent recognition : {recognition}\n\n")
             logging.debug(f"Intent recognition entities : {recognition['entities']}")
+
+        # If recognition successful (intent found).
+        if recognition :
+
+            # Parse recognition infos.
+            self.checkRecognition(recognition)
 
         # Return
         return recognition  
@@ -396,12 +401,7 @@ class Intent(object):
                 self.kwargs[arg_key] = None
 
         # Orphan entity value
-        self.orphan_text = self.stimulus.sentence.lower()
-
-        # If raw text is not empty.
-        if self.raw_text :
-            # Remove raw text from orphan.
-            self.orphan_text = self.orphan_text.replace(self.raw_text, "")
+        self.orphan_text = self.raw_text.lower()
 
         # Trim orphan entity.
         self.orphan_text = self.__clean_entity_value(self.orphan_text)

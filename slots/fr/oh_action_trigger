@@ -1,8 +1,0 @@
-(allume | allumer | lance | lancer | démarre | démarrer):(ON)
-(ouvre | ouvrir):(OPEN)
-(éteins | éteint | éteindre | coupe | couper | arrête | arrêter | stop | stopper):(OFF)
-(ferme | fermer)
-(monte | monter | augmente | augmenter | ajoute | ajouter):(UP)
-(descend | descendre | baisse | baisser | diminue | diminuer):(DOWN)
-(relance | relancer):(RESTART)
-(régler | regler | met | mettre):(SET)

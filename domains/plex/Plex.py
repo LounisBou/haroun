@@ -4,7 +4,6 @@
 # Libraries dependancies : #
 #
 # Import core concept domain.
-from re import X
 from core.concepts.Domain import Domain 
 # Import plex API account
 from plexapi.myplex import MyPlexAccount

@@ -36,9 +36,6 @@ class Weather(Domain):
 
         # Initialisation.
 
-        # Retrieve needed slots.
-        self.slot.load_slot_files(SLOTS_FILES)
-
         # Init client
         self.client = MeteoFranceClient()
 
@@ -72,13 +69,11 @@ class Weather(Domain):
         day_weather = weather.daily_forecast[day_diff_int]
 
         # Get slots values.
-        day_name = self.slot.get(day_diff)
+        day_name = self.getSlot(day_diff)
         
         # Get weather.daily dialog response.
-        dialog = self.dialog.get_dialog("weather.daily")
-
-        # Create response.
-        response = dialog.format(
+        response = self.say(
+            "weather.daily",
             city=city.title(), 
             day_name=day_name, 
             weather_desc=day_weather['weather12H']['desc'].lower(),

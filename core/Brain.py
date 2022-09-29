@@ -10,8 +10,10 @@
 from sys import path as syspath
 # Import os.path
 from os import path
+# Import importlib
+import importlib
 # Import rhasspynlu
-import rhasspynlu
+#import rhasspynlu
 # Import logging library
 import logging
 # Import consciousness class.
@@ -30,26 +32,18 @@ from core.concepts.Stimulus import Stimulus
 from core.concepts.Interaction import Interaction
 from core.concepts.Memory import Memory
 from core.concepts.Context import Context
-# Import domains.
-from domains import *
-# Import utils intent class.
-from utils.intent import Intent as IntentUtils
-# Import utils slot class.
-from utils.slot import Slot
-# Import utils slotProgram class.
-from utils.slotprogram import SlotProgram
+from core.concepts.Dialog import Dialog
+from core.concepts.Intent import Intent
+from core.concepts.Slot import Slot
 # Import utils debug function.
 from utils.debug import *
-# Import dialog utils.
-from utils.dialog import Dialog
-#
 #
 #
 # Gloabls : 
 #
 # Current, and root paths.
 CURRENT_PATH = path.dirname(path.abspath(__file__))+'/'
-ROOT_PATH = path.dirname(path.abspath(CURRENT_PATH))+'/'
+ROOT_PATH = path.join(CURRENT_PATH, "..")
 syspath.append(ROOT_PATH)
 #
 #
@@ -84,25 +78,10 @@ class Brain(object):
         logging.getLogger().setLevel(self.config['haroun']['log_level'])
         
         # Available domains list. 
-        self.domains = {}
-        
-        # Available intents list. 
-        self.intents = None
-        
-        # Available slots for replacements in intents.
-        self.slots = None
-        
-        # Training rhasspy-nlu graph from known intents. 
-        self.intents_graph = None
-    
-        # Memories 
-        self.memories = None
+        self.domains = []
         
         # Wake up : initialisation of Brain class.
         self.wakeUp()
-
-        # Load error dialogs.
-        self.dialogs = Dialog(self.lang, "error")
         
     
     # ! - Initialisation.
@@ -113,52 +92,35 @@ class Brain(object):
             wakeUp : Initialise Brain Class.
         """
         
-        # Available intents list. 
-        self.intents =  IntentUtils.get_rhasspy_intent_list(self.lang)
-        
+        # Get available domains list.
+        self.domains = Domain.get_available_domain_list()
+
+        # Load intents.
+        Intent.load_intents(self.domains, self.lang)
+
         # Check if slot file must be generated.
         slot_force_regenerate = self.config['haroun']['slot_force_regenerate'] == 'True' 
 
         # Execute slots programs.
-        SlotProgram.execute_all(self.lang, slot_force_regenerate)
+        Slot.execute_all_slot_program(self.domains, self.lang, slot_force_regenerate)
         
-        # Available slots for replacements in intents.
-        self.slots = Slot.get_rhasspy_slots_dict(self.lang)
-    
-        # Memories 
-        self.memories = Memory()
+        # Create slot dict for replacements in intents.
+        Slot.create_slots_replacement_dict(self.domains, self.lang)
+
+        # Create intents graph.
+        Intent.create_graph(Slot.replacements)
         
+        # Load haroun slots.
+        Slot.load_haroun_slots(self.lang)
+
+        # Load haroun dialogs.
+        Dialog.load_haroun_dialog_files(self.lang)
+
         # Create database schema if not exist.
         self.create_database()
         
-        # Training brain by creating intents graph.
-        self.nlu_training()
-        
     
     # ! - Utility methods.
-    
-    @staticmethod
-    def __get_domain_class(domain_module_name, domain_class_name): 
-        
-        """ 
-            Return domain class from domain name. 
-            ---
-            Parameters 
-                domain_name : String
-                    Domain module and class name.
-            ---
-            Return Class
-                Domain class from domain module.
-        """
-        
-        # Retrieve domain module.
-        domain_module = globals()[domain_module_name]
-        
-        # Retrieve domain class.
-        domain_class = getattr(domain_module, domain_class_name)
-        
-        # Return domain class. 
-        return domain_class
 
     def create_database(self):
         
@@ -169,21 +131,7 @@ class Brain(object):
         
         # Create tables, indexes and associated metadata for the given list of models.
         MyModel.db.create_tables(haroun_models)
-        
     
-    # ! - A.I. Training.
-    
-    @debug("verbose", True)
-    #@lru_cache(maxsize=128, typed=True)
-    def nlu_training(self):
-        
-        """ 
-            nlu_training : Acquire domains knowledge. 
-            Transform intents into graph training, replace slots if necessary.
-        """
-        
-        # Generate intents training graph from list of known intents.
-        self.intents_graph = rhasspynlu.intents_to_graph(self.intents, replacements = self.slots)
     
     # ! - Stimulus management.
         
@@ -280,10 +228,10 @@ class Brain(object):
         # if interpretation failed.
         if not modified_interaction :
             # Return interaction message error.
-            interaction.add_response(self.dialogs.get_dialog("intent_not_found"))
+            interaction.add_response(Dialog.say("intent_not_found"))
             # [LOG]
             logging.error(f"Interaction interpretation failed. [Error #4].")
-            logging.info(f"Message : {interaction.intent.stimulus.sentence}")
+            logging.info(f"Message : {interaction.stimulus.sentence}")
             logging.info(f"Intent : {str(interaction.intent)}")
         else:
             # [LOG]
@@ -293,10 +241,10 @@ class Brain(object):
             # If Interaction analysis failed. 
             if not modified_interaction :
                 # Return interaction message error.
-                interaction.add_response(self.dialogs.get_dialog("intent_not_handled"))
+                interaction.add_response(Dialog.say("intent_not_handled"))
                 # [LOG]
                 logging.error(f"Interaction analysis failed. [Error #6].")
-                logging.info(f"Message : {interaction.intent.stimulus.sentence}")
+                logging.info(f"Message : {interaction.stimulus.sentence}")
                 logging.info(f"Intent : {str(interaction.intent)}")
             else:
             
@@ -311,7 +259,7 @@ class Brain(object):
                 # If Interaction execution failed. 
                 if not modified_interaction :
                     # Return interaction message error.
-                    interaction.add_response(self.dialogs.get_dialog("skill_execution_failed"))
+                    interaction.add_response(Dialog.say("skill_execution_failed"))
                     # [LOG]
                     logging.error(f"Interaction skills execution failed. [Error #20].")
                 else:   
@@ -327,9 +275,7 @@ class Brain(object):
     def interpreter(self, interaction):
         
         """ 
-            interpreter : Interpreter method, apply NLU analysis on Interaction sentence.
-            Interpretation of Interaction sentence via rhasspy-nlu.
-            Try to retrieve a recognition dict, if success then create define an the interaction intent attribut from it.
+            Try intent recognition : define intent from interaction sentence.
             ---
             Parameters
                 interaction : Interaction
@@ -340,48 +286,17 @@ class Brain(object):
         """
         
         # [LOG]
-        logging.debug(f"Interaction sentence : {interaction.intent.stimulus.sentence}\n\n")
-                
-        # Perform intent recognition in Interaction intent sentence thanks to training graph.
-        try:
-            recognition = rhasspynlu.recognize(
-                interaction.intent.stimulus.sentence, 
-                self.intents_graph, 
-                fuzzy=True
-            )
-        except ZeroDivisionError :
+        logging.debug(f"Interaction sentence : {interaction.stimulus.sentence}\n\n")
+
+        # Perform intent recognition from sentence.
+        recognition_success = interaction.intent.recognize(interaction.stimulus.sentence)
+        
+        if recognition_success :
+            # Return
+            return interaction   
+        else:
             # Return
             return None
-
-        # [LOG]
-        logging.debug(f"Raw recognition : {recognition}\n\n")
-            
-        # If didn't find any intent for the stimulus sentence.
-        if not recognition :
-            # [LOG]
-            logging.info("No intent found for this sentence.")
-            # Check if there is a context intent.
-            if not Domain.get_context_intent() :
-                # [LOG]
-                logging.info(f"No current intent found. End of interaction.\n\n")
-                # Return
-                return None
-
-        # If intent found, parse recognition infos.
-        else:
-            
-            # Format recognition as Object.
-            recognition = recognition[0].asdict()
-
-            # [LOG]
-            logging.debug(f"Intent recognition : {recognition}\n\n")
-            logging.debug(f"Intent recognition entities : {recognition['entities']}")
-            
-            # Define intent.
-            interaction.intent.checkRecognition(recognition)
-
-        # Return
-        return interaction   
 
     def analysis(self, interaction):
         
@@ -441,7 +356,7 @@ class Brain(object):
 
             # [LOG]
             logging.info(f"Switching to context intent with arguments : {interaction.intent.kwargs}")
-            logging.info(f"Stimulus sentence : {interaction.intent.stimulus.sentence}")
+            logging.info(f"Stimulus sentence : {interaction.stimulus.sentence}")
             
             # Relaunch analysis with modified interaction.
             return self.analysis(interaction)

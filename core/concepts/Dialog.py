@@ -26,7 +26,7 @@ ROOT_PATH = path.dirname(path.abspath(PARENT_PATH))+'/'
 syspath.append(ROOT_PATH)
 #
 #
-class Dialog(ConfigParser):
+class Dialog(object):
 
     """ Concept of Haroun Dialog. """
 
@@ -34,6 +34,22 @@ class Dialog(ConfigParser):
     sections = {}
 
     """ Loading methods. """
+
+    @classmethod
+    def load_haroun_dialog_files(cls, lang):
+
+        """ 
+            Load domain dialog files.
+            ---
+            Parameters
+                domain_name : String
+                    Domain name to load.
+                lang : String
+                    Language to use for dialog.
+        """
+
+        # Load domain dialogs.
+        cls.load_dialog_files(f"{ROOT_PATH}dialogs/{lang}/")
 
     @classmethod
     def load_domain_dialog_files(cls, domain_name, lang):
@@ -86,7 +102,7 @@ class Dialog(ConfigParser):
         if path.exists(dialog_file_path):
 
             # Create parser.
-            parser = ConfigParser.SafeConfigParser(allow_no_value=True)
+            parser = ConfigParser(allow_no_value=True)
 
             # Parse domain dialogs file.
             parser.read(f"{dialog_file_path}")
@@ -109,9 +125,28 @@ class Dialog(ConfigParser):
                 
         else:
             # [LOG]
-            logging.error(f"Error config file {dialog_file_path} doesn't exist.")
+            logging.error(f"Error dialog file {dialog_file_path} doesn't exist.")
 
     """ Get files methods. """
+
+    @staticmethod
+    def get_haroun_dialog_files(lang):
+
+        """ 
+            Get domain dialog files.
+            ---
+            Parameters
+                domain_name : String
+                    Domain name to load.
+                lang : String
+                    Language to use for dialog.
+            ---
+            Return : List
+                Dialog files path list.
+        """
+
+        # Get domain dialogs.
+        return Dialog.get_dialog_files(f"{ROOT_PATH}dialogs/{lang}/")
 
     @staticmethod
     def get_domain_dialog_files(domain_name, lang):
@@ -151,10 +186,11 @@ class Dialog(ConfigParser):
         dialog_files_path = []
 
         # For each dialog file in dialog directory.
-        for dir_path, dir_names, file_names in walk(dialog_files_path):
-            for file_name in file_names:
-                # Add dialog file.
-                dialog_files_path.append(path.join(dir_path, file_name))
+        for dir_path, dir_names, file_names in walk(dialog_dir_path):
+            # Create file paths and remove hidden files.
+            file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.')]
+            # Add file paths to dialog files list.
+            dialog_files_path.extend(file_paths)
 
         # Return dialog files path list.
         return dialog_files_path
@@ -163,7 +199,8 @@ class Dialog(ConfigParser):
 
     """ Getters """
 
-    def get_dialog(self, dialog_key, random = True, dialog_position = 1):
+    @classmethod
+    def get(cls, dialog_key, random = True, dialog_position = 1):
         
         """
             Retrieve dialog self.dialogs.
@@ -182,9 +219,9 @@ class Dialog(ConfigParser):
                 
         # Random dialogs
         if random :
-            dialog = choice(self.dialogs_sections[dialog_key])
+            dialog = choice(cls.sections[dialog_key])
         else:
-            dialog = self.dialogs_sections[dialog_key][dialog_position - 1]
+            dialog = cls.sections[dialog_key][dialog_position - 1]
 
         # Replace "" by space, manage empty dialog.
         dialog = dialog.replace('""', ' ')
@@ -195,7 +232,8 @@ class Dialog(ConfigParser):
         # Return dialog.
         return dialog
 
-    def say(self, dialog_key, **kwargs):
+    @classmethod
+    def say(cls, dialog_key, **kwargs):
 
         """
             Return dialog formated with kwargs.
@@ -211,7 +249,7 @@ class Dialog(ConfigParser):
         """
 
         # Get dialog.
-        dialog = self.get_dialog(dialog_key)
+        dialog = cls.get(dialog_key)
 
         # Return dialog with replaced parameters.
         return dialog.format(**kwargs)

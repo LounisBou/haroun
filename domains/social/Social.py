@@ -44,7 +44,7 @@ class Social(Domain):
         """
         
         # Return a response dialog.
-        return self.dialog.get_dialog("social.whatsup.good")
+        return self.say("social.whatsup.good")
     
     @Domain.match_intent("social.hi")
     def hi(self, hi, orphan = None):
@@ -62,7 +62,7 @@ class Social(Domain):
         # Add context.
         
         # Return a response dialog.
-        return self.dialog.get_dialog("social.hi")
+        return self.say("social.hi")
     
     @Domain.match_intent("social.bye")
     def bye(self, bye, orphan = None):
@@ -78,7 +78,7 @@ class Social(Domain):
         """
 
         # Return a response dialog.
-        return self.dialog.get_dialog("social.bye")
+        return self.say("social.bye")
 
     @Domain.match_intent("social.good")
     def good(self, good, orphan = None):
@@ -94,7 +94,7 @@ class Social(Domain):
         """
 
         # Return a response dialog.
-        return self.dialog.get_dialog("social.good")
+        return self.say("social.good")
 
     @Domain.match_intent("social.bad")
     def bad(self, good, orphan = None):
@@ -110,4 +110,4 @@ class Social(Domain):
         """
 
         # Return a response dialog.
-        return self.dialog.get_dialog("social.bad")
+        return self.say("social.bad")

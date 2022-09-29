@@ -14,12 +14,11 @@ import logging
 #
 # Current, parent, and root paths.
 CURRENT_PATH = path.dirname(path.abspath(__file__))+'/'
-PARENT_PATH = path.dirname(path.abspath(CURRENT_PATH))+'/'
-ROOT_PATH = path.dirname(path.abspath(PARENT_PATH))+'/'
+ROOT_PATH = path.join(CURRENT_PATH, "../../../..")
 syspath.append(ROOT_PATH)
 #
 # Import plex Domain.
-from domains.Plex import Plex
+from domains.plex.Plex import Plex
 # 
 #
 def getPlexMovies():
