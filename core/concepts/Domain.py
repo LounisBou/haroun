@@ -74,92 +74,32 @@ class Domain(object):
         # Initialisation.
 
         # Use context intent lifespan if exist.
-        self.check_intent_lifespan()
-    
-    
-    def get_method_args(self, method_name):
-        
+        self.check_context_intent()
+
+    # ! Dialogs methods.
+
+    def say(self, dialog_name, **kwargs):
+
         """
-            Get methods arguments list as tuple.
-            ---
-            Parameters : 
-                method_name : String
-                    Method name in domain instance.
-            ---
-            Return Tuple
-                Method arguments.
-        """ 
-        
-        # Get Skill method.
-        method = getattr(self, method_name)
-        
-        # Retrieve method arguments.
-        args = inspect.getargspec(method).args
-        
-        # Return methods args.
-        return args
-        
-    
-    def execute_skill(self, skill):
-        
-        """
-            Execute the skill on a domain class method.
-            ---
-            Parameters : 
-                skill : Skill
-                    Skill to execute.
-            ---
-            Return skill : modified skill.
-        """ 
-        
-        # Get methods.
-        method = getattr(self, skill.method_name)
-        
-        # [LOG]
-        logging.info(f"Skills parameters = {skill.parameters}")
-        
-        # Execute methods with skill parameters
-        skill.return_values = method(**skill.parameters)
-        
-        # Return modified skill
-        return skill
-    
-    @staticmethod
-    def register_handled_intent(module_name, class_name, method_name, intent_name):
-        
-        """
-            Register domain method that handle an intent with Domain.match_intent decorator.
+            Say dialog.
             ---
             Parameters
-                module_name : String
-                     Domain module name that match the intent.
-                class_name : String
-                     Domain class name that match the intent.
-                method_name : String
-                    Domain method name that match the intent.
-                intent_name : String
-                    Name of the intent to match.
+                dialog_name : String
+                    Dialog name.
+                **kwargs : Dictionary
+                    Dialog arguments.
+            ---
+            Return : String
+                Dialog text.
         """
-                
-        # If intent_name entry don't exist. 
-        if intent_name not in Domain.intents_handlers.keys() :
-            # Declare new list of skill method for intent_name.
-            Domain.intents_handlers[intent_name] = []
-        else:    
-            # [LOG]
-            logging.warning(f"Intent handler for {intent_name} already exist. Handler is added to the list.")  
 
-        # Add intent handler entry in intents_handlers.
-        Domain.intents_handlers[intent_name].append({
-            "module" : module_name,
-            "class" : class_name,
-            "method" : method_name,
-        })
-        
+        # Say dialog.
+        return self.dialog.say(dialog_name, **kwargs)
+
     # ! Context methods.
 
     @classmethod
-    def check_intent_lifespan(cls):
+    def check_context_intent(cls):
 
         """ Decrease intent lifespan if exist. """
         
@@ -335,6 +275,56 @@ class Domain(object):
         else:
             return None
 
+    # ! Intents methods.
+
+    @staticmethod
+    def add_handled_intent(module_name, class_name, method_name, intent_name):
+        
+        """
+            Register domain method that handle an intent with Domain.match_intent decorator.
+            ---
+            Parameters
+                module_name : String
+                     Domain module name that match the intent.
+                class_name : String
+                     Domain class name that match the intent.
+                method_name : String
+                    Domain method name that match the intent.
+                intent_name : String
+                    Name of the intent to match.
+        """
+                
+        # If intent_name entry don't exist. 
+        if intent_name not in Domain.intents_handlers.keys() :
+            # Declare new list of skill method for intent_name.
+            Domain.intents_handlers[intent_name] = []
+        else:    
+            # [LOG]
+            logging.warning(f"Intent handler for {intent_name} already exist. Handler is added to the list.")  
+
+        # Add intent handler entry in intents_handlers.
+        Domain.intents_handlers[intent_name].append({
+            "module" : module_name,
+            "class" : class_name,
+            "method" : method_name,
+        })
+
+    @staticmethod
+    def remove_handled_intent(intent_name):
+
+        """
+            Remove intent handler.
+            ---
+            Parameters
+                intent_name : String
+                    Name of the intent to remove.
+        """
+
+        # Remove intent handler.
+        Domain.intents_handlers.pop(intent_name, None)
+
+        
+
     # ! Decorators :
     
     @staticmethod
@@ -399,7 +389,7 @@ class Domain(object):
             logging.debug(f"Intent {intent_name} : handling by {module_name}.{class_name}.{method_name}")
                  
             # Registering function as intent handler.
-            Domain.register_handled_intent(module_name, class_name, method_name, intent_name)
+            Domain.add_handled_intent(module_name, class_name, method_name, intent_name)
                         
             # Return the wrapper function.
             return wrapper

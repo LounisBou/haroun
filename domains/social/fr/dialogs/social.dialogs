@@ -1,0 +1,38 @@
+[social.hi]
+salut
+bonjour
+hey
+hey, comment ça va ?
+salut, ça va ?
+salut, comment ça va ?
+bonjour, comment allez-vous aujourd'hui ?
+bonjour, comment allez-vous ?
+bonjour que puis-je faire pour vous ?
+bonjour, j'espère que vous passer une bonne journée.
+
+[social.bye]
+au revoir
+a bientôt
+a plus tard
+bonne journée.
+
+[social.whatsup.good]
+ça va pas mal.
+je vais bien, merci.
+c'est une bonne journée jusqu'ici.
+je vais bien, merci !
+très bien, merci !
+
+[social.whatsup.bad]
+pas top
+ça pourrait aller mieux
+bof
+
+[social.good]
+""
+Alors tout va bien.
+Content que vous alliez bien.
+
+[social.bad]
+désolé pour vous, puis-je faire quelque chose ?
+j'espère que ça ira mieux.

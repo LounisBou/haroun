@@ -3,18 +3,45 @@
 #
 # Libraries dependancies :
 #
+# Import sys.path as syspath
+from sys import path as syspath
+# Import os.path, os.walk
+from os import path, walk
+# Import pathlib.Path for rhasspynlu.parse_ini
+from pathlib import Path
+# Import rhasspynlu
+import rhasspynlu
 # Import logging
 import logging
+# Import utils debug functions.
+from utils.debug import *
 #
 #
-# Globals :
+# Gloabls : 
 #
-#
+# Current, parent, and root paths.
+CURRENT_PATH = path.dirname(path.abspath(__file__))+'/'
+PARENT_PATH = path.dirname(path.abspath(CURRENT_PATH))+'/'
+ROOT_PATH = path.dirname(path.abspath(PARENT_PATH))+'/'
+syspath.append(ROOT_PATH)
 #
 #
 class Intent(object): 
     
     """ Concept of Haroun Intent. """
+
+    # Intents files path dict.
+    intents_files_path = []
+
+    # Intents list.
+    intents = []
+
+    # Intents graph.
+    graph = None
+
+    # Intent recognize fuzzy mode.
+    fuzzy_mode = True
+
     
     def __init__(self, stimulus):
         
@@ -63,9 +90,6 @@ class Intent(object):
             # Semicolon
             ';' : 0,
         }
-        
-        
-        
     
     def __str__(self):
         
@@ -100,7 +124,191 @@ class Intent(object):
         return print_str
         
     
-    # ! - Initialisation.
+    """ NLU methods. """
+
+    @staticmethod
+    def __get_intents_files_list_from(path):
+
+        """
+            Return list of intents files in path.
+            ---
+            Parameters :
+                path : str
+                    Path to look for intents files.
+            ---
+            Returns : list
+                List of intents files path.
+        """
+
+        # Check if path exists.
+        if path.exists(path):
+
+            # Create list of files for domains intents.
+            intents_files_list = []  
+
+            # Browse through domains intents files   
+            for dir_path, dir_names, file_names in walk(path):
+                # [LOG]
+                logging.debug(f"Looking in intent directory : {path}")
+                logging.debug(f"Listing intents files : \n{file_names}")
+                # Add domains intents dir files to list.
+                intents_files_list.extend(file_names)
+                # End of loop.
+                break
+
+            # Return list of intents files.
+            return intents_files_list
+            
+        else:
+            # [LOG]
+            logging.error(f"Path {path} does not exists.")
+            # Return empty list.
+            return []
+
+    @classmethod
+    def scan_domain_intents(cls, domain_name, lang):
+
+        """ 
+            Look for domain intents files in domain directory.
+            Add domain intents files path to self.domains_intents_files_path dict.
+            ---
+            Parameters :
+                domain_name : str
+                    Domain name.
+                lang : str
+                    Language.
+        """
+
+        # Intents directory path.
+        domain_intents_path=f"{ROOT_PATH}domains/{domain_name.lower()}/{lang}/intents/"
+
+        # Add list of files to intents files path list.
+        cls.intents_files_path.extend(Intent.__get_intents_files_list_from(domain_intents_path))
+
+    @classmethod
+    def load_intents(cls, domains, lang):
+
+        """ 
+            Acquire intents file list and create a all.ini intents file. 
+            Parse haroun/intents folder to list of intents file.
+            Normally one file per available domains.
+            Generate one intents file and parse it with rhasspy-nlu to create Rhasspy NLU intents list.
+            ---
+            Parameters :
+                domains : list
+                    List of domains.
+                lang : str
+                    Language.
+        """
+        
+        """ Scan intent to fill intents_files_path list. """
+
+        # Intents directory path.
+        haroun_intents_path = f"{ROOT_PATH}intents/{lang}/"
+
+        # Get haroun intents files list.
+        cls.intents_files_path.extend(Intent.__get_intents_files_list_from(haroun_intents_path))  
+        # Get domains intents files list.
+        for domain_name in domains :
+            # Scan domain intents files and add them to intents files path list.
+            cls.scan_domain_intents(domain_name, lang)
+            
+        """ Write all intents in intents/.all.ini file. """
+
+        # Open intents/.all.ini, a file that will contains all intents.
+        all_intents_file_path  = haroun_intents_path+".all.ini"
+                    
+        # Open intents/.all.ini in write mode
+        with open(all_intents_file_path, 'w+') as all_intents_file_buffer:
+            
+            # Iterate through intents_files list
+            for file_name in cls.intents_files_path:
+                
+                # Ignore .all.ini file.
+                if file_name != ".all.ini":
+
+                    # Construct file path.
+                    file_path = haroun_intents_path+file_name
+                    
+                    # Open each file in read mode
+                    with open(file_path) as file_buffer:
+        
+                        # Read the data from file. 
+                        file_intents = file_buffer.read()
+                        
+                        # Write it in all_intents_file_buffer and add '\n\n' to enter data from next line
+                        all_intents_file_buffer.write("# "+file_name+" file content : \n")
+                        # Lowercase all intents.
+                        all_intents_file_buffer.write(file_intents.lower()+"\n\n")
+                    
+                            
+        # Load file for rhasspy-nlu.
+        cls.intents = rhasspynlu.parse_ini(Path(all_intents_file_path))
+
+        
+    @debug("verbose", True)
+    #@lru_cache(maxsize=128, typed=True)
+    def create_intents_graph(cls):
+        
+        """ 
+            nlu_training : Acquire domains knowledge. 
+            Transform intents into graph training, replace slots if necessary.
+        """
+        
+        # Generate intents training graph from list of known intents.
+        cls.graph = rhasspynlu.intents_to_graph(cls.intents, replacements = self.slots)
+    
+    
+    @debug("verbose", True) 
+    def recognize(self):
+        
+        """ 
+            interpreter : Interpreter method, apply NLU analysis on Interaction sentence.
+            Interpretation of intent sentence via rhasspy-nlu.
+            Try to retrieve a recognition dict.
+            ---
+            Parameters
+                interaction : Interaction
+                    Interaction concept object generate from trigger Stimulus.
+            ---
+            Return : interaction 
+                Interpretation of interaction success, recognition and intent attributs are now defined.
+        """
+        
+        # [LOG]
+        logging.debug(f"Interaction sentence : {self.stimulus.sentence}\n\n")
+                
+        # Perform intent recognition in Interaction intent sentence thanks to training graph.
+        try:
+            recognition = rhasspynlu.recognize(
+                self.stimulus.sentence, 
+                Intent.graph, 
+                fuzzy=Intent.fuzzy_mode
+            )
+        except ZeroDivisionError :
+            # Return
+            return None
+
+        # [LOG]
+        logging.debug(f"Raw recognition : {recognition}\n\n")
+            
+        # If didn't find any intent for the stimulus sentence.
+        if not recognition :
+            # [LOG]
+            logging.info("No intent found for this sentence.")
+
+        # If intent found, parse recognition infos.
+        else:
+            
+            # Format recognition as Object.
+            recognition = recognition[0].asdict()
+
+            # [LOG]
+            logging.debug(f"Intent recognition : {recognition}\n\n")
+            logging.debug(f"Intent recognition entities : {recognition['entities']}")
+
+        # Return
+        return recognition  
     
     def checkRecognition(self, recognition):
         
@@ -132,6 +340,8 @@ class Intent(object):
         # Raw tokens
         self.raw_tokens = recognition['raw_tokens']
 
+
+    """ Arguments methods. """
 
     def get_args(self, skill_params):
 

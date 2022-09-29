@@ -1,0 +1,19 @@
+[openhab.question.answer]
+{item_type} de {room} est de {item_state}
+
+[openhab.question.what_room]
+ok mais dans quelle pièce souhaitez-vous connaitre {item_type} ?
+très bien je veux bien vous donner {item_type} mais de quelle pièce ?
+
+[openhab.question.item_not_found]
+je n'ai pas pu trouver d'item {item_name}
+
+[openhab.action.answer]
+je met {item_type} de {room} à {item_state}
+
+[openhab.action.what_room]
+ok mais dans quelle pièce souhaitez-vous modifier {item_type} ?
+très bien je veux bien modifier {item_type} mais de quelle pièce ?
+
+[openhab.action.item_not_found]
+je n'ai pas pu trouver d'item {item_name}

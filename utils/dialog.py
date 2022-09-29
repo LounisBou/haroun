@@ -129,4 +129,25 @@ class Dialog(ConfigParser):
 
         # Return dialog.
         return dialog
+
+    def say(self, dialog_key, **kwargs):
+
+        """
+            Return dialog formated with kwargs.
+            ---
+            Parameters
+                dialog_key : String
+                    Dialog section key name.
+                kwargs : Dict
+                    Dialogs parameters.
+            ---
+            Return : String
+                Dialog sentence.
+        """
+
+        # Get dialog.
+        dialog = self.get_dialog(dialog_key)
+
+        # Return dialog with replaced parameters.
+        return dialog.format(**kwargs)
         

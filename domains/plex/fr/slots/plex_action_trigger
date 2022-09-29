@@ -1,0 +1,3 @@
+(lance | joue | met | lancer | démarre | démarrer):(PLAY)
+(éteins | éteint | éteindre | coupe | couper | arrête | arrêter | stop | stopper):(STOP)
+(met en pause | (fais|fait) pause | pause):(PAUSE)
