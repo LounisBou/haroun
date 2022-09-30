@@ -4,18 +4,9 @@
 # Libraries dependancies : #
 #
 # Import core concept domain.
-from core.Mouth import CURRENT_PATH
 from core.concepts.Domain import Domain 
-# Random library import.
-import random
 #
 #
-# Domain globals : 
-#
-# Needed slots list.
-SLOTS_FILES = []
-#
-# ! DOMAIN 
 #
 class Social(Domain):
     

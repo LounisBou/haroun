@@ -82,9 +82,6 @@ class Interaction(object):
         # Add raw_text to response object.
         self.response.add_raw_text(raw_text)
         
-        # Done flag.
-        self.done = True
-        
     
     def add_error(self, error_text):
         

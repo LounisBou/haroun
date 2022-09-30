@@ -49,7 +49,7 @@ class Dialog(object):
         """
 
         # Load domain dialogs.
-        cls.load_dialog_files(f"{ROOT_PATH}dialogs/{lang}/")
+        cls.load_dialog_files(f"{ROOT_PATH}lang/{lang}/dialogs/")
 
     @classmethod
     def load_domain_dialog_files(cls, domain_name, lang):
@@ -65,7 +65,7 @@ class Dialog(object):
         """
 
         # Load domain dialogs.
-        cls.load_dialog_files(f"{ROOT_PATH}domains/{domain_name.lower()}/{lang}/dialogs/")
+        cls.load_dialog_files(f"{ROOT_PATH}domains/{domain_name.lower()}/lang/{lang}/dialogs/")
 
     @classmethod
     def load_dialog_files(cls, dialog_dir_path):
@@ -79,7 +79,7 @@ class Dialog(object):
         """
 
         # Get dialog files path list.
-        dialog_files_path = Dialog.get_dialog_files(dialog_dir_path)
+        dialog_files_path = Dialog.__get_dialog_files(dialog_dir_path)
 
         # For each dialog file.
         for dialog_file_path in dialog_files_path:
@@ -130,46 +130,7 @@ class Dialog(object):
     """ Get files methods. """
 
     @staticmethod
-    def get_haroun_dialog_files(lang):
-
-        """ 
-            Get domain dialog files.
-            ---
-            Parameters
-                domain_name : String
-                    Domain name to load.
-                lang : String
-                    Language to use for dialog.
-            ---
-            Return : List
-                Dialog files path list.
-        """
-
-        # Get domain dialogs.
-        return Dialog.get_dialog_files(f"{ROOT_PATH}dialogs/{lang}/")
-
-    @staticmethod
-    def get_domain_dialog_files(domain_name, lang):
-
-        """ 
-            Get domain dialog files.
-            ---
-            Parameters
-                domain_name : String
-                    Domain name to load.
-                lang : String
-                    Language to use for dialog.
-            ---
-            Return : List
-                Dialog files path list.
-        """
-
-        # Get domain dialogs.
-        return Dialog.get_dialog_files(f"{ROOT_PATH}domains/{domain_name.lower()}/{lang}/dialogs/")
-
-
-    @staticmethod
-    def get_dialog_files(dialog_dir_path):
+    def __get_dialog_files(dialog_dir_path):
 
         """ 
             Get dialog files path list.
@@ -188,7 +149,7 @@ class Dialog(object):
         # For each dialog file in dialog directory.
         for dir_path, dir_names, file_names in walk(dialog_dir_path):
             # Create file paths and remove hidden files.
-            file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.')]
+            file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.') and file_name.endswith('.ini')]
             # Add file paths to dialog files list.
             dialog_files_path.extend(file_paths)
 
@@ -200,28 +161,27 @@ class Dialog(object):
     """ Getters """
 
     @classmethod
-    def get(cls, dialog_key, random = True, dialog_position = 1):
+    def get(cls, dialog_key, dialog_position = None):
         
         """
-            Retrieve dialog self.dialogs.
+            Retrieve dialog self.dialogs, return random dialog if multiple dialogs.
+            You can choose dialog position by passing dialog_position parameter.
             ---
             Parameters
                 dialog_key : String
                     Dialog section key name.
-                random : Boolean
-                    If True, return a random dialog from section. [Default : True]
                 dialog_position : Integer
-                    If random is False, return dialog at dialog_position. [Default : 1]
+                    Choose dialog at dialog_position. [Default : None]
             ---
             Return : String
                 Dialog sentence.
         """
                 
         # Random dialogs
-        if random :
-            dialog = choice(cls.sections[dialog_key])
+        if dialog_position is not None and dialog_position <= len(cls.sections[dialog_key]) and dialog_position >= 1:
+            dialog = cls.sections[dialog_key][dialog_position - 1] 
         else:
-            dialog = cls.sections[dialog_key][dialog_position - 1]
+            dialog = choice(cls.sections[dialog_key])
 
         # Replace "" by space, manage empty dialog.
         dialog = dialog.replace('""', ' ')

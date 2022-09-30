@@ -14,16 +14,6 @@ import logging
 from prettyformatter import pprint
 #
 #
-# Domain globals : 
-#
-# Needed slots list.
-SLOTS_FILES = [
-  "city",
-  "day_diff",
-]
-#
-#
-# ! DOMAIN 
 #
 class Weather(Domain):
   
@@ -69,17 +59,23 @@ class Weather(Domain):
         day_weather = weather.daily_forecast[day_diff_int]
 
         # Get slots values.
-        day_name = self.getSlot(day_diff)
+        day_name = self.get_slot(day_diff)
         
-        # Get weather.daily dialog response.
-        response = self.say(
-            "weather.daily",
-            city=city.title(), 
-            day_name=day_name, 
-            weather_desc=day_weather['weather12H']['desc'].lower(),
-            temp_min=day_weather['T']['min'],
-            temp_max=day_weather['T']['max'],
-        )
-
-        # Return daily forecast.
-        return response
+        # Check if day_weather defined.
+        if "weather12H" in day_weather :
+            # Return weather.daily dialog response.
+            return self.say(
+                "weather.daily",
+                city=city.title(), 
+                day_name=day_name, 
+                weather_desc=day_weather['weather12H']['desc'].lower(),
+                temp_min=day_weather['T']['min'],
+                temp_max=day_weather['T']['max'],
+            )
+        else:
+            # Return weather.not_found dialog response.
+            return self.say(
+                "weather.not_found",
+                city=city.title(), 
+                day_name=day_name, 
+            )

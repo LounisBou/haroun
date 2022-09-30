@@ -5,18 +5,11 @@
 #
 # Import core concept domain.
 from core.concepts.Domain import Domain 
-# Import plex API account
-from plexapi.myplex import MyPlexAccount
 # Import plex API server.
 from plexapi.server import PlexServer
 # Import logging library
 import logging
 #
-#
-# Domain globals : 
-#
-# Needed slots list.
-SLOTS_FILES = []
 #
 # 
 class Plex(Domain):  
@@ -170,28 +163,94 @@ class Plex(Domain):
         # Return 
         return played
         
-    def search(self, search_string, media_type = None):
+    def search(self, media_type, search_string):
         
         """ 
             Search for entry in plex database.
             ---
             Parameters
+                media_type : String
+                    Media type to search in plex database.
                 search_string : String
+                    String to search in plex database.
             ---
             Return List
-                List of plex Video matching search_string.
+                List of plex media matching search_string.
         """
         
-        # List of matching videos title.
-        matching_videos_titles = []
+        # List of matching media title.
+        matching_media_titles = []
         
         # Make plex search
-        for video in self.server.search(search_string, media_type):
-            # Retrieve movie title.
-            matching_videos_titles.append(video.title)
+        for media in self.server.search(search_string, media_type):
+            # Retrieve media title.
+            matching_media_titles.append(media.title)
             
-        # Return matching movie title list
-        return matching_videos_titles
+        # Return matching media title list
+        return matching_media_titles
+
+    def search_match(self, media_title, media_type):
+        
+        """ 
+            Make search and check if search retrun match asked media.
+            ---
+            Parameters
+                media_type : String
+                    Media type to search.
+                media_title : String
+                    Media title to find.
+            ---
+            Return Boolean, String
+                Plex media find.
+        """
+        
+        # Make plex search
+        matching_media_titles = self.server.search(media_type, media_title)
+
+        # One media found.
+        if len(matching_media_titles) == 1 :
+            # Return media title.
+            return True, matching_media_titles[0]
+        
+        # No media found.
+        elif len(matching_media_titles) == 0 :
+            # Return None.
+            return False, None
+        
+        # Multiple media found.
+        else :
+            # Check if one match media title.
+            for media in matching_media_titles:
+                if media.title == media_title :
+                    return True, media.title
+            
+            # No match video title return all.
+            return False, Plex.create_media_list(matching_media_titles)
+        
+
+    @staticmethod
+    def create_media_list(media_titles):
+        
+        """ 
+            Create media string list for user to choose.
+            ---
+            Parameters
+                media_titles : List
+                    List of media title.
+            ---
+            Return String
+                String list of plex media title.
+        """
+
+        # Media string list.
+        string_list = ""
+        
+        # Create media list.
+        for title in media_titles:
+            string_list += f"{title}, "
+            
+        # Return matching media title list
+        return string_list
     
     def get_all_medias(self, library_section):
         
@@ -342,82 +401,67 @@ class Plex(Domain):
                 Response.
         """
 
-        # Check if media type is not None.
+        # If we have no media type.
         if media_type is None:
 
             # Create context.
             self.set_context_intent("plex.play_media", {})
             # Return response.
-            return f"Que souhaitez-vous regarder ?"
-        # Check if media type is MOVIE.
-        elif media_type == "MOVIE":
-            # Check if media title is not None.
-            if media_title is None:
-                # Create context.
-                self.set_context_intent("plex.play_media", {"media_type":media_type})
-                # Return response.
-                return f"Quel film souhaitez-vous regarder ?"
-            else:
-                # Return response.
-                return self.play_movie(media_title)
-        # Check if media type is SHOW.
-        elif media_type == "SHOW":
-            # Check if media title is not None.
-            if media_title is None:
-                # Create context.
-                self.set_context_intent("plex.play_media", {"media_type":media_type})
-                # Return response.
-                return f"Quelle série souhaitez-vous regarder ?"
-            else:
-                # Return response.
-                return self.play_show(media_title)
-        # Check if media type is EPISODE.
-        elif media_type == "EPISODE":
-            # Check if media title is not None.
-            if media_title is None:
-                # Create context.
-                self.set_context_intent(
-                    "plex.play_media", 
-                    {"media_type":media_type, "media_title":media_title}
-                )
-                # Return response.
-                return f"Quel série souhaitez-vous regarder ?"
-            else:
-                
+            return self.say("plex.play_media.get_media_type")
+            
+        # If we have media but no media title.
+        elif media_title is None:
 
+            # Create context.
+            self.set_context_intent("plex.play_media", {"media_type": media_type})
 
-                # Check if season number is not None.
-                if season_number is None:
-                    # Create context.
-                    self.set_context_intent(
-                        "plex.play_media", 
-                        {
-                            "media_type":media_type,
-                            "media_title":media_title, 
-                            "season_number":season_number}
-                        )
-                    # Return response.
-                    return f"Quelle saison souhaitez-vous regarder ?"
-                elif episode_number is None:
-                    # Create context.
-                    self.set_context_intent(
-                        "plex.play_media", 
-                        {
-                            "media_type":media_type,
-                            "media_title":media_title,
-                            "season_number":season_number,
-                            "episode_number":episode_number
-                        }
-                    )
-                    # Return response.
-                    return f"Quel épisode souhaitez-vous regarder ?"
-                else:
-                    # Return response.
-                    return self.play_show(media_title, season_number, episode_number)
+            # Ask for media title.
+            return self.say(
+                "plex.play_media.get_title",
+                media_type = self.get_slot(media_type)
+            )
+
+        # If we have media type and media title.
         else:
+            
+            # Check for media title in Plex library.
+            media_found, found_media_title = self.search_match(media_type, media_title)
+
+            # If media is identify.
+            if media_found:
+
+                # If media type is movie.
+                if media_type == "movie":
+                    # Get movie to play.
+                    media = self.server.library.section(self.plex_movies_section).get(found_media_title)
+                elif media_type == "show":
+                    # Get show to play.
+                    media = self.server.library.section(self.plex_shows_section).get(found_media_title)
                 
-            # Return response.
-            return f"Je ne sais pas ce que c'est, désolé."
+                # Play media.
+                self.play_client(media)
+
+                # Return dialog response.
+                return self.say("plex.play_media.found", media_title = found_media_title)
+            
+            # If media is not identify.
+            else:
+
+                # No media found.
+                if found_media_title is None:
+                    # Return dialog response.
+                    return self.say("plex.play_media.not_found", media_title = media_title)
+                # Multiple medias found.
+                else:
+                    # Return dialog response.
+                    return self.say(
+                        "plex.play_media.found_multiple",
+                        media_type = self.get_slot(media_type),
+                        medias_titles = found_media_title
+                    )
+
+
+
 
         
 
@@ -481,14 +525,11 @@ class Plex(Domain):
             # Create context.
             self.set_context_intent("plex.play_movie", {})
 
-            # Return list of available movie with this title match.
-            movies_titles = ""
-            for movie_title in matching_videos_titles:
-                movies_titles = movies_titles + f"{movie_title}, "
-            # Get dialog response.
-            response = self.dialog.get_dialog("plex.play_movie.found_multiple")
-            # Return response.
-            return response.format(movies_titles = movies_titles)
+            # Return dialog response.
+            return self.say(
+                "plex.play_movie.found_multiple", 
+                movies_titles = Plex.create_video_list(matching_videos_titles)
+            )
 
 
     @Domain.check_api_connection("server")
@@ -502,15 +543,13 @@ class Plex(Domain):
         else:
             # Create context.
             self.set_context_intent("plex.play_show", {})
-            # Get dialog response.
-            response = self.dialog.get_dialog("plex.play_show.show_title")
-            # Return response.
-            return response
+            # Return dialog response.
+            return self.say("plex.play_show.show_title")
 
         # If no show found.
         if len(matching_videos_titles) == 0 :
-            response = self.dialog.get_dialog("plex.show.not_found")
-            return response.format(show_title = show_title)
+            # Return dialog response.
+            return self.say("plex.show.not_found", show_title = show_title)
 
         # If just one show found.
         elif len(matching_videos_titles) == 1 or show_title.capitalize() in matching_videos_titles :
@@ -537,8 +576,9 @@ class Plex(Domain):
                 
                 # If episode not found.
                 if not match_episode :
-                    response = self.dialog.get_dialog("plex.show.episode_not_found")
-                    return response.format(
+                    # Return dialog response.
+                    return self.say(
+                        "plex.show.episode_not_found",
                         show_title = correct_show_title, 
                         episode_number = episode_number, 
                         season_number = season_number
@@ -549,9 +589,9 @@ class Plex(Domain):
                 if error :
                     return error
                 
-                # Return response.
-                response = self.dialog.get_dialog("plex.show.found")
-                return response.format(
+                # Return dialog response.
+                return self.say(
+                    "plex.show.found",
                     show_title = correct_show_title, 
                     episode_number = episode_number, 
                     season_number = season_number
@@ -564,9 +604,9 @@ class Plex(Domain):
                 if error :
                     return error
                 
-                # Return response.
-                response = self.dialog.get_dialog("plex.show.found")
-                return response.format(
+                # Return dialog response.
+                return self.say(
+                    "plex.show.found",
                     show_title = correct_show_title, 
                     episode_number = episode_number, 
                     season_number = season_number
@@ -582,9 +622,9 @@ class Plex(Domain):
             shows_titles = ""
             for show_title in matching_videos_titles:
                 shows_titles = shows_titles + f"{show_title}, "
-            # Return response.
-            response = self.dialog.get_dialog("plex.show.found_multiple")
-            return response.format(shows_titles = shows_titles)
+            
+            # Return dialog response.
+            return self.say("plex.show.found_multiple", shows_titles = shows_titles)
 
 
     @Domain.check_api_connection("server")

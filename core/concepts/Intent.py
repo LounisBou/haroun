@@ -95,15 +95,16 @@ class Intent(object):
         
         """ Intent print method. """
         
-        # Text
         print_str = f"\n"
-        print_str += f"  label : {str(self.label)} \n"
-        print_str += f"  raw_text  : {str(self.raw_text)} \n"
-        print_str += f"  interpreted text : {str(self.text)} \n"
-        #print_str += f" confidence  : {str(self.confidence)} \n"
+        print_str += f"  sentence : {self.sentence} \n"
+        print_str += f"  label : {self.label} \n"
+        print_str += f"  raw_text  : {self.raw_text} \n"
+        print_str += f"  interpreted text : {self.text} \n"
+        #print_str += f" confidence  : {self.confidence} \n"
         print_str += f"  entities  : \n"
         if self.entities : 
-            print_str += "\n".join(["    - "+str(entity['entity'])+" : "+str(entity['value']) for entity in self.entities])+"\n"
+            print_str += "\n".join([f"    - {entity['entity']} : {entity['value']}" for entity in self.entities])+"\n"
+        print_str += f"  orphan text  : {self.orphan_text} \n"
         #print_str += f"tokens  : \n"
         #if self.tokens : 
             #print_str += "\n".join([str(token) for token in self.tokens])+"\n"
@@ -118,7 +119,7 @@ class Intent(object):
         
         print_str += f"\n"
         
-        
+        # Return string to print.
         return print_str
         
     
@@ -147,10 +148,10 @@ class Intent(object):
             # Browse through domains intents files   
             for dir_path, dir_names, file_names in walk(intent_dir_path):
                 # Remove hidden files.
-                file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.')]
+                file_paths = [path.join(dir_path, file_name) for file_name in file_names if not file_name.startswith('.') and file_name.endswith('.ini')]
                 # [LOG]
                 logging.debug(f"Looking in intent directory : {intent_dir_path}")
-                logging.debug(f"Listing intents files : \n{file_names}")
+                logging.debug(f"Listing intents files : \n{file_paths}")
                 # Add domains intents dir files to list.
                 intent_files.extend(file_paths)
                 # End of loop.
@@ -180,7 +181,7 @@ class Intent(object):
         """
 
         # Intents directory path.
-        domain_intents_path=f"{ROOT_PATH}domains/{domain_name.lower()}/{lang}/intents/"
+        domain_intents_path=f"{ROOT_PATH}domains/{domain_name.lower()}/lang/{lang}/intents/"
 
         # Add list of files to intents files path list.
         cls.intents_files_path.extend(Intent.__get_intent_files_from(domain_intents_path))
@@ -204,7 +205,7 @@ class Intent(object):
         """ Scan intent to fill intents_files_path list. """
 
         # Intents directory path.
-        haroun_intents_path = f"{ROOT_PATH}intents/{lang}/"
+        haroun_intents_path = f"{ROOT_PATH}lang/{lang}/intents/"
 
         # Get haroun intents files list.
         cls.intents_files_path.extend(Intent.__get_intent_files_from(haroun_intents_path))  
@@ -217,6 +218,10 @@ class Intent(object):
 
         # Open intents/.all.ini, a file that will contains all intents.
         all_intents_file_path  = haroun_intents_path+".all.ini"
+
+        # [LOG]
+        logging.debug(f"Intents list : \n{cls.intents_files_path}")
+        logging.debug(f"Writing all intents in {all_intents_file_path} file.")
                     
         # Open intents/.all.ini in write mode
         with open(all_intents_file_path, 'w+') as all_intents_file_buffer:
@@ -340,13 +345,14 @@ class Intent(object):
         self.label = recognition['intent']['name']
         # Confidence.
         self.confidence = recognition['intent']['confidence']
-        # Entities
-        self.entities = recognition['entities']
         # Tokens
         self.tokens = recognition['tokens']
         # Raw tokens
         self.raw_tokens = recognition['raw_tokens']
-
+        # Entities
+        self.entities = recognition['entities']
+        # Orphan 
+        self.orphan_text = self.__get_orphan_text()
 
     """ Arguments methods. """
 
@@ -362,21 +368,42 @@ class Intent(object):
             Return : dict
                 Dict of arguments.    
         """
-
+        
         # If there is entities.
         if self.entities :
             # Check entities to create kwargs.
             for entity in self.entities :
                 # If entity is not already in kwargs.
-                if entity['entity'] not in self.kwargs.keys() :
+                if entity['entity'] not in self.kwargs.keys() or self.kwargs[entity['entity']] == None :
                     # Add entity to kwargs.
                     self.kwargs[entity['entity']] = entity['value']
-        
+
         # Add orphan to kwargs.
         self.__get_orphan(skill_params)
 
         # Return kwargs.
         return self.kwargs
+
+    def __get_orphan_text(self):
+
+        """ 
+            Retrieve orphan text from sentence. 
+            Orphan text is the text that is not recognized as an entity.
+            ---
+            Return : String
+                Orphan text.
+        """
+
+        # Orphan entity value
+        self.orphan_text = self.sentence.lower()
+
+        # If raw text is not empty.
+        if self.raw_text :
+            # Remove raw text from orphan.
+            self.orphan_text = self.orphan_text.replace(self.raw_text, "")
+
+        # Clean orphan text as an entity and return it.
+        return self.__clean_entity_value(self.orphan_text)
 
     def __get_orphan(self, skill_params):
         
@@ -401,17 +428,6 @@ class Intent(object):
                 self.kwargs['orphan'] = arg_value
                 # Remove argument value.
                 self.kwargs[arg_key] = None
-
-        # Orphan entity value
-        self.orphan_text = self.sentence.lower()
-
-        # If raw text is not empty.
-        if self.raw_text :
-            # Remove raw text from orphan.
-            self.orphan_text = self.orphan_text.replace(self.raw_text, "")
-
-        # Trim orphan entity.
-        self.orphan_text = self.__clean_entity_value(self.orphan_text)
 
         # If orphan_text is not empty and orphan argument not already defined..
         if self.orphan_text and not self.kwargs['orphan'] :

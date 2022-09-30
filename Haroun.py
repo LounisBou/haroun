@@ -47,7 +47,7 @@ class Haroun(object):
         """ Haroun class constructor """
         
         # Create configuration dict by loading Haroun configuration file.
-        self.config = Config("haroun")
+        self.config = Config.load_haroun_config("haroun", mandatory=True)
         
         # Get current date.
         today_date = date.today()
@@ -355,7 +355,12 @@ if __name__ == "__main__":
     # Haroun instanciation
     haroun = Haroun()
     
-    # Launch telegram session     
-    asyncio.run(haroun.start())
+    try:
+        # Start Haroun.      
+        asyncio.run(haroun.start())
+    except KeyboardInterrupt:
+        # [LOG]
+        logging.info(f"\n\nHaroun is shutting down...\n")
+
     
     

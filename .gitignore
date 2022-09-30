@@ -4,6 +4,7 @@ __pycache__/
 
 # Config files
 config/*.ini
+domains/*/*.ini
 
 # Logs directory
 log/*.log

@@ -56,8 +56,8 @@ class Domain(object):
         self.domain_class_name = type(self).__name__
         
         # Load config haroun and domain config.
-        self.config = Config("haroun")
-        self.config.load_config_file(self.domain_class_name)
+        self.config = Config.load_haroun_config("haroun", mandatory=True)
+        self.config = Config.load_domain_config(self.domain_class_name, mandatory=False, parser=self.config)
 
         # Load domain slots.
         Slot.load_domain_slots(self.domain_class_name, self.config['haroun']['lang'])
@@ -103,7 +103,7 @@ class Domain(object):
     
     """ Slots methods. """
 
-    def getSlot(self, slot_name):
+    def get_slot(self, slot_name):
 
         """
             Get slot value.
