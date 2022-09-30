@@ -7,11 +7,8 @@
 from core.concepts.Domain import Domain 
 # Import meteo France API.
 from meteofrance_api import MeteoFranceClient
-from meteofrance_api.helpers import readeable_phenomenoms_dict
 # Import logging library
 import logging
-# [DEBUG] Import pretty formatter.
-from prettyformatter import pprint
 #
 #
 #
