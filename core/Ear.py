@@ -3,8 +3,6 @@
 #
 # Import subprocess library.
 import subprocess
-# Import sys library.
-import sys
 # Import json library.
 import json
 # Import vosk library.

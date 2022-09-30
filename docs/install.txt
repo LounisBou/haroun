@@ -3,6 +3,9 @@
 # Install librairies requirements.
 pip install -r requirement.txt
 
+# Install librairies requirements for each domain.
+find . -name 'requirements.txt' -exec pip install -r {} \;
+
 # Haroun should be placed in folder /opt/haroun
 
 # Install Haroun as service.
