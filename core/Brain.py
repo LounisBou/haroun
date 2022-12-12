@@ -37,6 +37,8 @@ from core.concepts.Intent import Intent
 from core.concepts.Slot import Slot
 # Import utils debug function.
 from utils.debug import *
+# Import utils openAI class.
+from utils.openAI import OpenAI
 #
 #
 # Gloabls : 
@@ -82,6 +84,12 @@ class Brain(object):
         
         # Wake up : initialisation of Brain class.
         self.wakeUp()
+
+        # Check if openAI is enabled.
+        if self.config['openai']['enable'] == 'True':
+
+            # Create an openAI instance.
+            self.openAI = OpenAI(self.config['openai']['api_key'], self.config['openai']['debug'])
         
     
     # ! - Initialisation.
@@ -171,7 +179,6 @@ class Brain(object):
         context = Context.add(f"user_id_{user_id}", "Laura", "Telegram")
         #context.remove()
         
-
         # Create stimulus from script call infos.
         stimulus = Stimulus(source, source_id, sentence, user_id, interaction_id, parent_interaction_id, origin_datetime)
         
@@ -227,12 +234,22 @@ class Brain(object):
         modified_interaction = self.interpreter(interaction)
         # if interpretation failed.
         if not modified_interaction :
-            # Return interaction message error.
-            interaction.add_response(Dialog.say("intent_not_found"))
             # [LOG]
-            logging.error(f"Interaction interpretation failed. [Error #4].")
             logging.info(f"Message : {interaction.stimulus.sentence}")
             logging.info(f"Intent : {str(interaction.intent)}")
+            # Check if openAI is enabled.
+            if self.config['openai']['enable'] == 'True':
+                # [LOG]
+                logging.info(f"OpenAI is enabled. Switching to openAI response.")
+                # Ask openAI to complete interaction.
+                response = self.openAI.chat(interaction.stimulus.sentence, "Izno", "Haroun")
+            else:
+                # [LOG]
+                logging.error(f"Interaction interpretation failed. [Error #5].")
+                # Return interaction message error.
+                response = Dialog.say("intent_not_found")
+            # Add response to interaction.
+            interaction.add_response(response) 
         else:
             # [LOG]
             logging.info(f"{str(interaction.intent)}")
@@ -240,12 +257,22 @@ class Brain(object):
             modified_interaction = self.analysis(modified_interaction)
             # If Interaction analysis failed. 
             if not modified_interaction :
-                # Return interaction message error.
-                interaction.add_response(Dialog.say("intent_not_handled"))
                 # [LOG]
-                logging.error(f"Interaction analysis failed. [Error #6].")
                 logging.info(f"Message : {interaction.stimulus.sentence}")
                 logging.info(f"Intent : {str(interaction.intent)}")
+                # Check if openAI is enabled.
+                if self.config['openai']['enable'] == 'True':
+                    # [LOG]
+                    logging.info(f"OpenAI is enabled. Switching to openAI response.")
+                    # Ask openAI to complete interaction.
+                    response = self.openAI.chat(interaction.stimulus.sentence, "Izno", "Haroun")
+                else:
+                    # [LOG]
+                    logging.error(f"Interaction analysis failed. [Error #6].")
+                    # Interaction message error.
+                    response = Dialog.say("intent_not_handled")
+                # Add response to interaction.
+                interaction.add_response(response)
             else:
             
                 # [TODO]

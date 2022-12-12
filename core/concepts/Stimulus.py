@@ -9,6 +9,10 @@
 # Globals :
 #
 #
+USERNAMES = {
+    1767688016 : "Izno",
+    "default" : "Laura",
+}
 #
 #
 class Stimulus(object):
@@ -52,6 +56,12 @@ class Stimulus(object):
         
         # Interaction user ID.
         self.user_id = user_id
+
+        # Interaction user name.
+        if user_id not in USERNAMES :
+            self.user_name = USERNAMES["default"]
+        else :
+            self.user_name = USERNAMES[user_id]
         
         # Interaction ID if one.
         self.interaction_id =interaction_id

@@ -36,3 +36,19 @@ haroun_chat_id = -123456789
 # Telegram chat ID for debugging, use with haroun debug_mode. 
 # (Bot should be include in this chat group, or you can use user_id for direct conversation.)
 haroun_debug_chat_id = -1234567890
+
+[openai]
+# Enable OpenAI
+enable = True
+# OpenAI debug mode
+debug = True
+# OpenAI API key (see https://beta.openai.com/)
+api_key=sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+# OpenAI model (see https://beta.openai.com/docs/api-reference/models)
+model=text-davinci-003
+# OpenAI temperature (see https://beta.openai.com/docs/api-reference/completions/create-completion)
+temperature=0.5
+# OpenAI max token (see https://beta.openai.com/docs/api-reference/completions/create-completion)
+max_token=4096
+# OpenAI stop (see https://beta.openai.com/docs/api-reference/completions/create-completion)
+stop=["\n", "  ", " "]

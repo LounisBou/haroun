@@ -1,0 +1,10 @@
+[openia]
+api_key = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+debug = False
+model = "text-davinci-003"
+temperature = 0.5
+max_token = 4096
+stop = ["\n", "  ", " "]
+[chat]
+username = "User"
+botname = "Haroun"
