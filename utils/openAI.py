@@ -9,11 +9,23 @@ import os
 
 """ Constants """
 
-# Default openAI parameters
-DEFAULT_MODEL = "text-davinci-003"
-DEFAULT_TEMPERATURE = 0.5
-DEFAULT_MAX_TOKEN = 4096
-DEFAULT_STOP = ["\n", "  ", " "]
+# Default openAI model to use
+MODELS = {
+    "davinci" : {
+        "name" : "text-davinci-003",
+        "max_tokens" : 4096,
+        "temperature" : 0.1,
+        "stop" : ["\n", "  ", " "]
+    },
+    "curie" : {
+        "name" : "text-curie-001",
+        "max_tokens" : 2049,
+        "temperature" : 0.5,
+        "stop" : ["\n", "  ", " "]
+    }
+}
+# Default openAI model to use
+DEFAULT_MODEL = MODELS["davinci"]
 
 # Defaut chat parameters
 DEFAULT_USERNAME = "Izno"
@@ -61,10 +73,10 @@ class OpenAI:
 
         # Ask for the completion
         response = openai.Completion.create(
-            model=DEFAULT_MODEL, 
+            model=DEFAULT_MODEL["name"], 
             prompt=prompt, 
-            temperature=DEFAULT_TEMPERATURE, 
-            max_tokens=DEFAULT_MAX_TOKEN - len(prompt)
+            temperature=DEFAULT_MODEL["temperature"], 
+            max_tokens=DEFAULT_MODEL["max_tokens"] - len(prompt)
         )
 
         # If debug mode
@@ -78,7 +90,7 @@ class OpenAI:
 
 
     
-    def complete(self, prompt, temperature=DEFAULT_TEMPERATURE, max_tokens=DEFAULT_MAX_TOKEN, stop=DEFAULT_STOP):
+    def complete(self, prompt, temperature=DEFAULT_MODEL["temperature"], max_tokens=DEFAULT_MODEL["max_tokens"], stop=DEFAULT_MODEL["stop"]):
 
         """ 
             Complete the prompt with openAI API 
@@ -100,18 +112,18 @@ class OpenAI:
         # If arguments are None
         if temperature is None:
             # Set the default temperature
-            temperature = DEFAULT_TEMPERATURE
+            temperature = DEFAULT_MODEL["temperature"]
         if max_tokens is None:
             # Set the default max token
-            max_tokens = DEFAULT_MAX_TOKEN
+            max_tokens = DEFAULT_MODEL["max_tokens"]
         if stop is None:
             # Set the default stop
-            stop = DEFAULT_STOP
+            stop = DEFAULT_MODEL["stop"]
 
         # Max token must take prompt length into account
-        if max_tokens + len(prompt) >= DEFAULT_MAX_TOKEN:
+        if max_tokens + len(prompt) >= DEFAULT_MODEL["max_tokens"]:
             # Remove the prompt length from the max token
-            max_tokens = DEFAULT_MAX_TOKEN - len(prompt)
+            max_tokens = DEFAULT_MODEL["max_tokens"] - len(prompt)
 
         # If debug mode
         if self.debug:
@@ -123,7 +135,7 @@ class OpenAI:
 
         # Create the request
         request = self.engine.create(
-            model=DEFAULT_MODEL, 
+            model=DEFAULT_MODEL["name"], 
             prompt=prompt,
             temperature=temperature,
             max_tokens=max_tokens,
