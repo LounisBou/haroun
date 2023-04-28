@@ -17,19 +17,8 @@ Domain are python class that are must be named same as the python file. They con
 
 # What is the continuation of dev ?
 
-    * RoadMap
-    
-        • Part 1 :
+    * This is currently not a V1 the Work is In Progress
             
-        • Part 2 :
-            
-        • Part 3 : 
-            
-        • Part 4 : 
-            
-        • Part 5 :
-            
-
 # Working schema :
 
 ![design](docs/Haroun-design.png)
